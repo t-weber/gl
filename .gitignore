@@ -1,0 +1,65 @@
+# Compiled Object files
+*.o
+*.obj
+*.moc
+
+# Compiled Dynamic libraries
+*.so
+*.dll
+*.dylib
+
+# Compiled Static libraries
+*.a
+*.lib
+
+# LLVM intermediate files
+*.asm
+*.s
+*.bc
+*.dSYM
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Packages
+*.dmg
+*.deb
+
+# Archives
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.zip
+
+# Pictures
+*.jpg
+*.png
+*.pdf
+*.icns
+*.ico
+*.dot
+
+# Libraries
+tlibs2
+tlibs2/**
+
+# Temporary files
+build/**
+tests/build/**
+*.pyc
+*.csv
+*.prof
+*.swp
+.DS_Store
+
+# Temporary tex files
+*.log
+*.aux
+*.synctex.*
+*.toc
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
