@@ -24,8 +24,20 @@
 // ----------------------------------------------------------------------------
 
 // convert a vector to a serialisable string
-extern std::string geo_vec_to_str(const t_vec& vec);
+extern std::string geo_vec_to_str(const t_vec& vec,
+	const char* sep = "; ");
 
+// convert a serialised string to a vector
+extern t_vec geo_str_to_vec(const std::string& str,
+	const char* seps = "|;,");
+
+// convert a matrix to a serialisable string
+extern std::string geo_mat_to_str(const t_mat& mat,
+	const char* seprow = "| ", const char* sepcol = "; ");
+
+// convert a serialised string to a matrix
+extern t_mat geo_str_to_mat(const std::string& str,
+	const char* seprow = "|", const char* sepcol = ";");
 // ----------------------------------------------------------------------------
 
 

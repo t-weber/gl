@@ -325,12 +325,7 @@ void GeometriesBrowser::GeoTreeCurrentItemChanged(QTreeWidgetItem *item, QTreeWi
 		else if(std::holds_alternative<t_vec>(prop.value))
 		{
 			const t_vec& val = std::get<t_vec>(prop.value);
-
-			std::ostringstream ostr;
-			ostr.precision(g_prec);
-
-			using namespace tl2_ops;
-			ostr << val;
+			std::string str = geo_vec_to_str(val);
 
 			// type
 			auto* itemType = new QTableWidgetItem("vector");
@@ -339,19 +334,14 @@ void GeometriesBrowser::GeoTreeCurrentItemChanged(QTreeWidgetItem *item, QTreeWi
 
 			// value
 			m_geosettings->setItem(row, GEOBROWSER_SETTINGS_VALUE,
-				new QTableWidgetItem(ostr.str().c_str()));
+				new QTableWidgetItem(str.c_str()));
 		}
 
 		// matrix value
 		else if(std::holds_alternative<t_mat>(prop.value))
 		{
 			const t_mat& val = std::get<t_mat>(prop.value);
-
-			std::ostringstream ostr;
-			ostr.precision(g_prec);
-
-			using namespace tl2_ops;
-			ostr << val;
+			std::string str = geo_mat_to_str(val);
 
 			// type
 			auto* itemType = new QTableWidgetItem("matrix");
@@ -360,7 +350,7 @@ void GeometriesBrowser::GeoTreeCurrentItemChanged(QTreeWidgetItem *item, QTreeWi
 
 			// value
 			m_geosettings->setItem(row, GEOBROWSER_SETTINGS_VALUE,
-				new QTableWidgetItem(ostr.str().c_str()));
+				new QTableWidgetItem(str.c_str()));
 		}
 	}
 
@@ -422,43 +412,14 @@ void GeometriesBrowser::GeoSettingsItemChanged(QTableWidgetItem *item)
 		// vector value
 		else if(ty == "vector")
 		{
-			// get the components of the vector
-			std::vector<std::string> tokens;
-			tl2::get_tokens<std::string, std::string>(val, ";,", tokens);
-
-			t_vec vec = tl2::create<t_vec>(tokens.size());
-			for(std::size_t tokidx=0; tokidx<tokens.size(); ++tokidx)
-			{
-				// parse the vector component expression to yield a real value
-				tl2::ExprParser<t_real> parser;
-				if(!parser.parse(tokens[tokidx]))
-					throw std::logic_error("Could not parse vector expression.");
-				vec[tokidx] = parser.eval();
-			}
-
-			prop.value = vec;
+			prop.value = geo_str_to_vec(val);
 		}
 
 		// matrix value
-		/*else if(ty == "matrix")
+		else if(ty == "matrix")
 		{
-			// get the components of the matrix
-			std::vector<std::string> tokens;
-			tl2::get_tokens<std::string, std::string>(val, ";,", tokens);
-			typename t_mat::size_type num_rows = std::sqrt(tokens.size());
-
-			t_mat mat = tl2::create<t_mat>(num_rows, num_rows);
-			for(std::size_t tokidx=0; tokidx<tokens.size(); ++tokidx)
-			{
-				// parse the vector component expression to yield a real value
-				tl2::ExprParser<t_real> parser;
-				if(!parser.parse(tokens[tokidx]))
-					throw std::logic_error("Could not parse matrix expression.");
-				mat[tokidx] = parser.eval();
-			}
-
-			prop.value = mat;
-		}*/
+			prop.value = geo_str_to_mat(val);
+		}
 
 		emit SignalChangeObjectProperty(m_curObject, prop);
 	}

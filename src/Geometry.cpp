@@ -6,6 +6,7 @@
  */
 
 #include "Geometry.h"
+#include "tlibs2/libs/expr.h"
 #include "tlibs2/libs/str.h"
 
 #include <iostream>
@@ -20,33 +21,107 @@ namespace pt = boost::property_tree;
 /**
  * convert a vector to a serialisable string
  */
-std::string geo_vec_to_str(const t_vec& vec)
+std::string geo_vec_to_str(const t_vec& vec, const char* sep)
 {
 	std::ostringstream ostr;
 	ostr.precision(8);
 
-	for(t_real val : vec)
-		ostr << val << " ";
+	for(std::size_t i=0; i<vec.size(); ++i)
+	{
+		ostr << vec[i];
+		if(i < vec.size()-1)
+			ostr << sep;
+	}
 
 	return ostr.str();
 }
 
 
 /**
+ * convert a serialised string to a vector
+ */
+t_vec geo_str_to_vec(const std::string& str, const char* seps)
+{
+	// get the components of the vector
+	std::vector<std::string> tokens;
+	tl2::get_tokens<std::string, std::string>(str, seps, tokens);
+
+	t_vec vec = tl2::create<t_vec>(tokens.size());
+	for(std::size_t tokidx=0; tokidx<tokens.size(); ++tokidx)
+	{
+		// parse the vector component expression to yield a real value
+		tl2::ExprParser<t_real> parser;
+		if(!parser.parse(tokens[tokidx]))
+			throw std::logic_error("Could not parse vector expression.");
+		vec[tokidx] = parser.eval();
+	}
+
+	return vec;
+}
+
+
+/**
  * convert a matrix to a serialisable string
  */
-std::string geo_mat_to_str(const t_mat& mat)
+std::string geo_mat_to_str(const t_mat& mat, const char* seprow, const char* sepcol)
 {
 	std::ostringstream ostr;
 	ostr.precision(8);
 
-	for(std::size_t i=0; i<(std::size_t)mat.size1(); ++i)
+	for(std::size_t i=0; i<mat.size1(); ++i)
 	{
-		for(std::size_t j=0; j<(std::size_t)mat.size2(); ++j)
-			ostr << mat(i,j) << " ";
+		for(std::size_t j=0; j<mat.size2(); ++j)
+		{
+			ostr << mat(i,j);
+			if(j < mat.size2()-1)
+				ostr << sepcol;
+		}
+
+		if(i < mat.size1()-1)
+			ostr << seprow;
 	}
 
 	return ostr.str();
+}
+
+
+/**
+ * convert a serialised string to a matrix
+ */
+t_mat geo_str_to_mat(const std::string& str, const char* seprow, const char* sepcol)
+{
+	// get the rows of the matrix
+	std::vector<std::string> rowtokens;
+	tl2::get_tokens<std::string, std::string>(str, seprow, rowtokens);
+
+	std::size_t ROWS = rowtokens.size();
+	t_mat mat = tl2::zero<t_mat>(ROWS, ROWS);
+	ROWS = std::min(ROWS, mat.size1());
+
+	for(std::size_t i=0; i<ROWS; ++i)
+	{
+		// get the columns of the matrix
+		std::vector<std::string> coltokens;
+		tl2::get_tokens<std::string, std::string>(rowtokens[i], sepcol, coltokens);
+
+		for(std::size_t j=0; j<ROWS; ++j)
+		{
+			// parse the matrix component expression to yield a real value
+			if(j < coltokens.size())
+			{
+				tl2::ExprParser<t_real> parser;
+				if(!parser.parse(coltokens[j]))
+					throw std::logic_error("Could not parse vector expression.");
+				mat(i,j) = parser.eval();
+			}
+			else
+			{
+				mat(i,j) = 0;
+			}
+		}
+	}
+
+	return mat;
 }
 
 // ----------------------------------------------------------------------------
@@ -165,20 +240,21 @@ bool Geometry::Load(const pt::ptree& prop)
 	// position
 	if(auto optPos = prop.get_optional<std::string>("position"); optPos)
 	{
-		m_pos.clear();
-
-		tl2::get_tokens<t_real>(tl2::trimmed(*optPos), std::string{" \t,;"}, m_pos);
+		m_pos = geo_str_to_vec(*optPos);
 		if(m_pos.size() < 3)
 			m_pos.resize(3);
+	}
+
+	// rotation
+	if(auto optRot = prop.get_optional<std::string>("rotation"); optRot)
+	{
+		m_rot = geo_str_to_mat(*optRot);
 	}
 
 	// colour
 	if(auto col = prop.get_optional<std::string>("colour"); col)
 	{
-		m_colour.clear();
-		tl2::get_tokens<t_real>(
-			tl2::trimmed(*col), std::string{" \t,;"}, m_colour);
-
+		m_colour = geo_str_to_vec(*col);
 		if(m_colour.size() < 3)
 			m_colour.resize(3);
 	}

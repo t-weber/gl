@@ -7,7 +7,7 @@
 	<floor>
 		<len_x> 20 </len_x>
 		<len_y> 20 </len_y>
-		<colour> 0.5 0.5 0.5 </colour>
+		<colour> 0.5, 0.5, 0.5 </colour>
 	</floor>
 
 
@@ -15,11 +15,11 @@
 		<object id="wall 1">
 			<geometry>
 				<box>
-					<position> 10 0 </position>
+					<position> 10, 0 </position>
 					<height> 3 </height>
 					<depth> 20 </depth>
 					<length> 0.5 </length>
-					<colour> 1 0 0 </colour>
+					<colour> 1, 0, 0 </colour>
 				</box>
 			</geometry>
 		</object>
@@ -27,11 +27,11 @@
 		<object id="wall 2">
 			<geometry>
 				<box id="">
-					<position> 0 10 </position>
+					<position> 0, 10 </position>
 					<height> 3 </height>
 					<depth> 0.5 </depth>
 					<length> 20 </length>
-					<colour> 1 0 0 </colour>
+					<colour> 1, 0, 0 </colour>
 				</box>
 			</geometry>
 		</object>
@@ -39,11 +39,11 @@
 		<object id="wall 3">
 			<geometry>
 				<box id="">
-					<position> -10 0 </position>
+					<position> -10, 0 </position>
 					<height> 3 </height>
 					<depth> 20 </depth>
 					<length> 0.5 </length>
-					<colour> 1 0 0 </colour>
+					<colour> 1, 0, 0 </colour>
 				</box>
 			</geometry>
 		</object>
@@ -51,11 +51,11 @@
 		<object id="wall 4">
 			<geometry>
 				<box id="">
-					<position> 0 -10 </position>
+					<position> 0, -10 </position>
 					<height> 3 </height>
 					<depth> 0.5 </depth>
 					<length> 20 </length>
-					<colour> 1 0 0 </colour>
+					<colour> 1, 0, 0 </colour>
 				</box>
 			</geometry>
 		</object>
