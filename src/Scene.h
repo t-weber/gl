@@ -28,14 +28,14 @@ public:
 	~Scene();
 
 	// copy constructor and operator
-	Scene(const Scene& instr);
-	const Scene& operator=(const Scene& instr);
+	Scene(const Scene& scene);
+	const Scene& operator=(const Scene& scene);
 
 	void Clear();
 	bool Load(const boost::property_tree::ptree& prop);
 	boost::property_tree::ptree Save() const;
 
-	void AddWall(const std::vector<std::shared_ptr<Geometry>>& wallsegs, const std::string& id);
+	void AddObject(const std::vector<std::shared_ptr<Geometry>>& obj, const std::string& id);
 	bool DeleteObject(const std::string& id);
 	bool RenameObject(const std::string& oldid, const std::string& newid);
 	std::tuple<bool, std::shared_ptr<Geometry>> RotateObject(const std::string& id, t_real angle);
@@ -44,7 +44,7 @@ public:
 	t_real GetFloorLenY() const { return m_floorlen[1]; }
 	const t_vec& GetFloorColour() const { return m_floorcol; }
 
-	const std::vector<std::shared_ptr<Geometry>>& GetWalls() const { return m_walls; }
+	const std::vector<std::shared_ptr<Geometry>>& GetObjects() const { return m_objs; }
 
 	void DragObject(bool drag_start, const std::string& obj,
 		t_real x_start, t_real y_start, t_real x, t_real y);
@@ -67,20 +67,20 @@ public:
 public:
 	static std::pair<bool, std::string> load(
 		/*const*/ boost::property_tree::ptree& prop,
-		Scene& instrspace,
+		Scene& scene,
 		const std::string* filename = nullptr);
 
 	static std::pair<bool, std::string> load(
 		const std::string& filename,
-		Scene& instrspace);
+		Scene& scene);
 
 
 private:
 	t_real m_floorlen[2] = { 10., 10. };
 	t_vec m_floorcol = tl2::create<t_vec>({0.5, 0.5, 0.5});
 
-	// wall segments
-	std::vector<std::shared_ptr<Geometry>> m_walls{};
+	// objects
+	std::vector<std::shared_ptr<Geometry>> m_objs{};
 
 	// starting position for drag operation
 	t_vec m_drag_pos_axis_start{};

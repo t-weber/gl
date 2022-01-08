@@ -461,10 +461,10 @@ void GeometriesBrowser::accept()
 /**
  * set an instrument space and refresh the information in the geometries object tree
  */
-void GeometriesBrowser::UpdateGeoTree(const Scene& instrspace)
+void GeometriesBrowser::UpdateGeoTree(const Scene& scene)
 {
 	// remember the current instrument space
-	m_scene = &instrspace;
+	m_scene = &scene;
 
 	// clear old tree
 	m_geotree->clear();
@@ -474,7 +474,7 @@ void GeometriesBrowser::UpdateGeoTree(const Scene& instrspace)
 	auto* wallsitem = new QTreeWidgetItem(m_geotree);
 	wallsitem->setText(0, "Walls");
 
-	for(const auto& wall : instrspace.GetWalls())
+	for(const auto& wall : scene.GetObjects())
 	{
 		auto* wallitem = new QTreeWidgetItem(wallsitem);
 		wallitem->setFlags(wallitem->flags() | Qt::ItemIsEditable);

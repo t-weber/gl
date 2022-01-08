@@ -173,8 +173,9 @@ protected slots:
 	void UpdateStatusLabel();
 
 	// add or delete 3d objects
-	void AddWall();
-	void AddPillar();
+	void AddCuboid();
+	void AddSphere();
+	void AddCylinder();
 
 	void DeleteCurrentObject();
 	void RotateCurrentObject(t_real angle);

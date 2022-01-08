@@ -28,26 +28,26 @@ Scene::~Scene()
 
 
 /**
- * assign data from another instrument space
+ * assign data from another scene
  */
-Scene::Scene(const Scene& instr)
+Scene::Scene(const Scene& scene)
 {
-	*this = instr;
+	*this = scene;
 }
 
 
 /**
- * assign data from another instrument space
+ * assign data from another scene
  */
-const Scene& Scene::operator=(const Scene& instr)
+const Scene& Scene::operator=(const Scene& scene)
 {
-	this->m_floorlen[0] = instr.m_floorlen[0];
-	this->m_floorlen[1] = instr.m_floorlen[1];
-	this->m_floorcol = instr.m_floorcol;
+	this->m_floorlen[0] = scene.m_floorlen[0];
+	this->m_floorlen[1] = scene.m_floorlen[1];
+	this->m_floorcol = scene.m_floorcol;
 
-	this->m_walls = instr.m_walls;
+	this->m_objs = scene.m_objs;
 
-	this->m_drag_pos_axis_start = instr.m_drag_pos_axis_start;
+	this->m_drag_pos_axis_start = scene.m_drag_pos_axis_start;
 	this->m_sigUpdate = std::make_shared<t_sig_update>();
 
 	return *this;
@@ -55,7 +55,7 @@ const Scene& Scene::operator=(const Scene& instr)
 
 
 /**
- * clear all data in the instrument space
+ * clear all data in the scene
  */
 void Scene::Clear()
 {
@@ -64,7 +64,7 @@ void Scene::Clear()
 	m_floorcol = tl2::create<t_vec>({0.5, 0.5, 0.5});
 
 	// clear
-	m_walls.clear();
+	m_objs.clear();
 
 	// remove listeners
 	m_sigUpdate = std::make_shared<t_sig_update>();
@@ -72,7 +72,7 @@ void Scene::Clear()
 
 
 /**
- * load instrument and wall configuration from a property tree
+ * load scene and object configuration from a property tree
  */
 bool Scene::Load(const pt::ptree& prop)
 {
@@ -83,7 +83,6 @@ bool Scene::Load(const pt::ptree& prop)
 		m_floorlen[0] = *opt;
 	if(auto opt = prop.get_optional<t_real>("floor.len_y"); opt)
 		m_floorlen[1] = *opt;
-
 
 	// floor colour
 	if(auto col = prop.get_optional<std::string>("floor.colour"); col)
@@ -96,20 +95,19 @@ bool Scene::Load(const pt::ptree& prop)
 			m_floorcol.resize(3);
 	}
 
-
-	// walls
-	if(auto walls = prop.get_child_optional("walls"); walls)
+	// objects
+	if(auto objs = prop.get_child_optional("objects"); objs)
 	{
-		// iterate wall segments
-		for(const auto &wall : *walls)
+		// iterate objects
+		for(const auto &obj : *objs)
 		{
-			auto id = wall.second.get<std::string>("<xmlattr>.id", "");
-			auto geo = wall.second.get_child_optional("geometry");
+			auto id = obj.second.get<std::string>("<xmlattr>.id", "");
+			auto geo = obj.second.get_child_optional("geometry");
 			if(!geo)
 				continue;
 
 			if(auto geoobj = Geometry::load(*geo); std::get<0>(geoobj))
-				AddWall(std::get<1>(geoobj), id);
+				AddObject(std::get<1>(geoobj), id);
 		}
 	}
 
@@ -118,90 +116,91 @@ bool Scene::Load(const pt::ptree& prop)
 
 
 /**
- * save the instrument and wall configuration into a property tree
+ * save the scene and object configuration into a property tree
  */
 pt::ptree Scene::Save() const
 {
 	pt::ptree prop;
 
 	// floor
-	prop.put<t_real>(FILE_BASENAME "instrument_space.floor.len_x", m_floorlen[0]);
-	prop.put<t_real>(FILE_BASENAME "instrument_space.floor.len_y", m_floorlen[1]);
-	prop.put<std::string>(FILE_BASENAME "instrument_space.floor.colour", geo_vec_to_str(m_floorcol));
+	prop.put<t_real>(FILE_BASENAME "floor.len_x", m_floorlen[0]);
+	prop.put<t_real>(FILE_BASENAME "floor.len_y", m_floorlen[1]);
+	prop.put<std::string>(FILE_BASENAME "floor.colour", geo_vec_to_str(m_floorcol));
 
-	// walls
-	pt::ptree propwalls;
-	for(std::size_t wallidx=0; wallidx<m_walls.size(); ++wallidx)
+	// objects
+	pt::ptree propobjs;
+	for(std::size_t objidx=0; objidx<m_objs.size(); ++objidx)
 	{
-		const auto& wall = m_walls[wallidx];
+		const auto& obj = m_objs[objidx];
 
-		pt::ptree propwall;
-		propwall.put<std::string>("<xmlattr>.id", "wall " + std::to_string(wallidx+1));
-		propwall.put_child("geometry", wall->Save());
+		pt::ptree propobj;
+		propobj.put<std::string>("<xmlattr>.id", "object " + std::to_string(objidx+1));
+		propobj.put_child("geometry", obj->Save());
 
-		pt::ptree propwall2;
-		propwall2.put_child("wall", propwall);
-		propwalls.insert(propwalls.end(), propwall2.begin(), propwall2.end());
+		pt::ptree propobj2;
+		propobj2.put_child("object", propobj);
+		propobjs.insert(propobjs.end(), propobj2.begin(), propobj2.end());
 	}
 
-	prop.put_child(FILE_BASENAME "instrument_space.walls", propwalls);
+	prop.put_child(FILE_BASENAME "objects", propobjs);
 
 	return prop;
 }
 
 
 /**
- * add a wall to the instrument space
+ * add an object to the scene
  */
-void Scene::AddWall(const std::vector<std::shared_ptr<Geometry>>& wallsegs, const std::string& id)
+void Scene::AddObject(
+	const std::vector<std::shared_ptr<Geometry>>& objs,
+	const std::string& id)
 {
-	// get individual 3d primitives that comprise this wall
-	for(auto& wallseg : wallsegs)
+	// get individual 3d primitives that comprise this object
+	for(auto& obj : objs)
 	{
-		if(wallseg->GetId() == "")
-			wallseg->SetId(id);
-		m_walls.push_back(wallseg);
+		if(obj->GetId() == "")
+			obj->SetId(id);
+		m_objs.push_back(obj);
 	}
 }
 
 
 /**
- * delete an object (so far only walls)
+ * delete an object
  */
 bool Scene::DeleteObject(const std::string& id)
 {
-	// find the wall with the given id
-	if(auto iter = std::find_if(m_walls.begin(), m_walls.end(), [&id](const std::shared_ptr<Geometry>& wall) -> bool
+	// find the object with the given id
+	if(auto iter = std::find_if(m_objs.begin(), m_objs.end(),
+		[&id](const std::shared_ptr<Geometry>& obj) -> bool
 	{
-		return wall->GetId() == id;
-	}); iter != m_walls.end())
+		return obj->GetId() == id;
+	}); iter != m_objs.end())
 	{
-		m_walls.erase(iter);
+		m_objs.erase(iter);
 		return true;
 	}
 
-	// TODO: handle other cases besides walls
 	return false;
 }
 
 
 /**
- * rename an object (so far only walls)
+ * rename an object
  */
 bool Scene::RenameObject(const std::string& oldid, const std::string& newid)
 {
-	// find the wall with the given id
-	if(auto iter = std::find_if(m_walls.begin(), m_walls.end(),
-		[&oldid](const std::shared_ptr<Geometry>& wall) -> bool
+	// find the object with the given id
+	if(auto iter = std::find_if(m_objs.begin(), m_objs.end(),
+		[&oldid](const std::shared_ptr<Geometry>& obj) -> bool
 		{
-			return wall->GetId() == oldid;
-		}); iter != m_walls.end())
+			return obj->GetId() == oldid;
+		}); iter != m_objs.end())
 	{
 		(*iter)->SetId(newid);
 		return true;
 	}
 
-	// TODO: handle other cases besides walls
 	return false;
 }
 
@@ -209,19 +208,20 @@ bool Scene::RenameObject(const std::string& oldid, const std::string& newid)
 /**
  * rotate an object by the given angle
  */
-std::tuple<bool, std::shared_ptr<Geometry>> Scene::RotateObject(const std::string& id, t_real angle)
+std::tuple<bool, std::shared_ptr<Geometry>> 
+Scene::RotateObject(const std::string& id, t_real angle)
 {
-	// find the wall with the given id
-	if(auto iter = std::find_if(m_walls.begin(), m_walls.end(), [&id](const std::shared_ptr<Geometry>& wall) -> bool
+	// find the object with the given id
+	if(auto iter = std::find_if(m_objs.begin(), m_objs.end(), 
+		[&id](const std::shared_ptr<Geometry>& obj) -> bool
 	{
-		return wall->GetId() == id;
-	}); iter != m_walls.end())
+		return obj->GetId() == id;
+	}); iter != m_objs.end())
 	{
 		(*iter)->Rotate(angle);
 		return std::make_tuple(true, *iter);
 	}
 
-	// TODO: handle other cases besides walls
 	return std::make_tuple(false, nullptr);
 }
 
@@ -229,21 +229,20 @@ std::tuple<bool, std::shared_ptr<Geometry>> Scene::RotateObject(const std::strin
 /**
  * an object is requested to be dragged from the gui
  */
-void Scene::DragObject(bool drag_start, const std::string& obj,
+void Scene::DragObject(bool drag_start, const std::string& objid,
 	t_real x_start, t_real y_start, t_real x, t_real y)
 {
-	// cases involving walls
-	bool wall_dragged = false;
+	bool obj_dragged = false;
 
-	for(auto& wall : GetWalls())
+	for(auto& obj : GetObjects())
 	{
-		if(wall->GetId() != obj)
+		if(obj->GetId() != objid)
 			continue;
 
 		t_vec pos_startcur = tl2::create<t_vec>({ x_start, y_start });
 		t_vec pos_cur = tl2::create<t_vec>({ x, y });
 
-		t_vec pos_obj3 = wall->GetCentre();
+		t_vec pos_obj3 = obj->GetCentre();
 		t_vec pos_obj = pos_obj3;
 		pos_obj.resize(2);
 
@@ -254,51 +253,34 @@ void Scene::DragObject(bool drag_start, const std::string& obj,
 		pos_obj3[0] = pos_drag[0];
 		pos_obj3[1] = pos_drag[1];
 
-		wall->SetCentre(pos_obj3);
-		wall_dragged = true;
+		obj->SetCentre(pos_obj3);
+		obj_dragged = true;
 	}
 
-
-	if(wall_dragged)
+	if(obj_dragged)
 		EmitUpdate();
 }
 
 
 /**
- * load an instrument space definition from a property tree
+ * load a scene definition from a property tree
  */
 std::pair<bool, std::string> Scene::load(
-	/*const*/ pt::ptree& prop, Scene& instrspace, const std::string* filename)
+	/*const*/ pt::ptree& prop, Scene& scene, const std::string* filename)
 {
 	std::string unknown = "<unknown>";
-	if(!filename) filename = &unknown;
+	if(!filename)
+		filename = &unknown;
 
-	// get variables from config file
-	std::unordered_map<std::string, std::string> propvars{};
-
-	if(auto vars = prop.get_child_optional(FILE_BASENAME "variables"); vars)
+	if(auto scenetree = prop.get_child_optional(FILE_BASENAME); scenetree)
 	{
-		// iterate variables
-		for(const auto &var : *vars)
-		{
-			const auto& key = var.first;
-			std::string val = var.second.get<std::string>("<xmlattr>.value", "");
-			//std::cout << key << " = " << val << std::endl;
-
-			propvars.insert(std::make_pair(key, val));
-		}
-	}
-
-	// load instrument definition
-	if(auto instr = prop.get_child_optional(FILE_BASENAME "instrument_space"); instr)
-	{
-		if(!instrspace.Load(*instr))
-			return std::make_pair(false, "Instrument configuration \"" +
+		if(!scene.Load(*scenetree))
+			return std::make_pair(false, "Scene configuration \"" +
 				*filename + "\" could not be loaded.");
 	}
 	else
 	{
-		return std::make_pair(false, "No instrument definition found in \"" +
+		return std::make_pair(false, "No scene definition found in \"" +
 			*filename + "\".");
 	}
 
@@ -311,18 +293,18 @@ std::pair<bool, std::string> Scene::load(
 
 
 /**
- * load an instrument space definition from an xml file
+ * load a scene definition from an xml file
  */
 std::pair<bool, std::string> Scene::load(
-	const std::string& filename, Scene& instrspace)
+	const std::string& filename, Scene& scene)
 {
 	if(filename == "" || !fs::exists(fs::path(filename)))
-		return std::make_pair(false, "Instrument file \"" + filename + "\" does not exist.");
+		return std::make_pair(false, "Scene file \"" + filename + "\" does not exist.");
 
 	// open xml
 	std::ifstream ifstr{filename};
 	if(!ifstr)
-		return std::make_pair(false, "Could not read instrument file \"" + filename + "\".");
+		return std::make_pair(false, "Could not read scene file \"" + filename + "\".");
 
 	// read xml
 	pt::ptree prop;
@@ -331,25 +313,25 @@ std::pair<bool, std::string> Scene::load(
 	if(auto opt = prop.get_optional<std::string>(FILE_BASENAME "ident");
 		!opt || *opt != APPL_IDENT)
 	{
-		return std::make_pair(false, "Instrument file \"" + filename +
+		return std::make_pair(false, "Scene file \"" + filename +
 			"\" has invalid identifier.");
 	}
 
-	return load(prop, instrspace, &filename);
+	return load(prop, scene, &filename);
 }
 
 
 /**
- * get the properties of a geometry object in the instrument space
+ * get the properties of a geometry object in the scene
  */
-std::vector<ObjectProperty> Scene::GetProperties(const std::string& obj) const
+std::vector<ObjectProperty> Scene::GetProperties(const std::string& objid) const
 {
-	// find the wall with the given id
-	if(auto iter = std::find_if(m_walls.begin(), m_walls.end(),
-		[&obj](const std::shared_ptr<Geometry>& wall) -> bool
+	// find the object with the given id
+	if(auto iter = std::find_if(m_objs.begin(), m_objs.end(),
+		[&objid](const std::shared_ptr<Geometry>& obj) -> bool
 		{
-			return wall->GetId() == obj;
-		}); iter != m_walls.end())
+			return obj->GetId() == objid;
+		}); iter != m_objs.end())
 	{
 		return (*iter)->GetProperties();
 	}
@@ -359,17 +341,17 @@ std::vector<ObjectProperty> Scene::GetProperties(const std::string& obj) const
 
 
 /**
- * set the properties of a geometry object in the instrument space
+ * set the properties of a geometry object in the scene
  */
 std::tuple<bool, std::shared_ptr<Geometry>> Scene::SetProperties(
-	const std::string& obj, const std::vector<ObjectProperty>& props)
+	const std::string& objid, const std::vector<ObjectProperty>& props)
 {
-	// find the wall with the given id
-	if(auto iter = std::find_if(m_walls.begin(), m_walls.end(),
-		[&obj](const std::shared_ptr<Geometry>& wall) -> bool
+	// find the object with the given id
+	if(auto iter = std::find_if(m_objs.begin(), m_objs.end(),
+		[&objid](const std::shared_ptr<Geometry>& obj) -> bool
 		{
-			return wall->GetId() == obj;
-		}); iter != m_walls.end())
+			return obj->GetId() == objid;
+		}); iter != m_objs.end())
 	{
 		(*iter)->SetProperties(props);
 		return std::make_tuple(true, *iter);

@@ -28,7 +28,7 @@ public:
 	GeometriesBrowser(const GeometriesBrowser&) = delete;
 	const GeometriesBrowser& operator=(const GeometriesBrowser&) = delete;
 
-	void UpdateGeoTree(const Scene& instrspace);
+	void UpdateGeoTree(const Scene& scene);
 	void SelectObject(const std::string& obj);
 
 

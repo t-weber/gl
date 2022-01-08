@@ -219,12 +219,12 @@ bool PathsRenderer::LoadScene(const Scene& scene)
 		scene.GetFloorColour());
 	m_objs[lowerFloor].m_mat(2,3) = -0.01;
 
-	// walls
-	for(const auto& wall : scene.GetWalls())
+	// objects
+	for(const auto& obj : scene.GetObjects())
 	{
-		if(!wall)
+		if(!obj)
 			continue;
-		AddWall(*wall);
+		AddObject(*obj);
 	}
 
 	update();
@@ -233,42 +233,42 @@ bool PathsRenderer::LoadScene(const Scene& scene)
 
 
 /**
- * insert a wall into the scene
+ * insert an object into the scene
  */
-void PathsRenderer::AddWall(const Geometry& wall)
+void PathsRenderer::AddObject(const Geometry& obj)
 {
 	if(!m_initialised)
 		return;
 
-	auto [_verts, _norms, _uvs] = wall.GetTriangles();
+	auto [_verts, _norms, _uvs] = obj.GetTriangles();
 
 	auto verts = tl2::convert<t_vec3_gl>(_verts);
 	auto norms = tl2::convert<t_vec3_gl>(_norms);
 	auto uvs = tl2::convert<t_vec3_gl>(_uvs);
-	auto cols = tl2::convert<t_vec3_gl>(wall.GetColour());
+	auto cols = tl2::convert<t_vec3_gl>(obj.GetColour());
 
 	auto obj_iter = AddTriangleObject(
-		wall.GetId(), verts, norms, uvs,
+		obj.GetId(), verts, norms, uvs,
 		cols[0], cols[1], cols[2], 1);
 
-	const t_mat& _mat = wall.GetTrafo();
+	const t_mat& _mat = obj.GetTrafo();
 	t_mat_gl mat = tl2::convert<t_mat_gl>(_mat);
 	obj_iter->second.m_mat = mat;
-	obj_iter->second.m_texture = wall.GetTexture();
+	obj_iter->second.m_texture = obj.GetTexture();
 
 	update();
 }
 
 
 /**
- * scene has been changed (e.g. walls have been moved)
+ * scene has been changed (e.g. objects have been moved)
  */
 void PathsRenderer::UpdateScene(const Scene& scene)
 {
-	// update wall matrices
-	for(const auto& wall : scene.GetWalls())
+	// update object matrices
+	for(const auto& obj : scene.GetObjects())
 	{
-		m_objs[wall->GetId()].m_mat = wall->GetTrafo();
+		m_objs[obj->GetId()].m_mat = obj->GetTrafo();
 	}
 
 	update();
@@ -591,7 +591,7 @@ void PathsRenderer::UpdatePicker()
 					polyuv[0], polyuv[1], polyuv[2],
 					vecInters);
 
-				// save intersections with base plane for drawing walls
+				// save intersections with base plane for drawing objects
 				m_cursorUV[0] = uv[0];
 				m_cursorUV[1] = uv[1];
 				m_cursor[0] = vecInters4[0];

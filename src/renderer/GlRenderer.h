@@ -92,7 +92,7 @@ public:
 
 	void Clear();
 	bool LoadScene(const Scene& scene);
-	void AddWall(const Geometry& geo);
+	void AddObject(const Geometry& geo);
 
 	// receivers for scene update signals
 	void UpdateScene(const Scene& instr);

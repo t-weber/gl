@@ -335,18 +335,26 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 	// geometry menu
 	QMenu *menuGeo = new QMenu("Geometry", m_menubar);
 
-	QAction *actionAddCuboidWall = new QAction(QIcon::fromTheme("insert-object"), "Add Wall", menuGeo);
-	QAction *actionAddCylindricalWall = new QAction(QIcon::fromTheme("insert-object"), "Add Pillar", menuGeo);
-	QAction *actionGeoBrowser = new QAction(QIcon::fromTheme("document-properties"), "Object Browser...", menuGeo);
-	QAction *actionTextureBrowser = new QAction(QIcon::fromTheme("image-x-generic"), "Texture Browser...", menuGeo);
+	QAction *actionAddCuboid = new QAction(
+		QIcon::fromTheme("insert-object"), "Add Box", menuGeo);
+	QAction *actionAddSphere = new QAction(
+		QIcon::fromTheme("insert-object"), "Add Sphere", menuGeo);
+	QAction *actionAddCylinder = new QAction(
+		QIcon::fromTheme("insert-object"), "Add Cylinder", menuGeo);
+	QAction *actionGeoBrowser = new QAction(
+		QIcon::fromTheme("document-properties"), "Object Browser...", menuGeo);
+	QAction *actionTextureBrowser = new QAction(
+		QIcon::fromTheme("image-x-generic"), "Texture Browser...", menuGeo);
 
-	connect(actionAddCuboidWall, &QAction::triggered, this, &PathsTool::AddWall);
-	connect(actionAddCylindricalWall, &QAction::triggered, this, &PathsTool::AddPillar);
+	connect(actionAddCuboid, &QAction::triggered, this, &PathsTool::AddCuboid);
+	connect(actionAddSphere, &QAction::triggered, this, &PathsTool::AddSphere);
+	connect(actionAddCylinder, &QAction::triggered, this, &PathsTool::AddCylinder);
 	connect(actionGeoBrowser, &QAction::triggered, this, &PathsTool::ShowGeometryBrowser);
 	connect(actionTextureBrowser, &QAction::triggered, this, &PathsTool::ShowTextureBrowser);
 
-	menuGeo->addAction(actionAddCuboidWall);
-	menuGeo->addAction(actionAddCylindricalWall);
+	menuGeo->addAction(actionAddCuboid);
+	menuGeo->addAction(actionAddSphere);
+	menuGeo->addAction(actionAddCylinder);
 	menuGeo->addSeparator();
 	menuGeo->addAction(actionGeoBrowser);
 	menuGeo->addAction(actionTextureBrowser);
@@ -889,7 +897,7 @@ bool PathsTool::OpenFile(const QString& file)
 		if(m_dlgTextureBrowser)
 			m_dlgTextureBrowser->EnableTextures(textures_enabled, false);
 
-		// update slot for scene space (e.g. walls) changes
+		// update slot for scene space (e.g. objects) changes
 		m_scene.AddUpdateSlot(
 			[this](const Scene& scene)
 			{
@@ -1222,59 +1230,86 @@ void PathsTool::InitSettings()
 
 
 /**
- * add a wall to the scene
+ * add a cuboid to the scene
  */
-void PathsTool::AddWall()
+void PathsTool::AddCuboid()
 {
-	auto wall = std::make_shared<BoxGeometry>();
-	wall->SetHeight(4.);
-	wall->SetDepth(0.5);
-	wall->SetCentre(tl2::create<t_vec>({0, 0, wall->GetHeight()*0.5}));
-	wall->SetLength(4.);
-	wall->UpdateTrafo();
+	auto cuboid = std::make_shared<BoxGeometry>();
+	cuboid->SetHeight(2.);
+	cuboid->SetDepth(2.);
+	cuboid->SetLength(2.);
+	cuboid->SetCentre(tl2::create<t_vec>({0, 0, cuboid->GetHeight()*0.5}));
+	cuboid->UpdateTrafo();
 
-	static std::size_t wallcnt = 1;
+	static std::size_t cuboidcnt = 1;
 	std::ostringstream ostrId;
-	ostrId << "new wall " << wallcnt++;
+	ostrId << "new box " << cuboidcnt++;
 
-	// add wall to scene
-	m_scene.AddWall(std::vector<std::shared_ptr<Geometry>>{{wall}}, ostrId.str());
+	// add cuboid to scene
+	m_scene.AddObject(std::vector<std::shared_ptr<Geometry>>{{cuboid}}, ostrId.str());
 
 	// update object browser tree
 	if(m_dlgGeoBrowser)
 		m_dlgGeoBrowser->UpdateGeoTree(m_scene);
 
-	// add a 3d representation of the wall
+	// add a 3d representation of the cuboid
 	if(m_renderer)
-		m_renderer->AddWall(*wall);
+		m_renderer->AddObject(*cuboid);
 }
 
 
 /**
- * add a pillar to the scene
+ * add a sphere to the scene
  */
-void PathsTool::AddPillar()
+void PathsTool::AddSphere()
 {
-	auto wall = std::make_shared<CylinderGeometry>();
-	wall->SetHeight(4.);
-	wall->SetCentre(tl2::create<t_vec>({0, 0, wall->GetHeight()*0.5}));
-	wall->SetRadius(0.5);
-	wall->UpdateTrafo();
+	auto sphere = std::make_shared<SphereGeometry>();
+	sphere->SetRadius(2.);
+	sphere->SetCentre(tl2::create<t_vec>({0, 0, sphere->GetRadius()*0.5}));
+	sphere->UpdateTrafo();
 
-	static std::size_t wallcnt = 1;
+	static std::size_t sphcnt = 1;
 	std::ostringstream ostrId;
-	ostrId << "new pillar " << wallcnt++;
+	ostrId << "new sphere " << sphcnt++;
 
-	// add pillar to scene
-	m_scene.AddWall(std::vector<std::shared_ptr<Geometry>>{{wall}}, ostrId.str());
+	// add sphere to scene
+	m_scene.AddObject(std::vector<std::shared_ptr<Geometry>>{{sphere}}, ostrId.str());
 
 	// update object browser tree
 	if(m_dlgGeoBrowser)
 		m_dlgGeoBrowser->UpdateGeoTree(m_scene);
 
-	// add a 3d representation of the pillar
+	// add a 3d representation of the sphere
 	if(m_renderer)
-		m_renderer->AddWall(*wall);
+		m_renderer->AddObject(*sphere);
+}
+
+
+/**
+ * add a cylinder to the scene
+ */
+void PathsTool::AddCylinder()
+{
+	auto cyl = std::make_shared<CylinderGeometry>();
+	cyl->SetHeight(4.);
+	cyl->SetCentre(tl2::create<t_vec>({0, 0, cyl->GetHeight()*0.5}));
+	cyl->SetRadius(0.5);
+	cyl->UpdateTrafo();
+
+	static std::size_t cylcnt = 1;
+	std::ostringstream ostrId;
+	ostrId << "new cylinder " << cylcnt++;
+
+	// add cylinder to scene
+	m_scene.AddObject(std::vector<std::shared_ptr<Geometry>>{{cyl}}, ostrId.str());
+
+	// update object browser tree
+	if(m_dlgGeoBrowser)
+		m_dlgGeoBrowser->UpdateGeoTree(m_scene);
+
+	// add a 3d representation of the cylinder
+	if(m_renderer)
+		m_renderer->AddObject(*cyl);
 }
 
 
@@ -1339,11 +1374,10 @@ void PathsTool::RotateObject(const std::string& objname, t_real angle)
 			m_dlgGeoBrowser->UpdateGeoTree(m_scene);
 
 		// remove old 3d representation of object and create a new one
-		// TODO: handle other cases besides walls
 		if(m_renderer && objgeo)
 		{
 			m_renderer->DeleteObject(objname);
-			m_renderer->AddWall(*objgeo);
+			m_renderer->AddObject(*objgeo);
 		}
 	}
 	else
@@ -1466,11 +1500,10 @@ void PathsTool::ChangeObjectProperty(const std::string& objname, const ObjectPro
 			m_dlgGeoBrowser->UpdateGeoTree(m_scene);
 
 		// remove old 3d representation of object and create a new one
-		// TODO: handle other cases besides walls
 		if(m_renderer && objgeo)
 		{
 			m_renderer->DeleteObject(objname);
-			m_renderer->AddWall(*objgeo);
+			m_renderer->AddObject(*objgeo);
 		}
 	}
 	else

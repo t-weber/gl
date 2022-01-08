@@ -186,24 +186,7 @@ void BoxGeometry::SetCentre(const t_vec& vec)
 	t_vec newcentre = vec;
 	newcentre.resize(3);
 
-	m_pos1 += (newcentre - oldcentre);
-	m_pos2 += (newcentre - oldcentre);
-
-	m_trafo_needs_update = true;
-}
-
-
-void BoxGeometry::SetLength(t_real l)
-{
-	m_length = l;
-
-	t_vec dir = m_pos2 - m_pos1;
-	dir /= tl2::norm(dir);
-
-	t_vec centre = GetCentre();
-	centre[2] = 0;
-	m_pos1 = centre - dir*m_length*0.5;
-	m_pos2 = centre + dir*m_length*0.5;
+	m_pos += (newcentre - oldcentre);
 
 	m_trafo_needs_update = true;
 }
@@ -214,27 +197,18 @@ bool BoxGeometry::Load(const pt::ptree& prop)
 	if(!Geometry::Load(prop))
 		return false;
 
-	if(auto optPos = prop.get_optional<std::string>("pos1"); optPos)
+	if(auto optPos = prop.get_optional<std::string>("position"); optPos)
 	{
-		m_pos1.clear();
+		m_pos.clear();
 
-		tl2::get_tokens<t_real>(tl2::trimmed(*optPos), std::string{" \t,;"}, m_pos1);
-		if(m_pos1.size() < 3)
-			m_pos1.resize(3);
-	}
-
-	if(auto optPos = prop.get_optional<std::string>("pos2"); optPos)
-	{
-		m_pos2.clear();
-
-		tl2::get_tokens<t_real>(tl2::trimmed(*optPos), std::string{" \t,;"}, m_pos2);
-		if(m_pos2.size() < 3)
-			m_pos2.resize(3);
+		tl2::get_tokens<t_real>(tl2::trimmed(*optPos), std::string{" \t,;"}, m_pos);
+		if(m_pos.size() < 3)
+			m_pos.resize(3);
 	}
 
 	m_height = prop.get<t_real>("height", 1.);
 	m_depth = prop.get<t_real>("depth", 0.1);
-	m_length = tl2::norm<t_vec>(m_pos1 - m_pos2);
+	m_length = prop.get<t_real>("length", 0.1);
 
 	m_trafo_needs_update = true;
 	return true;
@@ -245,10 +219,10 @@ pt::ptree BoxGeometry::Save() const
 {
 	pt::ptree prop = Geometry::Save();
 
-	prop.put<std::string>("pos1", geo_vec_to_str(m_pos1));
-	prop.put<std::string>("pos2", geo_vec_to_str(m_pos2));
+	prop.put<std::string>("position", geo_vec_to_str(m_pos));
 	prop.put<t_real>("height", m_height);
 	prop.put<t_real>("depth", m_depth);
+	prop.put<t_real>("length", m_length);
 
 	pt::ptree propBox;
 	propBox.put_child("box", prop);
@@ -261,19 +235,8 @@ pt::ptree BoxGeometry::Save() const
  */
 void BoxGeometry::UpdateTrafo() const
 {
-	t_vec upDir = tl2::create<t_vec>({0, 0, 1});
-	t_vec vecFrom = tl2::create<t_vec>({1, 0, 0});
-	t_vec vecTo = m_pos2 - m_pos1;
-	t_vec preTranslate = 0.5*(m_pos1 + m_pos2);
-	t_vec postTranslate = tl2::create<t_vec>({0, 0, m_height*0.5});
-
-	//using namespace tl2_ops;
-	//std::cout << vecFrom << " -> " << vecTo << std::endl;
-
-	m_trafo = tl2::get_arrow_matrix<t_vec, t_mat, t_real>(
-		vecTo, 1., postTranslate, vecFrom, 1., preTranslate, upDir);
-
-	//std::cout << tl2::det<t_mat>(m_trafo) << std::endl;
+	m_trafo = tl2::hom_translation<t_mat, t_real>(
+		m_pos[0], m_pos[1], m_pos[2] + m_height*0.5);
 }
 
 
@@ -293,6 +256,7 @@ BoxGeometry::GetTriangles() const
  */
 void BoxGeometry::Rotate(t_real angle)
 {
+	/* TODO
 	// create the rotation matrix
 	t_vec axis = tl2::create<t_vec>({0, 0, 1});
 	t_mat R = tl2::rotation<t_mat, t_vec>(axis, angle);
@@ -307,6 +271,7 @@ void BoxGeometry::Rotate(t_real angle)
 
 	// restore translation
 	SetCentre(centre);
+	*/
 
 	m_trafo_needs_update = true;
 }
@@ -319,10 +284,10 @@ std::vector<ObjectProperty> BoxGeometry::GetProperties() const
 {
 	std::vector<ObjectProperty> props;
 
-	props.emplace_back(ObjectProperty{.key="position 1", .value=m_pos1});
-	props.emplace_back(ObjectProperty{.key="position 2", .value=m_pos2});
+	props.emplace_back(ObjectProperty{.key="position", .value=m_pos});
 	props.emplace_back(ObjectProperty{.key="height", .value=m_height});
 	props.emplace_back(ObjectProperty{.key="depth", .value=m_depth});
+	props.emplace_back(ObjectProperty{.key="length", .value=m_length});
 	props.emplace_back(ObjectProperty{.key="colour", .value=m_colour});
 	props.emplace_back(ObjectProperty{.key="texture", .value=m_texture});
 
@@ -337,22 +302,19 @@ void BoxGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 {
 	for(const auto& prop : props)
 	{
-		if(prop.key == "position 1")
-			m_pos1 = std::get<t_vec>(prop.value);
-		else if(prop.key == "position 2")
-			m_pos2 = std::get<t_vec>(prop.value);
+		if(prop.key == "position")
+			m_pos = std::get<t_vec>(prop.value);
 		else if(prop.key == "height")
 			m_height = std::get<t_real>(prop.value);
 		else if(prop.key == "depth")
 			m_depth = std::get<t_real>(prop.value);
+		else if(prop.key == "length")
+			m_length = std::get<t_real>(prop.value);
 		else if(prop.key == "colour")
 			m_colour = std::get<t_vec>(prop.value);
 		else if(prop.key == "texture")
 			m_texture  = std::get<std::string>(prop.value);
 	}
-
-	// calculate dependent parameters
-	m_length = tl2::norm<t_vec>(m_pos1 - m_pos2);
 
 	m_trafo_needs_update = true;
 }
@@ -410,7 +372,7 @@ bool CylinderGeometry::Load(const pt::ptree& prop)
 	if(!Geometry::Load(prop))
 		return false;
 
-	if(auto optPos = prop.get_optional<std::string>("pos"); optPos)
+	if(auto optPos = prop.get_optional<std::string>("position"); optPos)
 	{
 		m_pos.clear();
 
@@ -431,7 +393,7 @@ pt::ptree CylinderGeometry::Save() const
 {
 	pt::ptree prop = Geometry::Save();
 
-	prop.put<std::string>("pos", geo_vec_to_str(m_pos));
+	prop.put<std::string>("position", geo_vec_to_str(m_pos));
 	prop.put<t_real>("height", m_height);
 	prop.put<t_real>("radius", m_radius);
 
@@ -443,7 +405,8 @@ pt::ptree CylinderGeometry::Save() const
 
 void CylinderGeometry::UpdateTrafo() const
 {
-	m_trafo = tl2::hom_translation<t_mat, t_real>(m_pos[0], m_pos[1], m_pos[2] + m_height*0.5);
+	m_trafo = tl2::hom_translation<t_mat, t_real>(
+		m_pos[0], m_pos[1], m_pos[2] + m_height*0.5);
 }
 
 
@@ -558,7 +521,7 @@ bool SphereGeometry::Load(const pt::ptree& prop)
 	if(!Geometry::Load(prop))
 		return false;
 
-	if(auto optPos = prop.get_optional<std::string>("pos"); optPos)
+	if(auto optPos = prop.get_optional<std::string>("position"); optPos)
 	{
 		m_pos.clear();
 
@@ -578,7 +541,7 @@ pt::ptree SphereGeometry::Save() const
 {
 	pt::ptree prop = Geometry::Save();
 
-	prop.put<std::string>("pos", geo_vec_to_str(m_pos));
+	prop.put<std::string>("position", geo_vec_to_str(m_pos));
 	prop.put<t_real>("radius", m_radius);
 
 	pt::ptree propSphere;
@@ -589,7 +552,8 @@ pt::ptree SphereGeometry::Save() const
 
 void SphereGeometry::UpdateTrafo() const
 {
-	m_trafo = tl2::hom_translation<t_mat, t_real>(m_pos[0], m_pos[1], m_pos[2] + m_radius*0.5);
+	m_trafo = tl2::hom_translation<t_mat, t_real>(
+		m_pos[0], m_pos[1], m_pos[2] + m_radius*0.5);
 }
 
 
