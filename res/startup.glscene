@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<glscene>
+	<timestamp>1614257982.440783</timestamp>
+	<ident>glscene</ident>
+
+	<instrument_space>
+		<floor>
+			<len_x> 20 </len_x>
+			<len_y> 20 </len_y>
+			<colour> 0.5 0.5 0.5 </colour>
+		</floor>
+
+
+		<walls>
+			<wall id="wall 1">
+				<geometry>
+					<box>
+						<pos1> 10 -10 </pos1>
+						<pos2> 10 10 </pos2>
+						<height> 3 </height>
+						<depth> 0.5 </depth>
+						<colour> 1 0 0 </colour>
+					</box>
+				</geometry>
+			</wall>
+
+			<wall id="wall 2">
+				<geometry>
+					<box id="">
+						<pos1> -10 10 </pos1>
+						<pos2> 10 10 </pos2>
+						<height> 3 </height>
+						<depth> 0.5 </depth>
+						<colour> 1 0 0 </colour>
+					</box>
+				</geometry>
+			</wall>
+
+			<wall id="wall 3">
+				<geometry>
+					<box id="">
+						<pos1> -10 10 </pos1>
+						<pos2> -10 -10 </pos2>
+						<height> 3 </height>
+						<depth> 0.5 </depth>
+						<colour> 1 0 0 </colour>
+					</box>
+				</geometry>
+			</wall>
+
+			<wall id="wall 4">
+				<geometry>
+					<box id="">
+						<pos1> -10 -10 </pos1>
+						<pos2> 10 -10 </pos2>
+						<height> 3 </height>
+						<depth> 0.5 </depth>
+						<colour> 1 0 0 </colour>
+					</box>
+				</geometry>
+			</wall>
+
+
+			<wall id="obstacle 1">
+				<geometry>
+					<box id="">
+						<pos1> -3 -1 </pos1>
+						<pos2> 1 -1 </pos2>
+						<height> 3 </height>
+						<depth> 1 </depth>
+						<colour> 1 0 0 </colour>
+					</box>
+				</geometry>
+			</wall>
+
+
+			<wall id="obstacle 2">
+				<geometry>
+					<box id="">
+						<pos1> 1 -3 </pos1>
+						<pos2> 1 1 </pos2>
+						<height> 3 </height>
+						<depth> 1 </depth>
+						<colour> 1 0 0 </colour>
+					</box>
+				</geometry>
+			</wall>
+		</walls>
+	</instrument_space>
+
+
+	<configuration>
+		<path>
+			<target_2thM>90</target_2thM>
+			<target_2thS>90</target_2thS>
+		</path>
+	</configuration>
+</paths>
