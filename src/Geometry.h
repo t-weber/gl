@@ -51,10 +51,13 @@ enum class GeometryType
 struct ObjectProperty
 {
 	std::string key{};
-	std::variant<t_real, t_vec, t_int, std::string> value{};
+	std::variant<t_real, t_int, t_vec, t_mat, std::string> value{};
 };
 
 
+/**
+ * geometry base class
+ */
 class Geometry
 {
 public:
@@ -67,7 +70,7 @@ public:
 	virtual bool Load(const boost::property_tree::ptree& prop);
 	virtual boost::property_tree::ptree Save() const;
 
-	virtual void UpdateTrafo() const = 0;
+	virtual void UpdateTrafo() const;
 	virtual const t_mat& GetTrafo() const;
 	virtual std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 		GetTriangles() const = 0;
@@ -84,7 +87,7 @@ public:
 	virtual const std::string& GetTexture() const { return m_texture; }
 	virtual void SetTexture(std::string ident) { m_texture = ident; }
 
-	virtual void Rotate(t_real angle) = 0;
+	virtual void Rotate(t_real angle);
 
 	virtual std::vector<ObjectProperty> GetProperties() const = 0;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) = 0;
@@ -96,6 +99,9 @@ protected:
 	std::string m_id{};
 	t_vec m_colour = tl2::create<t_vec>({1, 0, 0});
 	std::string m_texture{};
+
+	t_mat m_rot = tl2::unit<t_mat>(4);
+	t_vec m_pos = tl2::create<t_vec>({0, 0, 0});
 
 	mutable bool m_trafo_needs_update = true;
 	mutable t_mat m_trafo = tl2::unit<t_mat>(4);
@@ -119,7 +125,6 @@ public:
 	virtual bool Load(const boost::property_tree::ptree& prop) override;
 	virtual boost::property_tree::ptree Save() const override;
 
-	virtual void UpdateTrafo() const override;
 	virtual std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 	GetTriangles() const override;
 
@@ -134,13 +139,10 @@ public:
 	void SetDepth(t_real d) { m_depth = d; m_trafo_needs_update = true; }
 	void SetLength(t_real l)  { m_length = l; m_trafo_needs_update = true; }
 
-	virtual void Rotate(t_real angle) override;
-
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
 
 private:
-	t_vec m_pos = tl2::create<t_vec>({0, 0, 0});
 	t_real m_height = 0, m_depth = 0, m_length = 0;
 };
 // ----------------------------------------------------------------------------
@@ -165,7 +167,6 @@ public:
 	virtual t_vec GetCentre() const override;
 	virtual void SetCentre(const t_vec& vec) override;
 
-	virtual void UpdateTrafo() const override;
 	virtual std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 		GetTriangles() const override;
 
@@ -178,13 +179,10 @@ public:
 	t_real GetRadius() const { return m_radius; }
 	void SetRadius(t_real rad) { m_radius = rad; m_trafo_needs_update = true; }
 
-	virtual void Rotate(t_real angle) override;
-
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
 
 private:
-	t_vec m_pos = tl2::create<t_vec>({0, 0, 0});
 	t_real m_height = 0, m_radius = 0;
 };
 // ----------------------------------------------------------------------------
@@ -209,7 +207,6 @@ public:
 	virtual t_vec GetCentre() const override;
 	virtual void SetCentre(const t_vec& vec) override;
 
-	virtual void UpdateTrafo() const override;
 	virtual std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 	GetTriangles() const override;
 
@@ -219,13 +216,10 @@ public:
 	t_real GetRadius() const { return m_radius; }
 	void SetRadius(t_real rad) { m_radius = rad; m_trafo_needs_update = true; }
 
-	virtual void Rotate(t_real angle) override;
-
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
 
 private:
-	t_vec m_pos = tl2::create<t_vec>({0, 0, 0});
 	t_real m_radius = 0;
 };
 // ----------------------------------------------------------------------------

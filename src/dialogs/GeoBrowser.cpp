@@ -332,15 +332,29 @@ void GeometriesBrowser::GeoTreeCurrentItemChanged(QTreeWidgetItem *item, QTreeWi
 			using namespace tl2_ops;
 			ostr << val;
 
-			/*for(std::size_t i=0; i<val.size(); ++i)
-			{
-				ostr << val[i];
-				if(i != val.size()-1)
-					ostr << ", ";
-			}*/
-
 			// type
 			auto* itemType = new QTableWidgetItem("vector");
+			itemType->setFlags(itemType->flags() & ~Qt::ItemIsEditable);
+			m_geosettings->setItem(row, GEOBROWSER_SETTINGS_TYPE, itemType);
+
+			// value
+			m_geosettings->setItem(row, GEOBROWSER_SETTINGS_VALUE,
+				new QTableWidgetItem(ostr.str().c_str()));
+		}
+
+		// matrix value
+		else if(std::holds_alternative<t_mat>(prop.value))
+		{
+			const t_mat& val = std::get<t_mat>(prop.value);
+
+			std::ostringstream ostr;
+			ostr.precision(g_prec);
+
+			using namespace tl2_ops;
+			ostr << val;
+
+			// type
+			auto* itemType = new QTableWidgetItem("matrix");
 			itemType->setFlags(itemType->flags() & ~Qt::ItemIsEditable);
 			m_geosettings->setItem(row, GEOBROWSER_SETTINGS_TYPE, itemType);
 
@@ -424,6 +438,27 @@ void GeometriesBrowser::GeoSettingsItemChanged(QTableWidgetItem *item)
 
 			prop.value = vec;
 		}
+
+		// matrix value
+		/*else if(ty == "matrix")
+		{
+			// get the components of the matrix
+			std::vector<std::string> tokens;
+			tl2::get_tokens<std::string, std::string>(val, ";,", tokens);
+			typename t_mat::size_type num_rows = std::sqrt(tokens.size());
+
+			t_mat mat = tl2::create<t_mat>(num_rows, num_rows);
+			for(std::size_t tokidx=0; tokidx<tokens.size(); ++tokidx)
+			{
+				// parse the vector component expression to yield a real value
+				tl2::ExprParser<t_real> parser;
+				if(!parser.parse(tokens[tokidx]))
+					throw std::logic_error("Could not parse matrix expression.");
+				mat[tokidx] = parser.eval();
+			}
+
+			prop.value = mat;
+		}*/
 
 		emit SignalChangeObjectProperty(m_curObject, prop);
 	}

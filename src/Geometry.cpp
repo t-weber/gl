@@ -32,6 +32,23 @@ std::string geo_vec_to_str(const t_vec& vec)
 }
 
 
+/**
+ * convert a matrix to a serialisable string
+ */
+std::string geo_mat_to_str(const t_mat& mat)
+{
+	std::ostringstream ostr;
+	ostr.precision(8);
+
+	for(std::size_t i=0; i<(std::size_t)mat.size1(); ++i)
+	{
+		for(std::size_t j=0; j<(std::size_t)mat.size2(); ++j)
+			ostr << mat(i,j) << " ";
+	}
+
+	return ostr.str();
+}
+
 // ----------------------------------------------------------------------------
 
 
@@ -51,13 +68,19 @@ Geometry::~Geometry()
 }
 
 
+void Geometry::UpdateTrafo() const
+{
+	m_trafo = tl2::hom_translation<t_mat, t_real>(
+		m_pos[0], m_pos[1], m_pos[2]) * m_rot;
+
+	m_trafo_needs_update = false;
+}
+
+
 const t_mat& Geometry::GetTrafo() const
 {
 	if(m_trafo_needs_update)
-	{
 		UpdateTrafo();
-		m_trafo_needs_update = false;
-	}
 
 	return m_trafo;
 }
@@ -111,8 +134,44 @@ Geometry::load(const pt::ptree& prop)
 }
 
 
+/**
+ * rotate the object around the z axis
+ */
+void Geometry::Rotate(t_real angle)
+{
+	/* TODO
+	// create the rotation matrix
+	t_vec axis = tl2::create<t_vec>({0, 0, 1});
+	t_mat R = tl2::rotation<t_mat, t_vec>(axis, angle);
+
+	// remove translation
+	t_vec centre = GetCentre();
+	SetCentre(tl2::create<t_vec>({0, 0, 0}));
+
+	// rotate the position vectors
+	m_pos1 = R*m_pos1;
+	m_pos2 = R*m_pos2;
+
+	// restore translation
+	SetCentre(centre);
+	*/
+
+	m_trafo_needs_update = true;
+}
+
+
 bool Geometry::Load(const pt::ptree& prop)
 {
+	// position
+	if(auto optPos = prop.get_optional<std::string>("position"); optPos)
+	{
+		m_pos.clear();
+
+		tl2::get_tokens<t_real>(tl2::trimmed(*optPos), std::string{" \t,;"}, m_pos);
+		if(m_pos.size() < 3)
+			m_pos.resize(3);
+	}
+
 	// colour
 	if(auto col = prop.get_optional<std::string>("colour"); col)
 	{
@@ -139,6 +198,8 @@ pt::ptree Geometry::Save() const
 	pt::ptree prop;
 
 	prop.put<std::string>("<xmlattr>.id", GetId());
+	prop.put<std::string>("position", geo_vec_to_str(m_pos));
+	prop.put<std::string>("rotation", geo_mat_to_str(m_rot));
 	prop.put<std::string>("colour", geo_vec_to_str(m_colour));
 	prop.put<std::string>("texture", m_texture);
 
@@ -197,15 +258,6 @@ bool BoxGeometry::Load(const pt::ptree& prop)
 	if(!Geometry::Load(prop))
 		return false;
 
-	if(auto optPos = prop.get_optional<std::string>("position"); optPos)
-	{
-		m_pos.clear();
-
-		tl2::get_tokens<t_real>(tl2::trimmed(*optPos), std::string{" \t,;"}, m_pos);
-		if(m_pos.size() < 3)
-			m_pos.resize(3);
-	}
-
 	m_height = prop.get<t_real>("height", 1.);
 	m_depth = prop.get<t_real>("depth", 0.1);
 	m_length = prop.get<t_real>("length", 0.1);
@@ -219,7 +271,6 @@ pt::ptree BoxGeometry::Save() const
 {
 	pt::ptree prop = Geometry::Save();
 
-	prop.put<std::string>("position", geo_vec_to_str(m_pos));
 	prop.put<t_real>("height", m_height);
 	prop.put<t_real>("depth", m_depth);
 	prop.put<t_real>("length", m_length);
@@ -227,16 +278,6 @@ pt::ptree BoxGeometry::Save() const
 	pt::ptree propBox;
 	propBox.put_child("box", prop);
 	return propBox;
-}
-
-
-/**
- * update the trafo matrix
- */
-void BoxGeometry::UpdateTrafo() const
-{
-	m_trafo = tl2::hom_translation<t_mat, t_real>(
-		m_pos[0], m_pos[1], m_pos[2] + m_height*0.5);
 }
 
 
@@ -252,39 +293,15 @@ BoxGeometry::GetTriangles() const
 
 
 /**
- * rotate the box around the z axis
- */
-void BoxGeometry::Rotate(t_real angle)
-{
-	/* TODO
-	// create the rotation matrix
-	t_vec axis = tl2::create<t_vec>({0, 0, 1});
-	t_mat R = tl2::rotation<t_mat, t_vec>(axis, angle);
-
-	// remove translation
-	t_vec centre = GetCentre();
-	SetCentre(tl2::create<t_vec>({0, 0, 0}));
-
-	// rotate the position vectors
-	m_pos1 = R*m_pos1;
-	m_pos2 = R*m_pos2;
-
-	// restore translation
-	SetCentre(centre);
-	*/
-
-	m_trafo_needs_update = true;
-}
-
-
-/**
  * obtain all defining properties of the geometry object
  */
 std::vector<ObjectProperty> BoxGeometry::GetProperties() const
 {
 	std::vector<ObjectProperty> props;
+	props.reserve(7);
 
 	props.emplace_back(ObjectProperty{.key="position", .value=m_pos});
+	props.emplace_back(ObjectProperty{.key="rotation", .value=m_rot});
 	props.emplace_back(ObjectProperty{.key="height", .value=m_height});
 	props.emplace_back(ObjectProperty{.key="depth", .value=m_depth});
 	props.emplace_back(ObjectProperty{.key="length", .value=m_length});
@@ -304,6 +321,8 @@ void BoxGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 	{
 		if(prop.key == "position")
 			m_pos = std::get<t_vec>(prop.value);
+		else if(prop.key == "rotation")
+			m_rot = std::get<t_mat>(prop.value);
 		else if(prop.key == "height")
 			m_height = std::get<t_real>(prop.value);
 		else if(prop.key == "depth")
@@ -372,15 +391,6 @@ bool CylinderGeometry::Load(const pt::ptree& prop)
 	if(!Geometry::Load(prop))
 		return false;
 
-	if(auto optPos = prop.get_optional<std::string>("position"); optPos)
-	{
-		m_pos.clear();
-
-		tl2::get_tokens<t_real>(tl2::trimmed(*optPos), std::string{" \t,;"}, m_pos);
-		if(m_pos.size() < 3)
-			m_pos.resize(3);
-	}
-
 	m_height = prop.get<t_real>("height", 1.);
 	m_radius = prop.get<t_real>("radius", 0.1);
 
@@ -393,20 +403,12 @@ pt::ptree CylinderGeometry::Save() const
 {
 	pt::ptree prop = Geometry::Save();
 
-	prop.put<std::string>("position", geo_vec_to_str(m_pos));
 	prop.put<t_real>("height", m_height);
 	prop.put<t_real>("radius", m_radius);
 
 	pt::ptree propCyl;
 	propCyl.put_child("cylinder", prop);
 	return propCyl;
-}
-
-
-void CylinderGeometry::UpdateTrafo() const
-{
-	m_trafo = tl2::hom_translation<t_mat, t_real>(
-		m_pos[0], m_pos[1], m_pos[2] + m_height*0.5);
 }
 
 
@@ -422,21 +424,15 @@ CylinderGeometry::GetTriangles() const
 
 
 /**
- * empty rotation function, nothing to be done
- */
-void CylinderGeometry::Rotate(t_real)
-{
-}
-
-
-/**
  * obtain all defining properties of the geometry object
  */
 std::vector<ObjectProperty> CylinderGeometry::GetProperties() const
 {
 	std::vector<ObjectProperty> props;
+	props.reserve(6);
 
 	props.emplace_back(ObjectProperty{.key="position", .value=m_pos});
+	props.emplace_back(ObjectProperty{.key="rotation", .value=m_rot});
 	props.emplace_back(ObjectProperty{.key="height", .value=m_height});
 	props.emplace_back(ObjectProperty{.key="radius", .value=m_radius});
 	props.emplace_back(ObjectProperty{.key="colour", .value=m_colour});
@@ -455,6 +451,8 @@ void CylinderGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 	{
 		if(prop.key == "position")
 			m_pos = std::get<t_vec>(prop.value);
+		else if(prop.key == "rotation")
+			m_rot = std::get<t_mat>(prop.value);
 		else if(prop.key == "height")
 			m_height = std::get<t_real>(prop.value);
 		else if(prop.key == "radius")
@@ -521,15 +519,6 @@ bool SphereGeometry::Load(const pt::ptree& prop)
 	if(!Geometry::Load(prop))
 		return false;
 
-	if(auto optPos = prop.get_optional<std::string>("position"); optPos)
-	{
-		m_pos.clear();
-
-		tl2::get_tokens<t_real>(tl2::trimmed(*optPos), std::string{" \t,;"}, m_pos);
-		if(m_pos.size() < 3)
-			m_pos.resize(3);
-	}
-
 	m_radius = prop.get<t_real>("radius", 0.1);
 
 	m_trafo_needs_update = true;
@@ -541,7 +530,6 @@ pt::ptree SphereGeometry::Save() const
 {
 	pt::ptree prop = Geometry::Save();
 
-	prop.put<std::string>("position", geo_vec_to_str(m_pos));
 	prop.put<t_real>("radius", m_radius);
 
 	pt::ptree propSphere;
@@ -550,32 +538,19 @@ pt::ptree SphereGeometry::Save() const
 }
 
 
-void SphereGeometry::UpdateTrafo() const
-{
-	m_trafo = tl2::hom_translation<t_mat, t_real>(
-		m_pos[0], m_pos[1], m_pos[2] + m_radius*0.5);
-}
-
-
 std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 SphereGeometry::GetTriangles() const
 {
 	const int numsubdivs = 2;
-	auto solid = tl2::create_icosahedron<t_vec>(1);
-	auto [triagverts, norms, uvs] = tl2::spherify<t_vec>(
+	auto solid = tl2::create_icosahedron<t_vec>(1.);
+	auto [verts, norms, uvs] = tl2::spherify<t_vec>(
 		tl2::subdivide_triangles<t_vec>(
-			tl2::create_triangles<t_vec>(solid), numsubdivs), m_radius);
+			tl2::create_triangles<t_vec>(solid),
+			numsubdivs),
+		m_radius);
 
 	//tl2::transform_obj(verts, norms, mat, true);
-	return std::make_tuple(triagverts, norms, uvs);
-}
-
-
-/**
- * empty rotation function, nothing to be done
- */
-void SphereGeometry::Rotate(t_real)
-{
+	return std::make_tuple(verts, norms, uvs);
 }
 
 
@@ -585,8 +560,10 @@ void SphereGeometry::Rotate(t_real)
 std::vector<ObjectProperty> SphereGeometry::GetProperties() const
 {
 	std::vector<ObjectProperty> props;
+	props.reserve(5);
 
 	props.emplace_back(ObjectProperty{.key="position", .value=m_pos});
+	props.emplace_back(ObjectProperty{.key="rotation", .value=m_rot});
 	props.emplace_back(ObjectProperty{.key="radius", .value=m_radius});
 	props.emplace_back(ObjectProperty{.key="colour", .value=m_colour});
 	props.emplace_back(ObjectProperty{.key="texture", .value=m_texture});
@@ -604,6 +581,8 @@ void SphereGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 	{
 		if(prop.key == "position")
 			m_pos = std::get<t_vec>(prop.value);
+		else if(prop.key == "rotation")
+			m_rot = std::get<t_mat>(prop.value);
 		else if(prop.key == "radius")
 			m_radius = std::get<t_real>(prop.value);
 		else if(prop.key == "colour")

@@ -1265,7 +1265,7 @@ void PathsTool::AddSphere()
 {
 	auto sphere = std::make_shared<SphereGeometry>();
 	sphere->SetRadius(2.);
-	sphere->SetCentre(tl2::create<t_vec>({0, 0, sphere->GetRadius()*0.5}));
+	sphere->SetCentre(tl2::create<t_vec>({0, 0, sphere->GetRadius()}));
 	sphere->UpdateTrafo();
 
 	static std::size_t sphcnt = 1;

@@ -498,7 +498,8 @@ public:
 
 
 	/**
-	 * get a projected bounding rectangle from the bounding box
+	 * get a projected bounding rectangle from an object's bounding box
+	 * (note that this is larger than the bounding rectangle of the actual object vertices)
 	 */
 	std::vector<t_vec> GetBoundingRect(const t_mat& matObj,
 		const std::vector<t_vec>& bbox) const
