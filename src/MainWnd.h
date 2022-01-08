@@ -176,6 +176,10 @@ protected slots:
 	void AddCuboid();
 	void AddSphere();
 	void AddCylinder();
+	void AddTetrahedron();
+	void AddOctahedron();
+	void AddDodecahedron();
+	void AddIcosahedron();
 
 	void DeleteCurrentObject();
 	void RotateCurrentObject(t_real angle);

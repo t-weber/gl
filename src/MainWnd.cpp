@@ -341,6 +341,15 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 		QIcon::fromTheme("insert-object"), "Add Sphere", menuGeo);
 	QAction *actionAddCylinder = new QAction(
 		QIcon::fromTheme("insert-object"), "Add Cylinder", menuGeo);
+	QAction *actionAddTetrahedron = new QAction(
+		QIcon::fromTheme("insert-object"), "Add Tetrahedron", menuGeo);
+	QAction *actionAddOctahedron = new QAction(
+		QIcon::fromTheme("insert-object"), "Add Octahedron", menuGeo);
+	QAction *actionAddDodecahedron = new QAction(
+		QIcon::fromTheme("insert-object"), "Add Dodecahedron", menuGeo);
+	QAction *actionAddIcosahedron = new QAction(
+		QIcon::fromTheme("insert-object"), "Add Icosahedron", menuGeo);
+
 	QAction *actionGeoBrowser = new QAction(
 		QIcon::fromTheme("document-properties"), "Object Browser...", menuGeo);
 	QAction *actionTextureBrowser = new QAction(
@@ -349,12 +358,20 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 	connect(actionAddCuboid, &QAction::triggered, this, &PathsTool::AddCuboid);
 	connect(actionAddSphere, &QAction::triggered, this, &PathsTool::AddSphere);
 	connect(actionAddCylinder, &QAction::triggered, this, &PathsTool::AddCylinder);
+	connect(actionAddTetrahedron, &QAction::triggered, this, &PathsTool::AddTetrahedron);
+	connect(actionAddOctahedron, &QAction::triggered, this, &PathsTool::AddOctahedron);
+	connect(actionAddDodecahedron, &QAction::triggered, this, &PathsTool::AddDodecahedron);
+	connect(actionAddIcosahedron, &QAction::triggered, this, &PathsTool::AddIcosahedron);
 	connect(actionGeoBrowser, &QAction::triggered, this, &PathsTool::ShowGeometryBrowser);
 	connect(actionTextureBrowser, &QAction::triggered, this, &PathsTool::ShowTextureBrowser);
 
 	menuGeo->addAction(actionAddCuboid);
 	menuGeo->addAction(actionAddSphere);
 	menuGeo->addAction(actionAddCylinder);
+	menuGeo->addAction(actionAddTetrahedron);
+	menuGeo->addAction(actionAddOctahedron);
+	menuGeo->addAction(actionAddDodecahedron);
+	menuGeo->addAction(actionAddIcosahedron);
 	menuGeo->addSeparator();
 	menuGeo->addAction(actionGeoBrowser);
 	menuGeo->addAction(actionTextureBrowser);
@@ -1311,6 +1328,115 @@ void PathsTool::AddCylinder()
 	if(m_renderer)
 		m_renderer->AddObject(*cyl);
 }
+
+
+/**
+ * add a tetrahedron to the scene
+ */
+void PathsTool::AddTetrahedron()
+{
+	auto tetr = std::make_shared<TetrahedronGeometry>();
+	tetr->SetRadius(1.);
+	tetr->SetCentre(tl2::create<t_vec>({0, 0, tetr->GetRadius()}));
+	tetr->UpdateTrafo();
+
+	static std::size_t tetrcnt = 1;
+	std::ostringstream ostrId;
+	ostrId << "new tetrahedron " << tetrcnt++;
+
+	// add tetrahedron to scene
+	m_scene.AddObject(std::vector<std::shared_ptr<Geometry>>{{tetr}}, ostrId.str());
+
+	// update object browser tree
+	if(m_dlgGeoBrowser)
+		m_dlgGeoBrowser->UpdateGeoTree(m_scene);
+
+	// add a 3d representation of the tetrahedron
+	if(m_renderer)
+		m_renderer->AddObject(*tetr);
+}
+
+
+/**
+ * add an octahedron to the scene
+ */
+void PathsTool::AddOctahedron()
+{
+	auto octa = std::make_shared<OctahedronGeometry>();
+	octa->SetRadius(1.);
+	octa->SetCentre(tl2::create<t_vec>({0, 0, octa->GetRadius()}));
+	octa->UpdateTrafo();
+
+	static std::size_t tetrcnt = 1;
+	std::ostringstream ostrId;
+	ostrId << "new octahedron " << tetrcnt++;
+
+	// add octahedron to scene
+	m_scene.AddObject(std::vector<std::shared_ptr<Geometry>>{{octa}}, ostrId.str());
+
+	// update object browser tree
+	if(m_dlgGeoBrowser)
+		m_dlgGeoBrowser->UpdateGeoTree(m_scene);
+
+	// add a 3d representation of the octahedron
+	if(m_renderer)
+		m_renderer->AddObject(*octa);
+}
+
+
+/**
+ * add an dodecahedron to the scene
+ */
+void PathsTool::AddDodecahedron()
+{
+	auto dode = std::make_shared<DodecahedronGeometry>();
+	dode->SetRadius(1.);
+	dode->SetCentre(tl2::create<t_vec>({0, 0, dode->GetRadius()}));
+	dode->UpdateTrafo();
+
+	static std::size_t tetrcnt = 1;
+	std::ostringstream ostrId;
+	ostrId << "new dodecahedron " << tetrcnt++;
+
+	// add dodecahedron to scene
+	m_scene.AddObject(std::vector<std::shared_ptr<Geometry>>{{dode}}, ostrId.str());
+
+	// update object browser tree
+	if(m_dlgGeoBrowser)
+		m_dlgGeoBrowser->UpdateGeoTree(m_scene);
+
+	// add a 3d representation of the dodecahedron
+	if(m_renderer)
+		m_renderer->AddObject(*dode);
+}
+
+
+/**
+ * add an icosahedron to the scene
+ */
+void PathsTool::AddIcosahedron()
+{
+	auto icosa = std::make_shared<IcosahedronGeometry>();
+	icosa->SetRadius(1.);
+	icosa->SetCentre(tl2::create<t_vec>({0, 0, icosa->GetRadius()}));
+	icosa->UpdateTrafo();
+
+	static std::size_t tetrcnt = 1;
+	std::ostringstream ostrId;
+	ostrId << "new icosahedron " << tetrcnt++;
+
+	// add icosahedron to scene
+	m_scene.AddObject(std::vector<std::shared_ptr<Geometry>>{{icosa}}, ostrId.str());
+
+	// update object browser tree
+	if(m_dlgGeoBrowser)
+		m_dlgGeoBrowser->UpdateGeoTree(m_scene);
+
+	// add a 3d representation of the icosahedron
+	if(m_renderer)
+		m_renderer->AddObject(*icosa);
+}
+
 
 
 /**

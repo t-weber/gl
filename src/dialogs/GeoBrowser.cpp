@@ -466,19 +466,19 @@ void GeometriesBrowser::UpdateGeoTree(const Scene& scene)
 	m_geotree->clear();
 
 
-	// walls
-	auto* wallsitem = new QTreeWidgetItem(m_geotree);
-	wallsitem->setText(0, "Walls");
+	// objects
+	auto* objsitem = new QTreeWidgetItem(m_geotree);
+	objsitem->setText(0, "Objects");
 
-	for(const auto& wall : scene.GetObjects())
+	for(const auto& obj : scene.GetObjects())
 	{
-		auto* wallitem = new QTreeWidgetItem(wallsitem);
-		wallitem->setFlags(wallitem->flags() | Qt::ItemIsEditable);
-		wallitem->setText(0, wall->GetId().c_str());
-		wallitem->setData(0, Qt::UserRole, QString(wall->GetId().c_str()));
+		auto* objitem = new QTreeWidgetItem(objsitem);
+		objitem->setFlags(objitem->flags() | Qt::ItemIsEditable);
+		objitem->setText(0, obj->GetId().c_str());
+		objitem->setData(0, Qt::UserRole, QString(obj->GetId().c_str()));
 	}
 
-	m_geotree->expandItem(wallsitem);
+	m_geotree->expandItem(objsitem);
 }
 
 

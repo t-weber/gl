@@ -139,7 +139,6 @@ Geometry::Geometry()
 
 Geometry::~Geometry()
 {
-	//Clear();
 }
 
 
@@ -198,6 +197,38 @@ Geometry::load(const pt::ptree& prop)
 			if(sph->Load(geo.second))
 				geo_objs.emplace_back(std::move(sph));
 		}
+		else if(geotype == "tetrahedron")
+		{
+			auto tetr = std::make_shared<TetrahedronGeometry>();
+			tetr->m_id = geoid;
+
+			if(tetr->Load(geo.second))
+				geo_objs.emplace_back(std::move(tetr));
+		}
+		else if(geotype == "octahedron")
+		{
+			auto octa = std::make_shared<OctahedronGeometry>();
+			octa->m_id = geoid;
+
+			if(octa->Load(geo.second))
+				geo_objs.emplace_back(std::move(octa));
+		}
+		else if(geotype == "dodecahedron")
+		{
+			auto dode = std::make_shared<DodecahedronGeometry>();
+			dode->m_id = geoid;
+
+			if(dode->Load(geo.second))
+				geo_objs.emplace_back(std::move(dode));
+		}
+		else if(geotype == "icosahedron")
+		{
+			auto icosa = std::make_shared<IcosahedronGeometry>();
+			icosa->m_id = geoid;
+
+			if(icosa->Load(geo.second))
+				geo_objs.emplace_back(std::move(icosa));
+		}
 		else
 		{
 			std::cerr << "Unknown geometry type \"" << geotype << "\"." << std::endl;
@@ -230,6 +261,43 @@ void Geometry::Rotate(t_real angle)
 	// restore translation
 	SetCentre(centre);
 	*/
+
+	m_trafo_needs_update = true;
+}
+
+
+/**
+ * obtain the general properties of the geometry object
+ */
+std::vector<ObjectProperty> Geometry::GetProperties() const
+{
+	std::vector<ObjectProperty> props;
+
+	props.emplace_back(ObjectProperty{.key="position", .value=m_pos});
+	props.emplace_back(ObjectProperty{.key="rotation", .value=m_rot});
+	props.emplace_back(ObjectProperty{.key="colour", .value=m_colour});
+	props.emplace_back(ObjectProperty{.key="texture", .value=m_texture});
+
+	return props;
+}
+
+
+/**
+ * set the properties of the geometry object
+ */
+void Geometry::SetProperties(const std::vector<ObjectProperty>& props)
+{
+	for(const auto& prop : props)
+	{
+		if(prop.key == "position")
+			m_pos = std::get<t_vec>(prop.value);
+		else if(prop.key == "rotation")
+			m_rot = std::get<t_mat>(prop.value);
+		else if(prop.key == "colour")
+			m_colour = std::get<t_vec>(prop.value);
+		else if(prop.key == "texture")
+			m_texture  = std::get<std::string>(prop.value);
+	}
 
 	m_trafo_needs_update = true;
 }
@@ -295,11 +363,6 @@ BoxGeometry::BoxGeometry()
 
 
 BoxGeometry::~BoxGeometry()
-{
-}
-
-
-void BoxGeometry::Clear()
 {
 }
 
@@ -373,16 +436,11 @@ BoxGeometry::GetTriangles() const
  */
 std::vector<ObjectProperty> BoxGeometry::GetProperties() const
 {
-	std::vector<ObjectProperty> props;
-	props.reserve(7);
+	std::vector<ObjectProperty> props = Geometry::GetProperties();
 
-	props.emplace_back(ObjectProperty{.key="position", .value=m_pos});
-	props.emplace_back(ObjectProperty{.key="rotation", .value=m_rot});
 	props.emplace_back(ObjectProperty{.key="height", .value=m_height});
 	props.emplace_back(ObjectProperty{.key="depth", .value=m_depth});
 	props.emplace_back(ObjectProperty{.key="length", .value=m_length});
-	props.emplace_back(ObjectProperty{.key="colour", .value=m_colour});
-	props.emplace_back(ObjectProperty{.key="texture", .value=m_texture});
 
 	return props;
 }
@@ -393,22 +451,16 @@ std::vector<ObjectProperty> BoxGeometry::GetProperties() const
  */
 void BoxGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 {
+	Geometry::SetProperties(props);
+
 	for(const auto& prop : props)
 	{
-		if(prop.key == "position")
-			m_pos = std::get<t_vec>(prop.value);
-		else if(prop.key == "rotation")
-			m_rot = std::get<t_mat>(prop.value);
-		else if(prop.key == "height")
+		if(prop.key == "height")
 			m_height = std::get<t_real>(prop.value);
 		else if(prop.key == "depth")
 			m_depth = std::get<t_real>(prop.value);
 		else if(prop.key == "length")
 			m_length = std::get<t_real>(prop.value);
-		else if(prop.key == "colour")
-			m_colour = std::get<t_vec>(prop.value);
-		else if(prop.key == "texture")
-			m_texture  = std::get<std::string>(prop.value);
 	}
 
 	m_trafo_needs_update = true;
@@ -428,11 +480,6 @@ CylinderGeometry::CylinderGeometry()
 
 
 CylinderGeometry::~CylinderGeometry()
-{
-}
-
-
-void CylinderGeometry::Clear()
 {
 }
 
@@ -504,15 +551,10 @@ CylinderGeometry::GetTriangles() const
  */
 std::vector<ObjectProperty> CylinderGeometry::GetProperties() const
 {
-	std::vector<ObjectProperty> props;
-	props.reserve(6);
+	std::vector<ObjectProperty> props = Geometry::GetProperties();
 
-	props.emplace_back(ObjectProperty{.key="position", .value=m_pos});
-	props.emplace_back(ObjectProperty{.key="rotation", .value=m_rot});
 	props.emplace_back(ObjectProperty{.key="height", .value=m_height});
 	props.emplace_back(ObjectProperty{.key="radius", .value=m_radius});
-	props.emplace_back(ObjectProperty{.key="colour", .value=m_colour});
-	props.emplace_back(ObjectProperty{.key="texture", .value=m_texture});
 
 	return props;
 }
@@ -523,20 +565,14 @@ std::vector<ObjectProperty> CylinderGeometry::GetProperties() const
  */
 void CylinderGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 {
+	Geometry::SetProperties(props);
+
 	for(const auto& prop : props)
 	{
-		if(prop.key == "position")
-			m_pos = std::get<t_vec>(prop.value);
-		else if(prop.key == "rotation")
-			m_rot = std::get<t_mat>(prop.value);
-		else if(prop.key == "height")
+		if(prop.key == "height")
 			m_height = std::get<t_real>(prop.value);
 		else if(prop.key == "radius")
 			m_radius = std::get<t_real>(prop.value);
-		else if(prop.key == "colour")
-			m_colour = std::get<t_vec>(prop.value);
-		else if(prop.key == "texture")
-			m_texture = std::get<std::string>(prop.value);
 	}
 
 	m_trafo_needs_update = true;
@@ -556,11 +592,6 @@ SphereGeometry::SphereGeometry()
 
 
 SphereGeometry::~SphereGeometry()
-{
-}
-
-
-void SphereGeometry::Clear()
 {
 }
 
@@ -635,14 +666,9 @@ SphereGeometry::GetTriangles() const
  */
 std::vector<ObjectProperty> SphereGeometry::GetProperties() const
 {
-	std::vector<ObjectProperty> props;
-	props.reserve(5);
+	std::vector<ObjectProperty> props = Geometry::GetProperties();
 
-	props.emplace_back(ObjectProperty{.key="position", .value=m_pos});
-	props.emplace_back(ObjectProperty{.key="rotation", .value=m_rot});
 	props.emplace_back(ObjectProperty{.key="radius", .value=m_radius});
-	props.emplace_back(ObjectProperty{.key="colour", .value=m_colour});
-	props.emplace_back(ObjectProperty{.key="texture", .value=m_texture});
 
 	return props;
 }
@@ -653,21 +679,439 @@ std::vector<ObjectProperty> SphereGeometry::GetProperties() const
  */
 void SphereGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 {
+	Geometry::SetProperties(props);
+
 	for(const auto& prop : props)
 	{
-		if(prop.key == "position")
-			m_pos = std::get<t_vec>(prop.value);
-		else if(prop.key == "rotation")
-			m_rot = std::get<t_mat>(prop.value);
-		else if(prop.key == "radius")
+		if(prop.key == "radius")
 			m_radius = std::get<t_real>(prop.value);
-		else if(prop.key == "colour")
-			m_colour = std::get<t_vec>(prop.value);
-		else if(prop.key == "texture")
-			m_texture  = std::get<std::string>(prop.value);
 	}
 
 	m_trafo_needs_update = true;
 }
 
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
+// tetrahedron
+// ----------------------------------------------------------------------------
+
+TetrahedronGeometry::TetrahedronGeometry()
+{
+}
+
+
+TetrahedronGeometry::~TetrahedronGeometry()
+{
+}
+
+
+t_vec TetrahedronGeometry::GetCentre() const
+{
+	using namespace tl2_ops;
+
+	t_vec centre = GetTrafo() * tl2::create<t_vec>({0, 0, 0, 1});
+	centre.resize(3);
+
+	return centre;
+}
+
+
+void TetrahedronGeometry::SetCentre(const t_vec& vec)
+{
+	using namespace tl2_ops;
+
+	t_vec oldcentre = GetCentre();
+	t_vec newcentre = vec;
+	newcentre.resize(3);
+
+	m_pos += (newcentre - oldcentre);
+
+	m_trafo_needs_update = true;
+}
+
+
+bool TetrahedronGeometry::Load(const pt::ptree& prop)
+{
+	if(!Geometry::Load(prop))
+		return false;
+
+	m_radius = prop.get<t_real>("radius", 0.1);
+
+	m_trafo_needs_update = true;
+	return true;
+}
+
+
+pt::ptree TetrahedronGeometry::Save() const
+{
+	pt::ptree prop = Geometry::Save();
+
+	prop.put<t_real>("radius", m_radius);
+
+	pt::ptree propSphere;
+	propSphere.put_child("tetrahedron", prop);
+	return propSphere;
+}
+
+
+std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
+TetrahedronGeometry::GetTriangles() const
+{
+	auto solid = tl2::create_tetrahedron<t_vec>(m_radius);
+	auto [verts, norms, uvs] = tl2::create_triangles<t_vec>(solid);
+
+	//tl2::transform_obj(verts, norms, mat, true);
+	return std::make_tuple(verts, norms, uvs);
+}
+
+
+/**
+ * obtain all defining properties of the geometry object
+ */
+std::vector<ObjectProperty> TetrahedronGeometry::GetProperties() const
+{
+	std::vector<ObjectProperty> props = Geometry::GetProperties();
+
+	props.emplace_back(ObjectProperty{.key="radius", .value=m_radius});
+
+	return props;
+}
+
+
+/**
+ * set the properties of the geometry object
+ */
+void TetrahedronGeometry::SetProperties(const std::vector<ObjectProperty>& props)
+{
+	Geometry::SetProperties(props);
+
+	for(const auto& prop : props)
+	{
+		if(prop.key == "radius")
+			m_radius = std::get<t_real>(prop.value);
+	}
+
+	m_trafo_needs_update = true;
+}
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
+// octahedron
+// ----------------------------------------------------------------------------
+
+OctahedronGeometry::OctahedronGeometry()
+{
+}
+
+
+OctahedronGeometry::~OctahedronGeometry()
+{
+}
+
+
+t_vec OctahedronGeometry::GetCentre() const
+{
+	using namespace tl2_ops;
+
+	t_vec centre = GetTrafo() * tl2::create<t_vec>({0, 0, 0, 1});
+	centre.resize(3);
+
+	return centre;
+}
+
+
+void OctahedronGeometry::SetCentre(const t_vec& vec)
+{
+	using namespace tl2_ops;
+
+	t_vec oldcentre = GetCentre();
+	t_vec newcentre = vec;
+	newcentre.resize(3);
+
+	m_pos += (newcentre - oldcentre);
+
+	m_trafo_needs_update = true;
+}
+
+
+bool OctahedronGeometry::Load(const pt::ptree& prop)
+{
+	if(!Geometry::Load(prop))
+		return false;
+
+	m_radius = prop.get<t_real>("radius", 0.1);
+
+	m_trafo_needs_update = true;
+	return true;
+}
+
+
+pt::ptree OctahedronGeometry::Save() const
+{
+	pt::ptree prop = Geometry::Save();
+
+	prop.put<t_real>("radius", m_radius);
+
+	pt::ptree propSphere;
+	propSphere.put_child("octahedron", prop);
+	return propSphere;
+}
+
+
+std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
+OctahedronGeometry::GetTriangles() const
+{
+	auto solid = tl2::create_octahedron<t_vec>(m_radius);
+	auto [verts, norms, uvs] = tl2::create_triangles<t_vec>(solid);
+
+	//tl2::transform_obj(verts, norms, mat, true);
+	return std::make_tuple(verts, norms, uvs);
+}
+
+
+/**
+ * obtain all defining properties of the geometry object
+ */
+std::vector<ObjectProperty> OctahedronGeometry::GetProperties() const
+{
+	std::vector<ObjectProperty> props = Geometry::GetProperties();
+
+	props.emplace_back(ObjectProperty{.key="radius", .value=m_radius});
+
+	return props;
+}
+
+
+/**
+ * set the properties of the geometry object
+ */
+void OctahedronGeometry::SetProperties(const std::vector<ObjectProperty>& props)
+{
+	Geometry::SetProperties(props);
+
+	for(const auto& prop : props)
+	{
+		if(prop.key == "radius")
+			m_radius = std::get<t_real>(prop.value);
+	}
+
+	m_trafo_needs_update = true;
+}
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
+// dodecahedron
+// ----------------------------------------------------------------------------
+
+DodecahedronGeometry::DodecahedronGeometry()
+{
+}
+
+
+DodecahedronGeometry::~DodecahedronGeometry()
+{
+}
+
+
+t_vec DodecahedronGeometry::GetCentre() const
+{
+	using namespace tl2_ops;
+
+	t_vec centre = GetTrafo() * tl2::create<t_vec>({0, 0, 0, 1});
+	centre.resize(3);
+
+	return centre;
+}
+
+
+void DodecahedronGeometry::SetCentre(const t_vec& vec)
+{
+	using namespace tl2_ops;
+
+	t_vec oldcentre = GetCentre();
+	t_vec newcentre = vec;
+	newcentre.resize(3);
+
+	m_pos += (newcentre - oldcentre);
+
+	m_trafo_needs_update = true;
+}
+
+
+bool DodecahedronGeometry::Load(const pt::ptree& prop)
+{
+	if(!Geometry::Load(prop))
+		return false;
+
+	m_radius = prop.get<t_real>("radius", 0.1);
+
+	m_trafo_needs_update = true;
+	return true;
+}
+
+
+pt::ptree DodecahedronGeometry::Save() const
+{
+	pt::ptree prop = Geometry::Save();
+
+	prop.put<t_real>("radius", m_radius);
+
+	pt::ptree propSphere;
+	propSphere.put_child("dodecahedron", prop);
+	return propSphere;
+}
+
+
+std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
+DodecahedronGeometry::GetTriangles() const
+{
+	auto solid = tl2::create_dodecahedron<t_vec>(m_radius);
+	auto [verts, norms, uvs] = tl2::create_triangles<t_vec>(solid);
+
+	//tl2::transform_obj(verts, norms, mat, true);
+	return std::make_tuple(verts, norms, uvs);
+}
+
+
+/**
+ * obtain all defining properties of the geometry object
+ */
+std::vector<ObjectProperty> DodecahedronGeometry::GetProperties() const
+{
+	std::vector<ObjectProperty> props = Geometry::GetProperties();
+
+	props.emplace_back(ObjectProperty{.key="radius", .value=m_radius});
+
+	return props;
+}
+
+
+/**
+ * set the properties of the geometry object
+ */
+void DodecahedronGeometry::SetProperties(const std::vector<ObjectProperty>& props)
+{
+	Geometry::SetProperties(props);
+
+	for(const auto& prop : props)
+	{
+		if(prop.key == "radius")
+			m_radius = std::get<t_real>(prop.value);
+	}
+
+	m_trafo_needs_update = true;
+}
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
+// icosahedron
+// ----------------------------------------------------------------------------
+
+IcosahedronGeometry::IcosahedronGeometry()
+{
+}
+
+
+IcosahedronGeometry::~IcosahedronGeometry()
+{
+}
+
+
+t_vec IcosahedronGeometry::GetCentre() const
+{
+	using namespace tl2_ops;
+
+	t_vec centre = GetTrafo() * tl2::create<t_vec>({0, 0, 0, 1});
+	centre.resize(3);
+
+	return centre;
+}
+
+
+void IcosahedronGeometry::SetCentre(const t_vec& vec)
+{
+	using namespace tl2_ops;
+
+	t_vec oldcentre = GetCentre();
+	t_vec newcentre = vec;
+	newcentre.resize(3);
+
+	m_pos += (newcentre - oldcentre);
+
+	m_trafo_needs_update = true;
+}
+
+
+bool IcosahedronGeometry::Load(const pt::ptree& prop)
+{
+	if(!Geometry::Load(prop))
+		return false;
+
+	m_radius = prop.get<t_real>("radius", 0.1);
+
+	m_trafo_needs_update = true;
+	return true;
+}
+
+
+pt::ptree IcosahedronGeometry::Save() const
+{
+	pt::ptree prop = Geometry::Save();
+
+	prop.put<t_real>("radius", m_radius);
+
+	pt::ptree propSphere;
+	propSphere.put_child("icosahedron", prop);
+	return propSphere;
+}
+
+
+std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
+IcosahedronGeometry::GetTriangles() const
+{
+	auto solid = tl2::create_icosahedron<t_vec>(m_radius);
+	auto [verts, norms, uvs] = tl2::create_triangles<t_vec>(solid);
+
+	//tl2::transform_obj(verts, norms, mat, true);
+	return std::make_tuple(verts, norms, uvs);
+}
+
+
+/**
+ * obtain all defining properties of the geometry object
+ */
+std::vector<ObjectProperty> IcosahedronGeometry::GetProperties() const
+{
+	std::vector<ObjectProperty> props = Geometry::GetProperties();
+
+	props.emplace_back(ObjectProperty{.key="radius", .value=m_radius});
+
+	return props;
+}
+
+
+/**
+ * set the properties of the geometry object
+ */
+void IcosahedronGeometry::SetProperties(const std::vector<ObjectProperty>& props)
+{
+	Geometry::SetProperties(props);
+
+	for(const auto& prop : props)
+	{
+		if(prop.key == "radius")
+			m_radius = std::get<t_real>(prop.value);
+	}
+
+	m_trafo_needs_update = true;
+}
 // ----------------------------------------------------------------------------
