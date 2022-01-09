@@ -250,6 +250,7 @@ int main(int argc, char** argv)
 		// make type definitions known as qt meta objects
 		qRegisterMetaType<t_real>("t_real");
 		qRegisterMetaType<t_vec>("t_vec");
+		qRegisterMetaType<t_vec>("t_vec_gl");
 		qRegisterMetaType<t_mat>("t_mat");
 		qRegisterMetaType<std::string>("std::string");
 		qRegisterMetaType<std::size_t>("std::size_t");

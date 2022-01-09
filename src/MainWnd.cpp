@@ -336,7 +336,7 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 	QMenu *menuGeo = new QMenu("Geometry", m_menubar);
 
 	QAction *actionAddCuboid = new QAction(
-		QIcon::fromTheme("insert-object"), "Add Box", menuGeo);
+		QIcon::fromTheme("insert-object"), "Add Cube", menuGeo);
 	QAction *actionAddSphere = new QAction(
 		QIcon::fromTheme("insert-object"), "Add Sphere", menuGeo);
 	QAction *actionAddCylinder = new QAction(
@@ -1162,13 +1162,10 @@ void PathsTool::ObjectClicked(const std::string& obj,
  * dragging an object
  */
 void PathsTool::ObjectDragged(bool drag_start, const std::string& obj,
-	t_real_gl x_start, t_real_gl y_start, t_real_gl x, t_real_gl y)
+	const t_vec_gl& start, const t_vec_gl& pos)
 {
-	/*std::cout << "Dragging " << obj
-		<< " from (" << x_start << ", " << y_start << ")"
-		<< " to (" << x << ", " << y << ")." << std::endl;*/
-
-	m_scene.DragObject(drag_start, obj, x_start, y_start, x, y);
+	m_scene.DragObject(drag_start, obj,
+		tl2::convert<t_vec>(start), tl2::convert<t_vec>(pos));
 }
 
 
@@ -1269,7 +1266,7 @@ void PathsTool::AddCuboid()
 
 	static std::size_t cuboidcnt = 1;
 	std::ostringstream ostrId;
-	ostrId << "new box " << cuboidcnt++;
+	ostrId << "cube " << cuboidcnt++;
 
 	// add cuboid to scene
 	m_scene.AddObject(std::vector<std::shared_ptr<Geometry>>{{cuboid}}, ostrId.str());
@@ -1296,7 +1293,7 @@ void PathsTool::AddSphere()
 
 	static std::size_t sphcnt = 1;
 	std::ostringstream ostrId;
-	ostrId << "new sphere " << sphcnt++;
+	ostrId << "sphere " << sphcnt++;
 
 	// add sphere to scene
 	m_scene.AddObject(std::vector<std::shared_ptr<Geometry>>{{sphere}}, ostrId.str());
@@ -1324,7 +1321,7 @@ void PathsTool::AddCylinder()
 
 	static std::size_t cylcnt = 1;
 	std::ostringstream ostrId;
-	ostrId << "new cylinder " << cylcnt++;
+	ostrId << "cylinder " << cylcnt++;
 
 	// add cylinder to scene
 	m_scene.AddObject(std::vector<std::shared_ptr<Geometry>>{{cyl}}, ostrId.str());
@@ -1351,7 +1348,7 @@ void PathsTool::AddTetrahedron()
 
 	static std::size_t tetrcnt = 1;
 	std::ostringstream ostrId;
-	ostrId << "new tetrahedron " << tetrcnt++;
+	ostrId << "tetrahedron " << tetrcnt++;
 
 	// add tetrahedron to scene
 	m_scene.AddObject(std::vector<std::shared_ptr<Geometry>>{{tetr}}, ostrId.str());
@@ -1405,7 +1402,7 @@ void PathsTool::AddDodecahedron()
 
 	static std::size_t tetrcnt = 1;
 	std::ostringstream ostrId;
-	ostrId << "new dodecahedron " << tetrcnt++;
+	ostrId << "dodecahedron " << tetrcnt++;
 
 	// add dodecahedron to scene
 	m_scene.AddObject(std::vector<std::shared_ptr<Geometry>>{{dode}}, ostrId.str());
@@ -1432,7 +1429,7 @@ void PathsTool::AddIcosahedron()
 
 	static std::size_t tetrcnt = 1;
 	std::ostringstream ostrId;
-	ostrId << "new icosahedron " << tetrcnt++;
+	ostrId << "icosahedron " << tetrcnt++;
 
 	// add icosahedron to scene
 	m_scene.AddObject(std::vector<std::shared_ptr<Geometry>>{{icosa}}, ostrId.str());

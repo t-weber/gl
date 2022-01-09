@@ -164,7 +164,7 @@ protected slots:
 
 	// dragging an object
 	void ObjectDragged(bool drag_start, const std::string& obj,
-		t_real_gl x_start, t_real_gl y_start, t_real_gl x, t_real_gl y);
+		const t_vec_gl& start, const t_vec_gl& pos);
 
 	// set temporary status message, by default for 2 seconds
 	void SetTmpStatus(const std::string& msg, int msg_duration=2000);

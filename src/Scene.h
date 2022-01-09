@@ -43,7 +43,7 @@ public:
 	const std::vector<std::shared_ptr<Geometry>>& GetObjects() const { return m_objs; }
 
 	void DragObject(bool drag_start, const std::string& obj,
-		t_real x_start, t_real y_start, t_real x, t_real y);
+		const t_vec& start, const t_vec& pos);
 
 	// connection to update signal
 	template<class t_slot>

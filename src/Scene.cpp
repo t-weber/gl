@@ -200,7 +200,7 @@ Scene::RotateObject(const std::string& id, t_real angle, char axis)
  * an object is requested to be dragged from the gui
  */
 void Scene::DragObject(bool drag_start, const std::string& objid,
-	t_real x_start, t_real y_start, t_real x, t_real y)
+	const t_vec& pos_startcur, const t_vec& pos_cur)
 {
 	bool obj_dragged = false;
 
@@ -209,21 +209,15 @@ void Scene::DragObject(bool drag_start, const std::string& objid,
 		if(obj->GetId() != objid)
 			continue;
 
-		t_vec pos_startcur = tl2::create<t_vec>({ x_start, y_start });
-		t_vec pos_cur = tl2::create<t_vec>({ x, y });
-
-		t_vec pos_obj3 = obj->GetCentre();
-		t_vec pos_obj = pos_obj3;
-		pos_obj.resize(2);
+		t_vec pos_obj = obj->GetCentre();
+		if(pos_obj.size() < pos_cur.size())
+			pos_obj.resize(pos_cur.size());
 
 		if(drag_start)
 			m_drag_pos_axis_start = pos_obj;
 
-		t_vec pos_drag = pos_cur - pos_startcur + m_drag_pos_axis_start;
-		pos_obj3[0] = pos_drag[0];
-		pos_obj3[1] = pos_drag[1];
-
-		obj->SetCentre(pos_obj3);
+		pos_obj = pos_cur - pos_startcur + m_drag_pos_axis_start;
+		obj->SetCentre(pos_obj);
 		obj_dragged = true;
 	}
 

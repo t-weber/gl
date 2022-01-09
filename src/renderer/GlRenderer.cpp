@@ -500,18 +500,14 @@ void PathsRenderer::UpdatePicker()
 
 	// cursor coordinates (intersection with selection plane)
 	{
-		t_vec_gl plane_norm = tl2::create<t_vec_gl>({0, 0, 1});
-		t_real_gl plane_d = 0;
 		auto[inters, inters_type, inters_lam] =
-			tl2::intersect_line_plane<t_vec_gl>(org3, dir3, plane_norm, plane_d);
+			tl2::intersect_line_plane<t_vec_gl>(
+				org3, dir3, m_selectionPlaneNorm, m_selectionPlaneD);
 
 		if(inters_type)
 		{
 			// save intersections with selection plane for drawing objects
-			m_cursor[0] = inters[0];
-			m_cursor[1] = inters[1];
-			m_cursor[2] = inters[2];
-
+			m_cursor = inters;
 			emit CursorCoordsChanged(inters[0], inters[1], inters[2]);
 
 			if(m_light_follows_cursor)
@@ -1391,8 +1387,7 @@ void PathsRenderer::mouseMoveEvent(QMouseEvent *pEvt)
 	if(m_draggedObj != "")
 	{
 		emit ObjectDragged(false, m_draggedObj,
-			m_dragstartcursor[0], m_dragstartcursor[1],
-			m_cursor[0], m_cursor[1]);
+			m_dragstartcursor, m_cursor);
 	}
 
 	m_mouseMovedBetweenDownAndUp = true;
@@ -1429,12 +1424,10 @@ void PathsRenderer::mousePressEvent(QMouseEvent *pEvt)
 	if(m_mouseDown[0] && m_draggedObj == "")
 	{
 		m_draggedObj = m_curObj;
-		m_dragstartcursor[0] = m_cursor[0];
-		m_dragstartcursor[1] = m_cursor[1];
+		m_dragstartcursor = m_cursor;
 
 		emit ObjectDragged(true, m_draggedObj,
-			m_dragstartcursor[0], m_dragstartcursor[1],
-			m_cursor[0], m_cursor[1]);
+			m_dragstartcursor, m_cursor);
 	}
 
 	// middle mouse button pressed

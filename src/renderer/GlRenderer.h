@@ -117,6 +117,11 @@ public:
 	t_cam& GetCamera() { return m_cam; }
 	void CentreCam(const std::string& obj);
 
+	void SetSelectionPlaneNorm(const t_vec_gl& vec) { m_selectionPlaneNorm = vec; }
+	void SetSelectionPlaneD(t_real_gl d) { m_selectionPlaneD = d; }
+	const t_vec_gl& GetSelectionPlaneNorm() const { return m_selectionPlaneNorm; }
+	t_real_gl GetSelectionPlaneD() const { return m_selectionPlaneD; }
+
 	QPoint GetMousePosition(bool global_pos = false) const;
 
 	void SaveShadowFramebuffer(const std::string& filename) const;
@@ -206,8 +211,8 @@ protected:
 		m_strGlVendor{}, m_strGlRenderer{};
 
 	// cursor coordinates and object under cursor
-	GLfloat m_cursor[3] = {0., 0., 0.};
-	GLfloat m_dragstartcursor[2] = {0., 0.};
+	t_vec_gl m_cursor = tl2::create<t_vec_gl>({0., 0., 0.});
+	t_vec_gl m_dragstartcursor = tl2::create<t_vec_gl>({0., 0., 0.});
 	std::string m_curObj{}, m_draggedObj{};
 	bool m_light_follows_cursor = false;
 
@@ -240,6 +245,8 @@ protected:
 	t_textures m_textures{};
 
 	// cursor
+	t_vec_gl m_selectionPlaneNorm = tl2::create<t_vec_gl>({0, 0, 1});
+	t_real_gl m_selectionPlaneD = 0;
 	QPointF m_posMouse{};
 	QPointF m_posMouseRotationStart{}, m_posMouseRotationEnd{};
 	bool m_inRotation = false;
@@ -261,8 +268,7 @@ signals:
 
 	void ObjectClicked(const std::string& obj, bool left, bool mid, bool right);
 	void ObjectDragged(bool drag_start, const std::string& obj,
-		t_real_gl x_start, t_real_gl y_start,
-		t_real_gl x, t_real_gl y);
+		const t_vec_gl& start, const t_vec_gl& pos);
 
 	void CursorCoordsChanged(t_real_gl x, t_real_gl y, t_real_gl z);
 	void PickerIntersection(const t_vec3_gl* pos, std::string obj_name);
