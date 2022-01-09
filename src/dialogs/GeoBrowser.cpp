@@ -39,7 +39,7 @@ GeometriesBrowser::GeometriesBrowser(QWidget* parent, QSettings *sett)
 
 	// geometry object tree
 	m_geotree = new QTreeWidget(this);
-	m_geotree->headerItem()->setText(0, "Instrument Space");
+	m_geotree->headerItem()->setText(0, "Scene");
 
 	QSizePolicy sptree(QSizePolicy::Preferred,
 		QSizePolicy::Expanding, QSizePolicy::DefaultType);
