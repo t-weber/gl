@@ -182,7 +182,7 @@ protected slots:
 	void AddIcosahedron();
 
 	void DeleteCurrentObject();
-	void RotateCurrentObject(t_real angle);
+	void RotateCurrentObject(t_real angle, char axis='z');
 	void ShowCurrentObjectProperties();
 
 	void ShowGeometryBrowser();
@@ -190,7 +190,7 @@ protected slots:
 
 	void CollectGarbage();
 
-	void RotateObject(const std::string& id, t_real angle);
+	void RotateObject(const std::string& id, t_real angle, char axis='z');
 	void DeleteObject(const std::string& id);
 	void RenameObject(const std::string& oldid, const std::string& newid);
 	void ChangeObjectProperty(const std::string& id, const ObjectProperty& prop);

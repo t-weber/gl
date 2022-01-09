@@ -241,27 +241,31 @@ Geometry::load(const pt::ptree& prop)
 
 
 /**
- * rotate the object around the z axis
+ * rotate the object around one of the principal axes
  */
-void Geometry::Rotate(t_real angle)
+void Geometry::Rotate(t_real angle, char axis)
 {
-	/* TODO
 	// create the rotation matrix
-	t_vec axis = tl2::create<t_vec>({0, 0, 1});
-	t_mat R = tl2::rotation<t_mat, t_vec>(axis, angle);
+	t_vec axis_vec;
+	if(axis == 'x')
+		axis_vec = tl2::create<t_vec>({1, 0, 0});
+	else if(axis == 'y')
+		axis_vec = tl2::create<t_vec>({0, 1, 0});
+	else /*if(axis == 'z')*/
+		axis_vec = tl2::create<t_vec>({0, 0, 1});
 
-	// remove translation
-	t_vec centre = GetCentre();
-	SetCentre(tl2::create<t_vec>({0, 0, 0}));
+	Rotate(angle, axis_vec);
+}
 
-	// rotate the position vectors
-	m_pos1 = R*m_pos1;
-	m_pos2 = R*m_pos2;
 
-	// restore translation
-	SetCentre(centre);
-	*/
+/**
+ * rotate the object around a given axis
+ */
+void Geometry::Rotate(t_real angle, const t_vec& axis)
+{
+	t_mat R = tl2::hom_rotation<t_mat, t_vec>(axis, angle);
 
+	m_rot = R*m_rot;
 	m_trafo_needs_update = true;
 }
 

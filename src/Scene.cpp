@@ -209,7 +209,7 @@ bool Scene::RenameObject(const std::string& oldid, const std::string& newid)
  * rotate an object by the given angle
  */
 std::tuple<bool, std::shared_ptr<Geometry>> 
-Scene::RotateObject(const std::string& id, t_real angle)
+Scene::RotateObject(const std::string& id, t_real angle, char axis)
 {
 	// find the object with the given id
 	if(auto iter = std::find_if(m_objs.begin(), m_objs.end(), 
@@ -218,7 +218,7 @@ Scene::RotateObject(const std::string& id, t_real angle)
 		return obj->GetId() == id;
 	}); iter != m_objs.end())
 	{
-		(*iter)->Rotate(angle);
+		(*iter)->Rotate(angle, axis);
 		return std::make_tuple(true, *iter);
 	}
 

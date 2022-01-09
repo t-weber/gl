@@ -501,32 +501,40 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 	// --------------------------------------------------------------------
 	m_contextMenuObj = new QMenu(this);
 
-	QAction *actionObjRotP10 = new QAction(QIcon::fromTheme("object-rotate-left"), "Rotate Object by +10°", m_contextMenuObj);
-	QAction *actionObjRotM10 = new QAction(QIcon::fromTheme("object-rotate-right"), "Rotate Object by -10°", m_contextMenuObj);
-	QAction *actionObjRotP45 = new QAction(QIcon::fromTheme("object-rotate-left"), "Rotate Object by +45°", m_contextMenuObj);
-	QAction *actionObjRotM45 = new QAction(QIcon::fromTheme("object-rotate-right"), "Rotate Object by -45°", m_contextMenuObj);
+	QAction *actionObjRotXP10 = new QAction(QIcon::fromTheme("object-rotate-left"), "Rotate Object by +10° around x", m_contextMenuObj);
+	QAction *actionObjRotXM10 = new QAction(QIcon::fromTheme("object-rotate-right"), "Rotate Object by -10° around x", m_contextMenuObj);
+	QAction *actionObjRotYP10 = new QAction(QIcon::fromTheme("object-rotate-left"), "Rotate Object by +10° around y", m_contextMenuObj);
+	QAction *actionObjRotYM10 = new QAction(QIcon::fromTheme("object-rotate-right"), "Rotate Object by -10° around y", m_contextMenuObj);
+	QAction *actionObjRotZP10 = new QAction(QIcon::fromTheme("object-rotate-left"), "Rotate Object by +10° around z", m_contextMenuObj);
+	QAction *actionObjRotZM10 = new QAction(QIcon::fromTheme("object-rotate-right"), "Rotate Object by -10° around z", m_contextMenuObj);
 	QAction *actionObjCentreCam = new QAction(QIcon::fromTheme("camera-video"), "Centre Camera on Object", m_contextMenuObj);
 	QAction *actionObjDel = new QAction(QIcon::fromTheme("edit-delete"), "Delete Object", m_contextMenuObj);
 	QAction *actionObjProp = new QAction(QIcon::fromTheme("document-properties"), "Object Properties...", m_contextMenuObj);
 
-	m_contextMenuObj->addAction(actionObjRotP10);
-	m_contextMenuObj->addAction(actionObjRotM10);
-	m_contextMenuObj->addAction(actionObjRotP45);
-	m_contextMenuObj->addAction(actionObjRotM45);
+	m_contextMenuObj->addAction(actionObjRotXP10);
+	m_contextMenuObj->addAction(actionObjRotXM10);
+	m_contextMenuObj->addAction(actionObjRotYP10);
+	m_contextMenuObj->addAction(actionObjRotYM10);
+	m_contextMenuObj->addAction(actionObjRotZP10);
+	m_contextMenuObj->addAction(actionObjRotZM10);
 	m_contextMenuObj->addSeparator();
 	m_contextMenuObj->addAction(actionObjCentreCam);
 	m_contextMenuObj->addSeparator();
 	m_contextMenuObj->addAction(actionObjDel);
 	m_contextMenuObj->addAction(actionObjProp);
 
-	connect(actionObjRotP10, &QAction::triggered,
-		[this]() { RotateCurrentObject(10./180.*tl2::pi<t_real>); });
-	connect(actionObjRotM10, &QAction::triggered,
-		[this]() { RotateCurrentObject(-10./180.*tl2::pi<t_real>); });
-	connect(actionObjRotP45, &QAction::triggered,
-		[this]() { RotateCurrentObject(45./180.*tl2::pi<t_real>); });
-	connect(actionObjRotM45, &QAction::triggered,
-		[this]() { RotateCurrentObject(-45./180.*tl2::pi<t_real>); });
+	connect(actionObjRotXP10, &QAction::triggered,
+		[this]() { RotateCurrentObject(10./180.*tl2::pi<t_real>, 'x'); });
+	connect(actionObjRotXM10, &QAction::triggered,
+		[this]() { RotateCurrentObject(-10./180.*tl2::pi<t_real>, 'x'); });
+	connect(actionObjRotYP10, &QAction::triggered,
+		[this]() { RotateCurrentObject(10./180.*tl2::pi<t_real>, 'y'); });
+	connect(actionObjRotYM10, &QAction::triggered,
+		[this]() { RotateCurrentObject(-10./180.*tl2::pi<t_real>, 'y'); });
+	connect(actionObjRotZP10, &QAction::triggered,
+		[this]() { RotateCurrentObject(10./180.*tl2::pi<t_real>, 'z'); });
+	connect(actionObjRotZM10, &QAction::triggered,
+		[this]() { RotateCurrentObject(-10./180.*tl2::pi<t_real>, 'z'); });
 	connect(actionObjDel, &QAction::triggered, this,
 		&PathsTool::DeleteCurrentObject);
 	connect(actionObjProp, &QAction::triggered, this,
@@ -1478,22 +1486,22 @@ void PathsTool::DeleteObject(const std::string& obj)
 /**
  * rotate 3d object under the cursor
  */
-void PathsTool::RotateCurrentObject(t_real angle)
+void PathsTool::RotateCurrentObject(t_real angle, char axis)
 {
-	RotateObject(m_curContextObj, angle);
+	RotateObject(m_curContextObj, angle, axis);
 }
 
 
 /**
  * rotate the given object
  */
-void PathsTool::RotateObject(const std::string& objname, t_real angle)
+void PathsTool::RotateObject(const std::string& objname, t_real angle, char axis)
 {
 	if(objname == "")
 		return;
 
 	// rotate the given object
-	if(auto [ok, objgeo] = m_scene.RotateObject(objname, angle); ok)
+	if(auto [ok, objgeo] = m_scene.RotateObject(objname, angle, axis); ok)
 	{
 		// update object browser tree
 		if(m_dlgGeoBrowser)

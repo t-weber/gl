@@ -85,7 +85,8 @@ public:
 	virtual const std::string& GetTexture() const { return m_texture; }
 	virtual void SetTexture(std::string ident) { m_texture = ident; }
 
-	virtual void Rotate(t_real angle);
+	virtual void Rotate(t_real angle, char axis='z');
+	virtual void Rotate(t_real angle, const t_vec& axis);
 
 	virtual std::vector<ObjectProperty> GetProperties() const ;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props);
