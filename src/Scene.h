@@ -40,10 +40,6 @@ public:
 	bool RenameObject(const std::string& oldid, const std::string& newid);
 	std::tuple<bool, std::shared_ptr<Geometry>> RotateObject(const std::string& id, t_real angle, char axis='x');
 
-	t_real GetFloorLenX() const { return m_floorlen[0]; }
-	t_real GetFloorLenY() const { return m_floorlen[1]; }
-	const t_vec& GetFloorColour() const { return m_floorcol; }
-
 	const std::vector<std::shared_ptr<Geometry>>& GetObjects() const { return m_objs; }
 
 	void DragObject(bool drag_start, const std::string& obj,
@@ -76,9 +72,6 @@ public:
 
 
 private:
-	t_real m_floorlen[2] = { 10., 10. };
-	t_vec m_floorcol = tl2::create<t_vec>({0.5, 0.5, 0.5});
-
 	// objects
 	std::vector<std::shared_ptr<Geometry>> m_objs{};
 

@@ -109,10 +109,6 @@ public:
 		const std::vector<t_vec3_gl>& triag_uvs,
 		t_real_gl r=0, t_real_gl g=0, t_real_gl b=0, t_real_gl a=1);
 
-	void AddFloorPlane(const std::string& obj_name,
-		t_real_gl len_x, t_real_gl len_y,
-		const t_vec& colour);
-
 	void SetLight(std::size_t idx, const t_vec3_gl& pos);
 	void SetLightFollowsCursor(bool b);
 	void EnableShadowRendering(bool b);
@@ -203,22 +199,16 @@ protected:
 	GLint m_uniMatrixLight = -1;
 	GLint m_uniMatrixLightInv = -1;
 	GLint m_uniMatrixObj = -1;
-
-	// cursor
-	GLint m_uniCursorActive = -1;
-	GLint m_uniCursorCoords = -1;
 	// ------------------------------------------------------------------------
 
 	// version identifiers
 	std::string m_strGlVer{}, m_strGlShaderVer{},
 		m_strGlVendor{}, m_strGlRenderer{};
 
-	// cursor uv coordinates and object under cursor
-	GLfloat m_cursorUV[2] = {0., 0.};
-	GLfloat m_cursor[2] = {0., 0.};
+	// cursor coordinates and object under cursor
+	GLfloat m_cursor[3] = {0., 0., 0.};
 	GLfloat m_dragstartcursor[2] = {0., 0.};
 	std::string m_curObj{}, m_draggedObj{};
-	bool m_curActive = false;
 	bool m_light_follows_cursor = false;
 
 	// textures active?
@@ -274,7 +264,7 @@ signals:
 		t_real_gl x_start, t_real_gl y_start,
 		t_real_gl x, t_real_gl y);
 
-	void FloorPlaneCoordsChanged(t_real_gl x, t_real_gl y);
+	void CursorCoordsChanged(t_real_gl x, t_real_gl y, t_real_gl z);
 	void PickerIntersection(const t_vec3_gl* pos, std::string obj_name);
 
 	void CamPositionChanged(t_real_gl x, t_real_gl y, t_real_gl z);

@@ -72,7 +72,7 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 
 	auto plotpanel = new QWidget(this);
 
-	connect(m_renderer.get(), &PathsRenderer::FloorPlaneCoordsChanged, this, &PathsTool::CursorCoordsChanged);
+	connect(m_renderer.get(), &PathsRenderer::CursorCoordsChanged, this, &PathsTool::CursorCoordsChanged);
 	connect(m_renderer.get(), &PathsRenderer::PickerIntersection, this, &PathsTool::PickerIntersection);
 	connect(m_renderer.get(), &PathsRenderer::ObjectClicked, this, &PathsTool::ObjectClicked);
 	connect(m_renderer.get(), &PathsRenderer::ObjectDragged, this, &PathsTool::ObjectDragged);
@@ -1111,10 +1111,11 @@ bool PathsTool::LoadInitialSceneFile()
 /**
  * mouse coordinates on base plane
  */
-void PathsTool::CursorCoordsChanged(t_real_gl x, t_real_gl y)
+void PathsTool::CursorCoordsChanged(t_real_gl x, t_real_gl y, t_real_gl z)
 {
 	m_mouseX = x;
 	m_mouseY = y;
+	m_mouseZ = z;
 	UpdateStatusLabel();
 }
 
@@ -1201,15 +1202,15 @@ void PathsTool::UpdateStatusLabel()
 {
 	const t_real maxRange = 1e6;
 
-	if(!std::isfinite(m_mouseX) || !std::isfinite(m_mouseY))
+	if(!std::isfinite(m_mouseX) || !std::isfinite(m_mouseY) || !std::isfinite(m_mouseZ))
 		return;
-	if(std::abs(m_mouseX) >= maxRange || std::abs(m_mouseY) >= maxRange)
+	if(std::abs(m_mouseX) >= maxRange || std::abs(m_mouseY) >= maxRange || std::abs(m_mouseZ) >= maxRange)
 		return;
 
 	std::ostringstream ostr;
 	ostr.precision(g_prec_gui);
 	ostr << std::fixed << std::showpos
-		<< "Cursor: (" << m_mouseX << ", " << m_mouseY << ") m";
+		<< "Cursor: (" << m_mouseX << ", " << m_mouseY << ", " << m_mouseZ << ")";
 
 	// show object name
 	//if(m_curObj != "")

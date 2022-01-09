@@ -41,10 +41,6 @@ Scene::Scene(const Scene& scene)
  */
 const Scene& Scene::operator=(const Scene& scene)
 {
-	this->m_floorlen[0] = scene.m_floorlen[0];
-	this->m_floorlen[1] = scene.m_floorlen[1];
-	this->m_floorcol = scene.m_floorcol;
-
 	this->m_objs = scene.m_objs;
 
 	this->m_drag_pos_axis_start = scene.m_drag_pos_axis_start;
@@ -59,10 +55,6 @@ const Scene& Scene::operator=(const Scene& scene)
  */
 void Scene::Clear()
 {
-	// reset to defaults
-	m_floorlen[0] = m_floorlen[1] = 10.;
-	m_floorcol = tl2::create<t_vec>({0.5, 0.5, 0.5});
-
 	// clear
 	m_objs.clear();
 
@@ -77,23 +69,6 @@ void Scene::Clear()
 bool Scene::Load(const pt::ptree& prop)
 {
 	Clear();
-
-	// floor size
-	if(auto opt = prop.get_optional<t_real>("floor.len_x"); opt)
-		m_floorlen[0] = *opt;
-	if(auto opt = prop.get_optional<t_real>("floor.len_y"); opt)
-		m_floorlen[1] = *opt;
-
-	// floor colour
-	if(auto col = prop.get_optional<std::string>("floor.colour"); col)
-	{
-		m_floorcol.clear();
-		tl2::get_tokens<t_real>(
-			tl2::trimmed(*col), std::string{" \t,;"}, m_floorcol);
-
-		if(m_floorcol.size() < 3)
-			m_floorcol.resize(3);
-	}
 
 	// objects
 	if(auto objs = prop.get_child_optional("objects"); objs)
@@ -121,11 +96,6 @@ bool Scene::Load(const pt::ptree& prop)
 pt::ptree Scene::Save() const
 {
 	pt::ptree prop;
-
-	// floor
-	prop.put<t_real>(FILE_BASENAME "floor.len_x", m_floorlen[0]);
-	prop.put<t_real>(FILE_BASENAME "floor.len_y", m_floorlen[1]);
-	prop.put<std::string>(FILE_BASENAME "floor.colour", geo_vec_to_str(m_floorcol));
 
 	// objects
 	pt::ptree propobjs;

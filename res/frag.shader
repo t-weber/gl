@@ -61,14 +61,6 @@ out vec4 frag_out_col;
 
 
 // ----------------------------------------------------------------------------
-// current cursor position
-// ----------------------------------------------------------------------------
-uniform bool cursor_active = true;
-uniform vec2 cursor_coords = vec2(0.5, 0.5);
-// ----------------------------------------------------------------------------
-
-
-// ----------------------------------------------------------------------------
 // transformations
 // ----------------------------------------------------------------------------
 uniform mat4 trafos_proj = mat4(1.);
@@ -242,12 +234,6 @@ void main()
 			// is the shadow z value larger than the current object z value?
 			if(shadow_val > frag_in.pos.z + z_eps)
 				frag_out_col.rgb *= g_shadow_atten;
-		}
-
-		// show cursor position
-		if(cursor_active && length(frag_in.coords - cursor_coords) < 0.01)
-		{
-			frag_out_col = vec4(1, 0, 0, 1);
 		}
 	}
 }

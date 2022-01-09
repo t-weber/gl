@@ -114,7 +114,7 @@ private:
 	Scene m_scene{};
 
 	// mouse picker
-	t_real m_mouseX{}, m_mouseY{};
+	t_real m_mouseX{}, m_mouseY{}, m_mouseZ{};;
 	std::string m_curObj{};
 
 
@@ -154,7 +154,7 @@ protected slots:
 	void AfterGLInitialisation();
 
 	// mouse coordinates on base plane
-	void CursorCoordsChanged(t_real_gl x, t_real_gl y);
+	void CursorCoordsChanged(t_real_gl x, t_real_gl y, t_real_gl z);
 
 	// mouse is over an object
 	void PickerIntersection(const t_vec3_gl* pos, std::string obj_name);

@@ -33,8 +33,6 @@
 #include "tlibs2/libs/file.h"
 
 
-#define OBJNAME_COORD_CROSS  "coord_cross"
-#define OBJNAME_FLOOR_PLANE  "floor"
 #define MAX_LIGHTS           4  // max. number allowed in shader
 
 
@@ -208,17 +206,6 @@ bool PathsRenderer::LoadScene(const Scene& scene)
 
 	Clear();
 
-	// upper and lower floor plane
-	// the lower floor plane just serves to hide clipping artefacts
-	std::string lowerFloor = "lower " OBJNAME_FLOOR_PLANE;
-	AddFloorPlane(OBJNAME_FLOOR_PLANE,
-		scene.GetFloorLenX(), scene.GetFloorLenY(),
-		scene.GetFloorColour());
-	AddFloorPlane(lowerFloor,
-		scene.GetFloorLenX(), scene.GetFloorLenY(),
-		scene.GetFloorColour());
-	m_objs[lowerFloor].m_mat(2,3) = -0.01;
-
 	// objects
 	for(const auto& obj : scene.GetObjects())
 	{
@@ -367,25 +354,6 @@ PathsRenderer::AddTriangleObject(
 
 
 /**
- * add the floor plane
- */
-void PathsRenderer::AddFloorPlane(const std::string& obj_name,
-	t_real_gl len_x, t_real_gl len_y, const t_vec& colour)
-{
-	auto norm = tl2::create<t_vec3_gl>({0, 0, 1});
-	auto plane = tl2::create_plane<t_mat_gl, t_vec3_gl>(
-		norm, 0.5*len_x, 0.5*len_y);
-	auto [verts, norms, uvs] = tl2::subdivide_triangles<t_vec3_gl>(
-		tl2::create_triangles<t_vec3_gl>(plane), 1);
-
-	auto obj_iter = AddTriangleObject(
-		obj_name, verts, norms, uvs,
-		colour[0], colour[1], colour[2], 1.);
-	obj_iter->second.m_cull = false;
-}
-
-
-/**
  * centre camera around a given object
  */
 void PathsRenderer::CentreCam(const std::string& objid)
@@ -530,11 +498,32 @@ void PathsRenderer::UpdatePicker()
 	// picker ray
 	auto [org3, dir3] = m_cam.GetPickerRay(m_posMouse.x(), m_posMouse.y());
 
+	// cursor coordinates (intersection with selection plane)
+	{
+		t_vec_gl plane_norm = tl2::create<t_vec_gl>({0, 0, 1});
+		t_real_gl plane_d = 0;
+		auto[inters, inters_type, inters_lam] =
+			tl2::intersect_line_plane<t_vec_gl>(org3, dir3, plane_norm, plane_d);
+
+		if(inters_type)
+		{
+			// save intersections with selection plane for drawing objects
+			m_cursor[0] = inters[0];
+			m_cursor[1] = inters[1];
+			m_cursor[2] = inters[2];
+
+			emit CursorCoordsChanged(inters[0], inters[1], inters[2]);
+
+			if(m_light_follows_cursor)
+				SetLight(0, tl2::create<t_vec3_gl>({inters[0], inters[1], 10}));
+		}
+	}
+
+
 	// intersection with geometry
 	bool hasInters = false;
 	m_curObj = "";
-	m_curActive = false;
-	t_vec_gl vecClosestInters = tl2::create<t_vec_gl>({0, 0, 0, 0});
+	t_vec_gl closest_inters = tl2::create<t_vec_gl>({0, 0, 0, 0});
 
 	QMutexLocker _locker{&m_mutexObj};
 
@@ -573,55 +562,34 @@ void PathsRenderer::UpdatePicker()
 				obj.m_uvs[startidx+2]
 			} };
 
-			auto [vecInters, bInters, lamInters] =
+			auto [inters, does_intersect, inters_lam] =
 				tl2::intersect_line_poly<t_vec3_gl, t_mat_gl>(
 					org3, dir3, poly, matTrafo);
 
-			if(!bInters)
+			if(!does_intersect)
 				continue;
 
-			t_vec_gl vecInters4 = tl2::create<t_vec_gl>({
-				vecInters[0], vecInters[1], vecInters[2], 1});
-
-			// intersection with floor plane
-			if(obj_name == OBJNAME_FLOOR_PLANE)
-			{
-				auto uv = tl2::poly_uv<t_mat_gl, t_vec3_gl>(
-					poly[0], poly[1], poly[2],
-					polyuv[0], polyuv[1], polyuv[2],
-					vecInters);
-
-				// save intersections with base plane for drawing objects
-				m_cursorUV[0] = uv[0];
-				m_cursorUV[1] = uv[1];
-				m_cursor[0] = vecInters4[0];
-				m_cursor[1] = vecInters4[1];
-				m_curActive = true;
-
-				emit FloorPlaneCoordsChanged(vecInters4[0], vecInters4[1]);
-
-				if(m_light_follows_cursor)
-					SetLight(0, tl2::create<t_vec3_gl>({vecInters4[0], vecInters4[1], 10}));
-			}
+			t_vec_gl inters4 = tl2::create<t_vec_gl>({
+				inters[0], inters[1], inters[2], 1});
 
 			// intersection with other objects
 			bool updateUV = false;
 
 			if(!hasInters)
 			{	// first intersection
-				vecClosestInters = vecInters4;
+				closest_inters = inters4;
 				m_curObj = obj_name;
 				hasInters = true;
 				updateUV = true;
 			}
 			else
 			{	// test if next intersection is closer...
-				t_vec_gl oldPosTrafo = m_cam.GetTransformation() * vecClosestInters;
-				t_vec_gl newPosTrafo = m_cam.GetTransformation() * vecInters4;
+				t_vec_gl oldPosTrafo = m_cam.GetTransformation() * closest_inters;
+				t_vec_gl newPosTrafo = m_cam.GetTransformation() * inters4;
 
 				if(tl2::norm(newPosTrafo) < tl2::norm(oldPosTrafo))
 				{	// ...it is closer
-					vecClosestInters = vecInters4;
+					closest_inters = inters4;
 					m_curObj = obj_name;
 
 					updateUV = true;
@@ -636,10 +604,10 @@ void PathsRenderer::UpdatePicker()
 	}
 
 	m_pickerNeedsUpdate = false;
-	t_vec3_gl vecClosestInters3 = tl2::create<t_vec3_gl>({
-		vecClosestInters[0], vecClosestInters[1], vecClosestInters[2]});
+	t_vec3_gl closest_inters3 = tl2::create<t_vec3_gl>({
+		closest_inters[0], closest_inters[1], closest_inters[2]});
 
-	emit PickerIntersection(hasInters ? &vecClosestInters3 : nullptr, m_curObj);
+	emit PickerIntersection(hasInters ? &closest_inters3 : nullptr, m_curObj);
 }
 
 
@@ -839,8 +807,6 @@ void PathsRenderer::initializeGL()
 	m_uniShadowRenderPass = m_shaders->uniformLocation("shadow_renderpass");
 	m_uniShadowMap = m_shaders->uniformLocation("shadow_map");
 
-	m_uniCursorActive = m_shaders->uniformLocation("cursor_active");
-	m_uniCursorCoords = m_shaders->uniformLocation("cursor_coords");
 	LOGGLERR(pGl);
 
 	SetLight(0, tl2::create<t_vec3_gl>({0, 0, 10}));
@@ -1093,9 +1059,6 @@ void PathsRenderer::DoPaintGL(qgl_funcs *pGl)
 	//m_shaders->setUniformValue(m_uniTextureActive, m_textures_active);
 	m_shaders->setUniformValue(m_uniTexture, 1);
 
-	// cursor
-	m_shaders->setUniformValue(m_uniCursorCoords, m_cursorUV[0], m_cursorUV[1]);
-
 	auto colOverride = tl2::create<t_vec_gl>({1,1,1,1});
 
 
@@ -1166,10 +1129,6 @@ void PathsRenderer::DoPaintGL(qgl_funcs *pGl)
 			pGl->glEnable(GL_CULL_FACE);
 		else
 			pGl->glDisable(GL_CULL_FACE);
-
-		// cursor only active on base plane
-		m_shaders->setUniformValue(m_uniCursorActive,
-			obj_name==OBJNAME_FLOOR_PLANE && m_curActive);
 
 		// set object matrix
 		m_shaders->setUniformValue(m_uniMatrixObj, obj.m_mat);
