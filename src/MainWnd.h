@@ -40,6 +40,7 @@
 #include "dialogs/Settings.h"
 
 #include "dock/CamProperties.h"
+#include "dock/SelectionProperties.h"
 
 
 class PathsTool : public QMainWindow
@@ -96,6 +97,7 @@ private:
 
 	// docks
 	std::shared_ptr<CamPropertiesDockWidget> m_camProperties{};
+	std::shared_ptr<SelectionPropertiesDockWidget> m_selProperties{};
 
 	std::string m_initialSceneFile = "startup.glscene";
 	bool m_initialSceneFileModified = false;

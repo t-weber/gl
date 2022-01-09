@@ -89,7 +89,9 @@
 			"__split_buffer": "cpp",
 			"qgraphicsview": "cpp",
 			"unordered_set": "cpp",
-			"filesystem": "cpp"
+			"filesystem": "cpp",
+			"__functional_base": "cpp",
+			"locale": "cpp"
 		},
 		"npm.fetchOnlinePackageInfo": false
 	}

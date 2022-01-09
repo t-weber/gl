@@ -129,9 +129,10 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 	// dock widgets
 	// --------------------------------------------------------------------
 	m_camProperties = std::make_shared<CamPropertiesDockWidget>(this);
+	m_selProperties = std::make_shared<SelectionPropertiesDockWidget>(this);
 
-	for(QDockWidget* dockwidget : std::initializer_list<QDockWidget*>{
-		m_camProperties.get() })
+	for(QDockWidget* dockwidget : std::initializer_list<QDockWidget*>
+		{ m_camProperties.get(), m_selProperties.get() })
 	{
 		dockwidget->setFeatures(
 			QDockWidget::DockWidgetClosable |
@@ -142,7 +143,10 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 	}
 
 	addDockWidget(Qt::RightDockWidgetArea, m_camProperties.get());
+	addDockWidget(Qt::RightDockWidgetArea, m_selProperties.get());
+
 	auto* camwidget = m_camProperties->GetWidget().get();
+	auto* selwidget = m_selProperties->GetWidget().get();
 
 	// camera viewing angle
 	connect(camwidget, &CamPropertiesWidget::ViewingAngleChanged,
@@ -209,6 +213,34 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 				m_renderer->UpdateCam();
 			}
 		});
+
+	// selection plane normal
+	connect(selwidget, &SelectionPropertiesWidget::PlaneNormChanged,
+		[this](t_real _x, t_real _y, t_real _z) -> void
+		{
+			t_real_gl x = t_real_gl(_x);
+			t_real_gl y = t_real_gl(_y);
+			t_real_gl z = t_real_gl(_z);
+
+			if(m_renderer)
+			{
+				m_renderer->SetSelectionPlaneNorm(
+					tl2::create<t_vec3_gl>({x, y, z}));
+			}
+		});
+
+	// selection plane distance
+	connect(selwidget, &SelectionPropertiesWidget::PlaneDistChanged,
+		[this](t_real _d) -> void
+		{
+			t_real_gl d = t_real_gl(_d);
+
+			if(m_renderer)
+			{
+				m_renderer->SetSelectionPlaneDist(d);
+			}
+		});
+
 	// --------------------------------------------------------------------
 
 
@@ -296,6 +328,7 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 	QAction *acRestoreState = new QAction("Restore Layout", menuFile);
 
 	menuWindow->addAction(m_camProperties->toggleViewAction());
+	menuWindow->addAction(m_selProperties->toggleViewAction());
 	menuWindow->addSeparator();
 	menuWindow->addAction(acHideAllDocks);
 	menuWindow->addAction(acShowAllDocks);
@@ -308,7 +341,7 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 	{
 		for(QDockWidget* dock : std::initializer_list<QDockWidget*>
 		{
-			m_camProperties.get()
+			m_camProperties.get(), m_selProperties.get()
 		})
 		{
 			dock->hide();
@@ -319,7 +352,7 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 	{
 		for(QDockWidget* dock : std::initializer_list<QDockWidget*>
 		{
-			m_camProperties.get()
+			m_camProperties.get(), m_selProperties.get()
 		})
 		{
 			dock->show();
@@ -463,7 +496,7 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 	// go to bug report url
 	connect(actionBug, &QAction::triggered, this, [this]()
 	{
-		QUrl url("https://code.ill.fr/scientific-software/takin/paths/-/issues");
+		QUrl url("https://code.ill.fr/tweber/gl/-/issues");
 		if(!QDesktopServices::openUrl(url))
 			QMessageBox::critical(this, "Error", "Could not open bug report website.");
 	});
@@ -881,6 +914,8 @@ bool PathsTool::OpenFile(const QString& file)
 		// load dock window settings
 		if(auto prop_dock = prop.get_child_optional(FILE_BASENAME "configuration.camera"); prop_dock)
 			m_camProperties->GetWidget()->Load(*prop_dock);
+		if(auto prop_dock = prop.get_child_optional(FILE_BASENAME "configuration.selection_plane"); prop_dock)
+			m_selProperties->GetWidget()->Load(*prop_dock);
 
 
 		SetCurrentFile(file);
@@ -953,6 +988,7 @@ bool PathsTool::SaveFile(const QString &file)
 
 	// save dock window settings
 	prop.put_child(FILE_BASENAME "configuration.camera", m_camProperties->GetWidget()->Save());
+	prop.put_child(FILE_BASENAME "configuration.selection_plane", m_selProperties->GetWidget()->Save());
 
 	// set format and version
 	prop.put(FILE_BASENAME "ident", APPL_IDENT);

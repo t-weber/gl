@@ -118,9 +118,9 @@ public:
 	void CentreCam(const std::string& obj);
 
 	void SetSelectionPlaneNorm(const t_vec_gl& vec) { m_selectionPlaneNorm = vec; }
-	void SetSelectionPlaneD(t_real_gl d) { m_selectionPlaneD = d; }
+	void SetSelectionPlaneDist(t_real_gl d) { m_selectionPlaneD = d; }
 	const t_vec_gl& GetSelectionPlaneNorm() const { return m_selectionPlaneNorm; }
-	t_real_gl GetSelectionPlaneD() const { return m_selectionPlaneD; }
+	t_real_gl GetSelectionPlaneDist() const { return m_selectionPlaneD; }
 
 	QPoint GetMousePosition(bool global_pos = false) const;
 

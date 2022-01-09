@@ -28,7 +28,7 @@ CamPropertiesWidget::CamPropertiesWidget(QWidget *parent)
 	m_spinViewingAngle->setDecimals(g_prec_gui);
 	m_spinViewingAngle->setSingleStep(1);
 	m_spinViewingAngle->setSuffix("°");
-	m_spinViewingAngle->setToolTip("Camera field of view in units of [deg].");
+	m_spinViewingAngle->setToolTip("Camera field of view [deg].");
 
 	m_spinZoom = new QDoubleSpinBox(this);
 	m_spinZoom->setMinimum(0.001);
@@ -50,7 +50,7 @@ CamPropertiesWidget::CamPropertiesWidget(QWidget *parent)
 		m_spinPos[pos]->setMaximum(+100);
 		m_spinPos[pos]->setDecimals(g_prec_gui);
 		m_spinPos[pos]->setSingleStep(1);
-		m_spinPos[pos]->setToolTip(QString("Camera %1 position in units of [m].").arg(pos_comp[pos]));
+		m_spinPos[pos]->setToolTip(QString("Camera %1 position.").arg(pos_comp[pos]));
 	}
 
 	m_spinRot[0] = new QDoubleSpinBox(this);
@@ -59,7 +59,7 @@ CamPropertiesWidget::CamPropertiesWidget(QWidget *parent)
 	m_spinRot[0]->setDecimals(g_prec_gui);
 	m_spinRot[0]->setSingleStep(1);
 	m_spinRot[0]->setSuffix("°");
-	m_spinRot[0]->setToolTip("Camera φ rotation in units of [deg].");
+	m_spinRot[0]->setToolTip("Camera φ rotation [deg].");
 
 	m_spinRot[1] = new QDoubleSpinBox(this);
 	m_spinRot[1]->setMinimum(-90);
@@ -67,7 +67,7 @@ CamPropertiesWidget::CamPropertiesWidget(QWidget *parent)
 	m_spinRot[1]->setDecimals(g_prec_gui);
 	m_spinRot[1]->setSingleStep(1);
 	m_spinRot[1]->setSuffix("°");
-	m_spinRot[1]->setToolTip("Camera θ rotation in units of [deg].");
+	m_spinRot[1]->setToolTip("Camera θ rotation [deg].");
 
 	auto *groupProj = new QGroupBox("Projection", this);
 	{

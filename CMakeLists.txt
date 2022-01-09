@@ -199,6 +199,7 @@ add_executable(glscene
 	src/renderer/Camera.h
 
 	src/dock/CamProperties.cpp src/dock/CamProperties.h
+	src/dock/SelectionProperties.cpp src/dock/SelectionProperties.h
 
 	src/dialogs/About.cpp src/dialogs/About.h
 	src/dialogs/GeoBrowser.cpp src/dialogs/GeoBrowser.h
