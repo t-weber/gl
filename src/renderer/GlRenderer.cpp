@@ -369,6 +369,30 @@ void PathsRenderer::CentreCam(const std::string& objid)
 
 
 /**
+ * set the normal vector of the selection plane
+ */
+void PathsRenderer::SetSelectionPlaneNorm(const t_vec3_gl& vec)
+{
+	const t_real_gl len = tl2::norm<t_vec3_gl>(vec);
+
+	if(!tl2::equals_0<t_real_gl>(len, t_real_gl(g_eps)))
+	{
+		m_selectionPlaneNorm = vec;
+		m_selectionPlaneNorm /= len;
+	}
+}
+
+
+/**
+ * set the distance of the selection plane
+ */
+void PathsRenderer::SetSelectionPlaneDist(t_real_gl d)
+{
+	m_selectionPlaneDist = d;
+}
+
+
+/**
  * set light position
  */
 void PathsRenderer::SetLight(std::size_t idx, const t_vec3_gl& pos)
@@ -479,11 +503,17 @@ void PathsRenderer::UpdateLights()
 
 
 /**
- * enable or disable the mouse picker
+ * get the position of the mouse cursor on the selection plane
  */
-void PathsRenderer::EnablePicker(bool b)
+std::tuple<t_vec3_gl, int> PathsRenderer::GetSelectionPlaneCursor() const
 {
-	m_pickerEnabled = b;
+	auto [org3, dir3] = m_cam.GetPickerRay(m_posMouse.x(), m_posMouse.y());
+
+	auto[inters, inters_type, inters_lam] =
+		tl2::intersect_line_plane<t_vec3_gl>(
+			org3, dir3, m_selectionPlaneNorm, m_selectionPlaneDist);
+
+	return std::make_tuple(inters, inters_type);
 }
 
 
@@ -492,27 +522,21 @@ void PathsRenderer::EnablePicker(bool b)
  */
 void PathsRenderer::UpdatePicker()
 {
-	if(!m_initialised || !m_pickerEnabled)
+	if(!m_initialised)
 		return;
 
 	// picker ray
 	auto [org3, dir3] = m_cam.GetPickerRay(m_posMouse.x(), m_posMouse.y());
 
+
 	// cursor coordinates (intersection with selection plane)
+	if(auto [cursor_pos, inters_type] = GetSelectionPlaneCursor(); inters_type)
 	{
-		auto[inters, inters_type, inters_lam] =
-			tl2::intersect_line_plane<t_vec_gl>(
-				org3, dir3, m_selectionPlaneNorm, m_selectionPlaneD);
+		// save intersections with selection plane for drawing objects
+		emit CursorCoordsChanged(cursor_pos[0], cursor_pos[1], cursor_pos[2]);
 
-		if(inters_type)
-		{
-			// save intersections with selection plane for drawing objects
-			m_cursor = inters;
-			emit CursorCoordsChanged(inters[0], inters[1], inters[2]);
-
-			if(m_light_follows_cursor)
-				SetLight(0, tl2::create<t_vec3_gl>({inters[0], inters[1], 10}));
-		}
+		if(m_light_follows_cursor)
+			SetLight(0, tl2::create<t_vec3_gl>({cursor_pos[0], cursor_pos[1], 10}));
 	}
 
 
@@ -1386,8 +1410,7 @@ void PathsRenderer::mouseMoveEvent(QMouseEvent *pEvt)
 	// an object is being dragged
 	if(m_draggedObj != "")
 	{
-		emit ObjectDragged(false, m_draggedObj,
-			m_dragstartcursor, m_cursor);
+		emit ObjectDragged(false, m_draggedObj);
 	}
 
 	m_mouseMovedBetweenDownAndUp = true;
@@ -1424,10 +1447,7 @@ void PathsRenderer::mousePressEvent(QMouseEvent *pEvt)
 	if(m_mouseDown[0] && m_draggedObj == "")
 	{
 		m_draggedObj = m_curObj;
-		m_dragstartcursor = m_cursor;
-
-		emit ObjectDragged(true, m_draggedObj,
-			m_dragstartcursor, m_cursor);
+		emit ObjectDragged(true, m_draggedObj);
 	}
 
 	// middle mouse button pressed

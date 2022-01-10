@@ -227,6 +227,34 @@ void Scene::DragObject(bool drag_start, const std::string& objid,
 
 
 /**
+ * find the object with the given id
+ */
+std::shared_ptr<Geometry> Scene::FindObject(const std::string& objid)
+{
+	const Scene* _this = this;
+	return std::const_pointer_cast<Geometry>(_this->FindObject(objid));
+}
+
+
+/**
+ * find the object with the given id
+ */
+std::shared_ptr<const Geometry> Scene::FindObject(const std::string& objid) const
+{
+	if(auto iter = std::find_if(m_objs.begin(), m_objs.end(),
+		[&objid](const std::shared_ptr<Geometry>& obj) -> bool
+		{
+			return obj->GetId() == objid;
+		}); iter != m_objs.end())
+	{
+		return *iter;
+	}
+
+	return nullptr;
+}
+
+
+/**
  * load a scene definition from a property tree
  */
 std::pair<bool, std::string> Scene::load(
@@ -291,13 +319,9 @@ std::pair<bool, std::string> Scene::load(
 std::vector<ObjectProperty> Scene::GetProperties(const std::string& objid) const
 {
 	// find the object with the given id
-	if(auto iter = std::find_if(m_objs.begin(), m_objs.end(),
-		[&objid](const std::shared_ptr<Geometry>& obj) -> bool
-		{
-			return obj->GetId() == objid;
-		}); iter != m_objs.end())
+	if(std::shared_ptr<const Geometry> obj = FindObject(objid); obj)
 	{
-		return (*iter)->GetProperties();
+		return obj->GetProperties();
 	}
 
 	return {};
@@ -311,14 +335,10 @@ std::tuple<bool, std::shared_ptr<Geometry>> Scene::SetProperties(
 	const std::string& objid, const std::vector<ObjectProperty>& props)
 {
 	// find the object with the given id
-	if(auto iter = std::find_if(m_objs.begin(), m_objs.end(),
-		[&objid](const std::shared_ptr<Geometry>& obj) -> bool
-		{
-			return obj->GetId() == objid;
-		}); iter != m_objs.end())
+	if(const std::shared_ptr<Geometry> obj = FindObject(objid); obj)
 	{
-		(*iter)->SetProperties(props);
-		return std::make_tuple(true, *iter);
+		obj->SetProperties(props);
+		return std::make_tuple(true, obj);
 	}
 
 	return std::make_tuple(false, nullptr);

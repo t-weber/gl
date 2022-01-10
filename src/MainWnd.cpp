@@ -1161,22 +1161,24 @@ void PathsTool::CursorCoordsChanged(t_real_gl x, t_real_gl y, t_real_gl z)
  */
 void PathsTool::PickerIntersection([[maybe_unused]] const t_vec3_gl* pos, std::string obj_name)
 {
+	if(pos)
+		m_curInters = *pos;
 	m_curObj = obj_name;
 	UpdateStatusLabel();
 }
 
 
 /**
- * clicked on an object
+ * clicked on an object in the scene
  */
 void PathsTool::ObjectClicked(const std::string& obj,
 	[[maybe_unused]] bool left, bool middle, bool right)
 {
-	if(!m_renderer)
+	if(!m_renderer || obj == "")
 		return;
 
 	// show context menu for object
-	if(right && obj != "")
+	if(right)
 	{
 		m_curContextObj = obj;
 
@@ -1195,13 +1197,48 @@ void PathsTool::ObjectClicked(const std::string& obj,
 
 
 /**
- * dragging an object
+ * dragging an object in the scene
  */
-void PathsTool::ObjectDragged(bool drag_start, const std::string& obj,
-	const t_vec_gl& start, const t_vec_gl& pos)
+void PathsTool::ObjectDragged(bool drag_start, const std::string& objid)
 {
-	m_scene.DragObject(drag_start, obj,
-		tl2::convert<t_vec>(start), tl2::convert<t_vec>(pos));
+	//const std::shared_ptr<Geometry> obj = m_scene.FindObject(objid);
+
+	if(!m_renderer /*|| !obj*/)
+		return;
+
+	t_vec3_gl cursor;
+
+	if(drag_start)
+	{
+		// set the selection plane distance to the dragged object's position
+		const t_vec3_gl& plane_norm = m_renderer->GetSelectionPlaneNorm();
+		t_vec3_gl proj = tl2::ortho_project<t_vec3_gl>(m_curInters, plane_norm, true);
+		t_real_gl dist = tl2::norm<t_vec3_gl>(m_curInters - proj);
+
+		//std::cout << "pos : " << m_curInters[0] << " " << m_curInters[1] << " " << m_curInters[2] << std::endl;
+		//std::cout << "norm: " << plane_norm[0] << " " << plane_norm[1] << " " << plane_norm[2] << std::endl;
+		//std::cout << "proj: " << proj[0] << " " << proj[1] << " " << proj[2] << std::endl;
+		//std::cout << std::endl;
+
+		m_renderer->SetSelectionPlaneDist(dist);
+		if(m_selProperties)
+			m_selProperties->GetWidget()->SetPlaneDist(dist);
+
+		// get mouse cursor position on selection plane
+		if(auto[inters_cursor, inters_type] = m_renderer->GetSelectionPlaneCursor(); inters_type)
+		{
+			cursor = inters_cursor;
+			m_drag_start = tl2::convert<t_vec>(cursor);
+		}
+	}
+	else
+	{
+		if(auto[inters_cursor, inters_type] = m_renderer->GetSelectionPlaneCursor(); inters_type)
+			cursor = inters_cursor;
+	}
+
+	m_scene.DragObject(drag_start, objid,
+		m_drag_start, tl2::convert<t_vec>(cursor));
 }
 
 

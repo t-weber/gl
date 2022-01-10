@@ -116,7 +116,9 @@ private:
 	Scene m_scene{};
 
 	// mouse picker
-	t_real m_mouseX{}, m_mouseY{}, m_mouseZ{};;
+	t_vec m_drag_start = tl2::create<t_vec>({0, 0, 0});
+	t_real m_mouseX{}, m_mouseY{}, m_mouseZ{};
+	t_vec3_gl m_curInters = tl2::create<t_vec3_gl>({0, 0, 0});
 	std::string m_curObj{};
 
 
@@ -165,8 +167,7 @@ protected slots:
 	void ObjectClicked(const std::string& obj, bool left, bool middle, bool right);
 
 	// dragging an object
-	void ObjectDragged(bool drag_start, const std::string& obj,
-		const t_vec_gl& start, const t_vec_gl& pos);
+	void ObjectDragged(bool drag_start, const std::string& obj);
 
 	// set temporary status message, by default for 2 seconds
 	void SetTmpStatus(const std::string& msg, int msg_duration=2000);

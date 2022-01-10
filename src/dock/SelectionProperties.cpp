@@ -43,6 +43,16 @@ SelectionPropertiesWidget::SelectionPropertiesWidget(QWidget *parent)
 	m_spinPlaneDist->setValue(0.);
 	m_spinPlaneDist->setToolTip("Selection plane distance.");
 
+	QPushButton* btnPlaneNorm[3];
+	const char* pos_btn[] = {"[100]", "[010]", "[001]"};
+	for(int pos=0; pos<3; ++pos)
+	{
+		btnPlaneNorm[pos] = new QPushButton(this);
+		btnPlaneNorm[pos]->setText(pos_btn[pos]);
+		btnPlaneNorm[pos]->setToolTip(
+			QString("Set selection plane normal to %1.").arg(pos_btn[pos]));
+	}
+
 	auto *groupVecs = new QGroupBox("Selection Plane", this);
 	{
 		auto *layoutVecs = new QGridLayout(groupVecs);
@@ -57,13 +67,17 @@ SelectionPropertiesWidget::SelectionPropertiesWidget(QWidget *parent)
 		layoutVecs->addWidget(m_spinPlaneNorm[1], y, 2, 1, 2);
 		layoutVecs->addWidget(m_spinPlaneNorm[2], y++, 4, 1, 2);
 
-		//QFrame *separator = new QFrame(this);
-		//separator->setFrameStyle(QFrame::HLine);
-		//layoutVecs->addWidget(separator, y++, 0, 1, 6);
-
 		layoutVecs->addWidget(new QLabel("Distance:", this),
 			y, 0, 1, 3);
 		layoutVecs->addWidget(m_spinPlaneDist, y++, 3, 1, 3);
+
+		QFrame *separator = new QFrame(this);
+		separator->setFrameStyle(QFrame::HLine);
+		layoutVecs->addWidget(separator, y++, 0, 1, 6);
+
+		layoutVecs->addWidget(btnPlaneNorm[0], y, 0, 1, 2);
+		layoutVecs->addWidget(btnPlaneNorm[1], y, 2, 1, 2);
+		layoutVecs->addWidget(btnPlaneNorm[2], y++, 4, 1, 2);
 	}
 
 	auto *grid = new QGridLayout(this);
@@ -73,7 +87,8 @@ SelectionPropertiesWidget::SelectionPropertiesWidget(QWidget *parent)
 
 	int y = 0;
 	grid->addWidget(groupVecs, y++, 0, 1, 1);
-	grid->addItem(new QSpacerItem(1, 1, QSizePolicy::Minimum, QSizePolicy::Expanding), y++, 0, 1, 1);
+	grid->addItem(new QSpacerItem(1, 1, 
+		QSizePolicy::Minimum, QSizePolicy::Expanding), y++, 0, 1, 1);
 
 	// plane distance
 	connect(m_spinPlaneDist,
@@ -97,6 +112,39 @@ SelectionPropertiesWidget::SelectionPropertiesWidget(QWidget *parent)
 				}
 
 				emit PlaneNormChanged(pos[0], pos[1], pos[2]);
+			});
+
+		connect(btnPlaneNorm[i], &QAbstractButton::clicked,
+			[this, i]() -> void
+			{
+				this->blockSignals(true);
+				m_spinPlaneDist->setValue(0.);
+
+				switch(i)
+				{
+					case 0:
+						m_spinPlaneNorm[0]->setValue(1.);
+						m_spinPlaneNorm[1]->setValue(0.);
+						m_spinPlaneNorm[2]->setValue(0.);
+						break;
+					case 1:
+						m_spinPlaneNorm[0]->setValue(0.);
+						m_spinPlaneNorm[1]->setValue(1.);
+						m_spinPlaneNorm[2]->setValue(0.);
+						break;
+					case 2:
+						m_spinPlaneNorm[0]->setValue(0.);
+						m_spinPlaneNorm[1]->setValue(0.);
+						m_spinPlaneNorm[2]->setValue(1.);
+						break;
+				}
+
+				this->blockSignals(false);
+				emit PlaneNormChanged(
+					m_spinPlaneNorm[0]->value(),
+					m_spinPlaneNorm[1]->value(),
+					m_spinPlaneNorm[2]->value());
+				emit PlaneDistChanged(m_spinPlaneDist->value());
 			});
 	}
 }

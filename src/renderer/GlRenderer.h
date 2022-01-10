@@ -117,11 +117,12 @@ public:
 	t_cam& GetCamera() { return m_cam; }
 	void CentreCam(const std::string& obj);
 
-	void SetSelectionPlaneNorm(const t_vec_gl& vec) { m_selectionPlaneNorm = vec; }
-	void SetSelectionPlaneDist(t_real_gl d) { m_selectionPlaneD = d; }
-	const t_vec_gl& GetSelectionPlaneNorm() const { return m_selectionPlaneNorm; }
-	t_real_gl GetSelectionPlaneDist() const { return m_selectionPlaneD; }
+	void SetSelectionPlaneNorm(const t_vec3_gl& vec);
+	void SetSelectionPlaneDist(t_real_gl d);
+	const t_vec3_gl& GetSelectionPlaneNorm() const { return m_selectionPlaneNorm; }
+	t_real_gl GetSelectionPlaneDist() const { return m_selectionPlaneDist; }
 
+	std::tuple<t_vec3_gl, int> GetSelectionPlaneCursor() const;
 	QPoint GetMousePosition(bool global_pos = false) const;
 
 	void SaveShadowFramebuffer(const std::string& filename) const;
@@ -210,9 +211,7 @@ protected:
 	std::string m_strGlVer{}, m_strGlShaderVer{},
 		m_strGlVendor{}, m_strGlRenderer{};
 
-	// cursor coordinates and object under cursor
-	t_vec_gl m_cursor = tl2::create<t_vec_gl>({0., 0., 0.});
-	t_vec_gl m_dragstartcursor = tl2::create<t_vec_gl>({0., 0., 0.});
+	// object under cursor
 	std::string m_curObj{}, m_draggedObj{};
 	bool m_light_follows_cursor = false;
 
@@ -226,7 +225,6 @@ protected:
 	t_cam m_lightcam{};
 
 	std::atomic<bool> m_initialised = false;
-	std::atomic<bool> m_pickerEnabled = true;
 	std::atomic<bool> m_pickerNeedsUpdate = false;
 	std::atomic<bool> m_lightsNeedUpdate = true;
 	std::atomic<bool> m_perspectiveNeedsUpdate = true;
@@ -245,8 +243,8 @@ protected:
 	t_textures m_textures{};
 
 	// cursor
-	t_vec_gl m_selectionPlaneNorm = tl2::create<t_vec_gl>({0, 0, 1});
-	t_real_gl m_selectionPlaneD = 0;
+	t_vec3_gl m_selectionPlaneNorm = tl2::create<t_vec3_gl>({0, 0, 1});
+	t_real_gl m_selectionPlaneDist = 0;
 	QPointF m_posMouse{};
 	QPointF m_posMouseRotationStart{}, m_posMouseRotationEnd{};
 	bool m_inRotation = false;
@@ -256,7 +254,6 @@ protected:
 
 
 public slots:
-	void EnablePicker(bool b);
 	void EnableTimer(bool enable=true);
 
 	void EnableTextures(bool b);
@@ -267,8 +264,7 @@ signals:
 	void AfterGLInitialisation();
 
 	void ObjectClicked(const std::string& obj, bool left, bool mid, bool right);
-	void ObjectDragged(bool drag_start, const std::string& obj,
-		const t_vec_gl& start, const t_vec_gl& pos);
+	void ObjectDragged(bool drag_start, const std::string& obj);
 
 	void CursorCoordsChanged(t_real_gl x, t_real_gl y, t_real_gl z);
 	void PickerIntersection(const t_vec3_gl* pos, std::string obj_name);

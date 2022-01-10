@@ -40,6 +40,8 @@ public:
 	bool RenameObject(const std::string& oldid, const std::string& newid);
 	std::tuple<bool, std::shared_ptr<Geometry>> RotateObject(const std::string& id, t_real angle, char axis='x');
 
+	std::shared_ptr<Geometry> FindObject(const std::string& id);
+	std::shared_ptr<const Geometry> FindObject(const std::string& id) const;
 	const std::vector<std::shared_ptr<Geometry>>& GetObjects() const { return m_objs; }
 
 	void DragObject(bool drag_start, const std::string& obj,
