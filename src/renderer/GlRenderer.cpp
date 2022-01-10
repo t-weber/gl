@@ -1155,7 +1155,7 @@ void PathsRenderer::DoPaintGL(qgl_funcs *pGl)
 
 
 		// main vertex array object
-		obj.m_pvertexarr->bind();
+		obj.m_vertex_array->bind();
 
 		// bind vertex attribute arrays
 		BOOST_SCOPE_EXIT(pGl, &obj, &m_attrVertex, &m_attrVertexNorm, &m_attrVertexCol, &m_attrTexCoords)

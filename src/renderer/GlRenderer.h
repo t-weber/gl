@@ -25,9 +25,8 @@
 #include <QtGui/QMouseEvent>
 
 #include "tlibs2/libs/maths.h"
-
-#include "gl.h"
-#include "Camera.h"
+#include "tlibs2/libs/cam.h"
+#include "tlibs2/libs/qt/gl.h"
 
 #include "src/Scene.h"
 

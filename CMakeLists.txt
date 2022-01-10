@@ -195,8 +195,6 @@ add_executable(glscene
 	src/common/Recent.cpp src/common/Recent.h
 
 	src/renderer/GlRenderer.cpp src/renderer/GlRenderer.h
-	src/renderer/gl.cpp src/renderer/gl.h
-	src/renderer/Camera.h
 
 	src/dock/CamProperties.cpp src/dock/CamProperties.h
 	src/dock/SelectionProperties.cpp src/dock/SelectionProperties.h
@@ -209,6 +207,9 @@ add_executable(glscene
 	src/Geometry.cpp src/Geometry.h
 	src/Scene.cpp src/Scene.h
 	src/types.h
+
+	tlibs2/libs/qt/gl.cpp tlibs2/libs/qt/gl.h
+	tlibs2/libs/maths.h tlibs2/libs/cam.h
 )
 
 
