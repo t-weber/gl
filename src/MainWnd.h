@@ -176,6 +176,7 @@ protected slots:
 	void UpdateStatusLabel();
 
 	// add or delete 3d objects
+	void AddPlane();
 	void AddCuboid();
 	void AddSphere();
 	void AddCylinder();

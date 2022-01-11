@@ -160,6 +160,19 @@ const t_mat& Geometry::GetTrafo() const
 }
 
 
+t_vec Geometry::GetCentre() const
+{
+	return m_pos;
+}
+
+
+void Geometry::SetCentre(const t_vec& vec)
+{
+	m_pos = vec;
+	m_trafo_needs_update = true;
+}
+
+
 std::tuple<bool, std::vector<std::shared_ptr<Geometry>>>
 Geometry::load(const pt::ptree& prop)
 {
@@ -371,31 +384,6 @@ BoxGeometry::~BoxGeometry()
 }
 
 
-t_vec BoxGeometry::GetCentre() const
-{
-	using namespace tl2_ops;
-
-	t_vec centre = GetTrafo() * tl2::create<t_vec>({0, 0, 0, 1});
-	centre.resize(3);
-
-	return centre;
-}
-
-
-void BoxGeometry::SetCentre(const t_vec& vec)
-{
-	using namespace tl2_ops;
-
-	t_vec oldcentre = GetCentre();
-	t_vec newcentre = vec;
-	newcentre.resize(3);
-
-	m_pos += (newcentre - oldcentre);
-
-	m_trafo_needs_update = true;
-}
-
-
 bool BoxGeometry::Load(const pt::ptree& prop)
 {
 	if(!Geometry::Load(prop))
@@ -475,6 +463,105 @@ void BoxGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 
 
 // ----------------------------------------------------------------------------
+// plane
+// ----------------------------------------------------------------------------
+
+PlaneGeometry::PlaneGeometry()
+{
+}
+
+
+PlaneGeometry::~PlaneGeometry()
+{
+}
+
+
+bool PlaneGeometry::Load(const pt::ptree& prop)
+{
+	if(!Geometry::Load(prop))
+		return false;
+
+	// normal
+	if(auto optPos = prop.get_optional<std::string>("normal"); optPos)
+	{
+		m_norm = geo_str_to_vec(*optPos);
+		if(m_norm.size() < 3)
+			m_norm.resize(3);
+	}
+
+	m_width = prop.get<t_real>("width", 0.1);
+	m_height = prop.get<t_real>("height", 1.);
+
+	m_trafo_needs_update = true;
+	return true;
+}
+
+
+pt::ptree PlaneGeometry::Save() const
+{
+	pt::ptree prop = Geometry::Save();
+
+	prop.put<std::string>("normal", geo_vec_to_str(m_norm));
+	prop.put<t_real>("width", m_width);
+	prop.put<t_real>("height", m_height);
+
+	pt::ptree propPlane;
+	propPlane.put_child("plane", prop);
+	return propPlane;
+}
+
+
+std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
+PlaneGeometry::GetTriangles() const
+{
+	auto solid = tl2::create_plane<t_mat, t_vec>(m_norm, m_width*0.5, m_height*0.5);
+	auto [verts, norms, uvs] = tl2::create_triangles<t_vec>(solid);
+
+	//tl2::transform_obj(verts, norms, mat, true);
+	return std::make_tuple(verts, norms, uvs);
+}
+
+
+/**
+ * obtain all defining properties of the geometry object
+ */
+std::vector<ObjectProperty> PlaneGeometry::GetProperties() const
+{
+	std::vector<ObjectProperty> props = Geometry::GetProperties();
+
+	props.emplace_back(ObjectProperty{.key="normal", .value=m_norm});
+	props.emplace_back(ObjectProperty{.key="width", .value=m_width});
+	props.emplace_back(ObjectProperty{.key="height", .value=m_height});
+
+	return props;
+}
+
+
+/**
+ * set the properties of the geometry object
+ */
+void PlaneGeometry::SetProperties(const std::vector<ObjectProperty>& props)
+{
+	Geometry::SetProperties(props);
+
+	for(const auto& prop : props)
+	{
+		if(prop.key == "normal")
+			m_norm = std::get<t_vec>(prop.value);
+		else if(prop.key == "width")
+			m_width = std::get<t_real>(prop.value);
+		else if(prop.key == "height")
+			m_height = std::get<t_real>(prop.value);
+	}
+
+	m_trafo_needs_update = true;
+}
+
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
 // cylinder
 // ----------------------------------------------------------------------------
 
@@ -485,31 +572,6 @@ CylinderGeometry::CylinderGeometry()
 
 CylinderGeometry::~CylinderGeometry()
 {
-}
-
-
-t_vec CylinderGeometry::GetCentre() const
-{
-	using namespace tl2_ops;
-
-	t_vec centre = GetTrafo() * tl2::create<t_vec>({0, 0, 0, 1});
-	centre.resize(3);
-
-	return centre;
-}
-
-
-void CylinderGeometry::SetCentre(const t_vec& vec)
-{
-	using namespace tl2_ops;
-
-	t_vec oldcentre = GetCentre();
-	t_vec newcentre = vec;
-	newcentre.resize(3);
-
-	m_pos += (newcentre - oldcentre);
-
-	m_trafo_needs_update = true;
 }
 
 
@@ -600,31 +662,6 @@ SphereGeometry::~SphereGeometry()
 }
 
 
-t_vec SphereGeometry::GetCentre() const
-{
-	using namespace tl2_ops;
-
-	t_vec centre = GetTrafo() * tl2::create<t_vec>({0, 0, 0, 1});
-	centre.resize(3);
-
-	return centre;
-}
-
-
-void SphereGeometry::SetCentre(const t_vec& vec)
-{
-	using namespace tl2_ops;
-
-	t_vec oldcentre = GetCentre();
-	t_vec newcentre = vec;
-	newcentre.resize(3);
-
-	m_pos += (newcentre - oldcentre);
-
-	m_trafo_needs_update = true;
-}
-
-
 bool SphereGeometry::Load(const pt::ptree& prop)
 {
 	if(!Geometry::Load(prop))
@@ -712,31 +749,6 @@ TetrahedronGeometry::~TetrahedronGeometry()
 }
 
 
-t_vec TetrahedronGeometry::GetCentre() const
-{
-	using namespace tl2_ops;
-
-	t_vec centre = GetTrafo() * tl2::create<t_vec>({0, 0, 0, 1});
-	centre.resize(3);
-
-	return centre;
-}
-
-
-void TetrahedronGeometry::SetCentre(const t_vec& vec)
-{
-	using namespace tl2_ops;
-
-	t_vec oldcentre = GetCentre();
-	t_vec newcentre = vec;
-	newcentre.resize(3);
-
-	m_pos += (newcentre - oldcentre);
-
-	m_trafo_needs_update = true;
-}
-
-
 bool TetrahedronGeometry::Load(const pt::ptree& prop)
 {
 	if(!Geometry::Load(prop))
@@ -815,31 +827,6 @@ OctahedronGeometry::OctahedronGeometry()
 
 OctahedronGeometry::~OctahedronGeometry()
 {
-}
-
-
-t_vec OctahedronGeometry::GetCentre() const
-{
-	using namespace tl2_ops;
-
-	t_vec centre = GetTrafo() * tl2::create<t_vec>({0, 0, 0, 1});
-	centre.resize(3);
-
-	return centre;
-}
-
-
-void OctahedronGeometry::SetCentre(const t_vec& vec)
-{
-	using namespace tl2_ops;
-
-	t_vec oldcentre = GetCentre();
-	t_vec newcentre = vec;
-	newcentre.resize(3);
-
-	m_pos += (newcentre - oldcentre);
-
-	m_trafo_needs_update = true;
 }
 
 
@@ -924,31 +911,6 @@ DodecahedronGeometry::~DodecahedronGeometry()
 }
 
 
-t_vec DodecahedronGeometry::GetCentre() const
-{
-	using namespace tl2_ops;
-
-	t_vec centre = GetTrafo() * tl2::create<t_vec>({0, 0, 0, 1});
-	centre.resize(3);
-
-	return centre;
-}
-
-
-void DodecahedronGeometry::SetCentre(const t_vec& vec)
-{
-	using namespace tl2_ops;
-
-	t_vec oldcentre = GetCentre();
-	t_vec newcentre = vec;
-	newcentre.resize(3);
-
-	m_pos += (newcentre - oldcentre);
-
-	m_trafo_needs_update = true;
-}
-
-
 bool DodecahedronGeometry::Load(const pt::ptree& prop)
 {
 	if(!Geometry::Load(prop))
@@ -1027,31 +989,6 @@ IcosahedronGeometry::IcosahedronGeometry()
 
 IcosahedronGeometry::~IcosahedronGeometry()
 {
-}
-
-
-t_vec IcosahedronGeometry::GetCentre() const
-{
-	using namespace tl2_ops;
-
-	t_vec centre = GetTrafo() * tl2::create<t_vec>({0, 0, 0, 1});
-	centre.resize(3);
-
-	return centre;
-}
-
-
-void IcosahedronGeometry::SetCentre(const t_vec& vec)
-{
-	using namespace tl2_ops;
-
-	t_vec oldcentre = GetCentre();
-	t_vec newcentre = vec;
-	newcentre.resize(3);
-
-	m_pos += (newcentre - oldcentre);
-
-	m_trafo_needs_update = true;
 }
 
 

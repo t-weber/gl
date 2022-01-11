@@ -76,8 +76,8 @@ public:
 	virtual const std::string& GetId() const { return m_id; }
 	virtual void SetId(const std::string& id) { m_id = id; }
 
-	virtual t_vec GetCentre() const = 0;
-	virtual void SetCentre(const t_vec& vec) = 0;
+	virtual t_vec GetCentre() const;
+	virtual void SetCentre(const t_vec& vec);
 
 	virtual const t_vec& GetColour() const { return m_colour; }
 	virtual void SetColour(const t_vec& col) { m_colour = col; }
@@ -110,6 +110,40 @@ protected:
 
 
 // ----------------------------------------------------------------------------
+// plane
+// ----------------------------------------------------------------------------
+class PlaneGeometry : public Geometry
+{
+public:
+	PlaneGeometry();
+	virtual ~PlaneGeometry();
+
+	virtual bool Load(const boost::property_tree::ptree& prop) override;
+	virtual boost::property_tree::ptree Save() const override;
+
+	virtual std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
+	GetTriangles() const override;
+
+	const t_vec& GetNormal() const { return m_norm; }
+	t_real GetWidth() const { return m_width; }
+	t_real GetHeight() const { return m_height; }
+
+	void SetNormal(const t_vec& n)  { m_norm = n; m_trafo_needs_update = true; }
+	void SetWidth(t_real w)  { m_width = w; m_trafo_needs_update = true; }
+	void SetHeight(t_real h) { m_height = h; m_trafo_needs_update = true; }
+
+	virtual std::vector<ObjectProperty> GetProperties() const override;
+	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
+
+private:
+	t_vec m_norm = tl2::create<t_vec>({0, 0, 1});
+	t_real m_width = 0, m_height = 0;
+};
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
 // box
 // ----------------------------------------------------------------------------
 class BoxGeometry : public Geometry
@@ -123,9 +157,6 @@ public:
 
 	virtual std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 	GetTriangles() const override;
-
-	virtual t_vec GetCentre() const override;
-	virtual void SetCentre(const t_vec& vec) override;
 
 	t_real GetHeight() const { return m_height; }
 	t_real GetDepth() const { return m_depth; }
@@ -156,9 +187,6 @@ public:
 
 	virtual bool Load(const boost::property_tree::ptree& prop) override;
 	virtual boost::property_tree::ptree Save() const override;
-
-	virtual t_vec GetCentre() const override;
-	virtual void SetCentre(const t_vec& vec) override;
 
 	virtual std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 		GetTriangles() const override;
@@ -194,9 +222,6 @@ public:
 	virtual bool Load(const boost::property_tree::ptree& prop) override;
 	virtual boost::property_tree::ptree Save() const override;
 
-	virtual t_vec GetCentre() const override;
-	virtual void SetCentre(const t_vec& vec) override;
-
 	virtual std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 	GetTriangles() const override;
 
@@ -227,9 +252,6 @@ public:
 
 	virtual bool Load(const boost::property_tree::ptree& prop) override;
 	virtual boost::property_tree::ptree Save() const override;
-
-	virtual t_vec GetCentre() const override;
-	virtual void SetCentre(const t_vec& vec) override;
 
 	virtual std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 	GetTriangles() const override;
@@ -262,9 +284,6 @@ public:
 	virtual bool Load(const boost::property_tree::ptree& prop) override;
 	virtual boost::property_tree::ptree Save() const override;
 
-	virtual t_vec GetCentre() const override;
-	virtual void SetCentre(const t_vec& vec) override;
-
 	virtual std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 	GetTriangles() const override;
 
@@ -296,9 +315,6 @@ public:
 	virtual bool Load(const boost::property_tree::ptree& prop) override;
 	virtual boost::property_tree::ptree Save() const override;
 
-	virtual t_vec GetCentre() const override;
-	virtual void SetCentre(const t_vec& vec) override;
-
 	virtual std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 	GetTriangles() const override;
 
@@ -329,9 +345,6 @@ public:
 
 	virtual bool Load(const boost::property_tree::ptree& prop) override;
 	virtual boost::property_tree::ptree Save() const override;
-
-	virtual t_vec GetCentre() const override;
-	virtual void SetCentre(const t_vec& vec) override;
 
 	virtual std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 	GetTriangles() const override;

@@ -368,6 +368,8 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 	// geometry menu
 	QMenu *menuGeo = new QMenu("Geometry", m_menubar);
 
+	QAction *actionAddPlane = new QAction(
+		QIcon::fromTheme("insert-object"), "Add Plane", menuGeo);
 	QAction *actionAddCuboid = new QAction(
 		QIcon::fromTheme("insert-object"), "Add Cube", menuGeo);
 	QAction *actionAddSphere = new QAction(
@@ -388,6 +390,7 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 	QAction *actionTextureBrowser = new QAction(
 		QIcon::fromTheme("image-x-generic"), "Texture Browser...", menuGeo);
 
+	connect(actionAddPlane, &QAction::triggered, this, &PathsTool::AddPlane);
 	connect(actionAddCuboid, &QAction::triggered, this, &PathsTool::AddCuboid);
 	connect(actionAddSphere, &QAction::triggered, this, &PathsTool::AddSphere);
 	connect(actionAddCylinder, &QAction::triggered, this, &PathsTool::AddCylinder);
@@ -398,6 +401,7 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 	connect(actionGeoBrowser, &QAction::triggered, this, &PathsTool::ShowGeometryBrowser);
 	connect(actionTextureBrowser, &QAction::triggered, this, &PathsTool::ShowTextureBrowser);
 
+	menuGeo->addAction(actionAddPlane);
 	menuGeo->addAction(actionAddCuboid);
 	menuGeo->addAction(actionAddSphere);
 	menuGeo->addAction(actionAddCylinder);
@@ -1212,8 +1216,12 @@ void PathsTool::ObjectDragged(bool drag_start, const std::string& objid)
 	{
 		// set the selection plane distance to the dragged object's position
 		const t_vec3_gl& plane_norm = m_renderer->GetSelectionPlaneNorm();
-		t_vec3_gl proj = tl2::ortho_project<t_vec3_gl>(m_curInters, plane_norm, true);
-		t_real_gl dist = tl2::norm<t_vec3_gl>(m_curInters - proj);
+		t_vec3_gl proj = tl2::ortho_project<t_vec3_gl>(
+			m_curInters, plane_norm, true);
+		t_vec3_gl diff = m_curInters - proj;
+		t_real_gl dist = tl2::norm<t_vec3_gl>(diff);
+		if(tl2::inner<t_vec3_gl>(diff, plane_norm) < 0.)
+			dist = -dist;
 
 		//std::cout << "pos : " << m_curInters[0] << " " << m_curInters[1] << " " << m_curInters[2] << std::endl;
 		//std::cout << "norm: " << plane_norm[0] << " " << plane_norm[1] << " " << plane_norm[2] << std::endl;
@@ -1322,6 +1330,34 @@ void PathsTool::InitSettings()
 		m_renderer->SetLightFollowsCursor(g_light_follows_cursor);
 		m_renderer->EnableShadowRendering(g_enable_shadow_rendering);
 	}
+}
+
+
+/**
+ * add a plane to the scene
+ */
+void PathsTool::AddPlane()
+{
+	auto plane = std::make_shared<PlaneGeometry>();
+	plane->SetWidth(2.);
+	plane->SetHeight(2.);
+	plane->SetCentre(tl2::create<t_vec>({0, 0, 0}));
+	plane->UpdateTrafo();
+
+	static std::size_t cnt = 1;
+	std::ostringstream ostrId;
+	ostrId << "plane " << cnt++;
+
+	// add plane to scene
+	m_scene.AddObject(std::vector<std::shared_ptr<Geometry>>{{plane}}, ostrId.str());
+
+	// update object browser tree
+	if(m_dlgGeoBrowser)
+		m_dlgGeoBrowser->UpdateGeoTree(m_scene);
+
+	// add a 3d representation of the plane
+	if(m_renderer)
+		m_renderer->AddObject(*plane);
 }
 
 
