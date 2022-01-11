@@ -520,6 +520,7 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 	actionSettings->setShortcut(QKeySequence::Preferences);
 	actionQuit->setShortcut(QKeySequence::Quit);
 	actionGeoBrowser->setShortcut(int(Qt::CTRL) | int(Qt::Key_B));
+	actionTextureBrowser->setShortcut(int(Qt::CTRL) | int(Qt::Key_T));
 
 
 	// menu bar
@@ -996,7 +997,7 @@ bool PathsTool::SaveFile(const QString &file)
 
 	// set format and version
 	prop.put(FILE_BASENAME "ident", APPL_IDENT);
-	prop.put(FILE_BASENAME "doi", "https://doi.org/10.5281/zenodo.4625649");
+	//prop.put(FILE_BASENAME "doi", "https://doi.org/10.5281/zenodo.4625649");
 	prop.put(FILE_BASENAME "timestamp", tl2::var_to_str(tl2::epoch<t_real>()));
 
 	// save texture list
@@ -1205,9 +1206,9 @@ void PathsTool::ObjectClicked(const std::string& obj,
  */
 void PathsTool::ObjectDragged(bool drag_start, const std::string& objid)
 {
-	//const std::shared_ptr<Geometry> obj = m_scene.FindObject(objid);
+	const std::shared_ptr<Geometry> obj = m_scene.FindObject(objid);
 
-	if(!m_renderer /*|| !obj*/)
+	if(!m_renderer || !obj)
 		return;
 
 	t_vec3_gl cursor;
@@ -1247,6 +1248,14 @@ void PathsTool::ObjectDragged(bool drag_start, const std::string& objid)
 
 	m_scene.DragObject(drag_start, objid,
 		m_drag_start, tl2::convert<t_vec>(cursor));
+
+
+	// if the object is a light, set its new position
+	if(objid == "light")
+	{
+		const t_vec& pos = obj->GetCentre();
+		m_renderer->SetLight(0, tl2::convert<t_vec3_gl>(pos));
+	}
 }
 
 

@@ -194,6 +194,14 @@ Geometry::load(const pt::ptree& prop)
 			if(box->Load(geo.second))
 				geo_objs.emplace_back(std::move(box));
 		}
+		else if(geotype == "plane")
+		{
+			auto plane = std::make_shared<PlaneGeometry>();
+			plane->m_id = geoid;
+
+			if(plane->Load(geo.second))
+				geo_objs.emplace_back(std::move(plane));
+		}
 		else if(geotype == "cylinder")
 		{
 			auto cyl = std::make_shared<CylinderGeometry>();
@@ -292,6 +300,7 @@ std::vector<ObjectProperty> Geometry::GetProperties() const
 
 	props.emplace_back(ObjectProperty{.key="position", .value=m_pos});
 	props.emplace_back(ObjectProperty{.key="rotation", .value=m_rot});
+	props.emplace_back(ObjectProperty{.key="fixed", .value=m_fixed});
 	props.emplace_back(ObjectProperty{.key="colour", .value=m_colour});
 	props.emplace_back(ObjectProperty{.key="texture", .value=m_texture});
 
@@ -310,6 +319,8 @@ void Geometry::SetProperties(const std::vector<ObjectProperty>& props)
 			m_pos = std::get<t_vec>(prop.value);
 		else if(prop.key == "rotation")
 			m_rot = std::get<t_mat>(prop.value);
+		else if(prop.key == "fixed")
+			m_fixed = std::get<bool>(prop.value);
 		else if(prop.key == "colour")
 			m_colour = std::get<t_vec>(prop.value);
 		else if(prop.key == "texture")
@@ -336,6 +347,10 @@ bool Geometry::Load(const pt::ptree& prop)
 		m_rot = geo_str_to_mat(*optRot);
 	}
 
+	// fixed
+	if(auto optFixed = prop.get_optional<bool>("fixed"); optFixed)
+		m_fixed = *optFixed;
+
 	// colour
 	if(auto col = prop.get_optional<std::string>("colour"); col)
 	{
@@ -361,6 +376,7 @@ pt::ptree Geometry::Save() const
 	prop.put<std::string>("<xmlattr>.id", GetId());
 	prop.put<std::string>("position", geo_vec_to_str(m_pos));
 	prop.put<std::string>("rotation", geo_mat_to_str(m_rot));
+	prop.put<std::string>("fixed", m_fixed ? "1" : "0");
 	prop.put<std::string>("colour", geo_vec_to_str(m_colour));
 	prop.put<std::string>("texture", m_texture);
 

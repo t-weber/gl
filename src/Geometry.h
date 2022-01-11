@@ -52,7 +52,7 @@ extern t_mat geo_str_to_mat(const std::string& str,
 struct ObjectProperty
 {
 	std::string key{};
-	std::variant<t_real, t_int, t_vec, t_mat, std::string> value{};
+	std::variant<t_real, t_int, bool, t_vec, t_mat, std::string> value{};
 };
 
 
@@ -79,6 +79,9 @@ public:
 	virtual t_vec GetCentre() const;
 	virtual void SetCentre(const t_vec& vec);
 
+	virtual bool IsFixed() const { return m_fixed; }
+	virtual void SetFixed(bool b) { m_fixed = b; }
+
 	virtual const t_vec& GetColour() const { return m_colour; }
 	virtual void SetColour(const t_vec& col) { m_colour = col; }
 
@@ -101,6 +104,7 @@ protected:
 
 	t_mat m_rot = tl2::unit<t_mat>(4);
 	t_vec m_pos = tl2::create<t_vec>({0, 0, 0});
+	bool m_fixed = false;
 
 	mutable bool m_trafo_needs_update = true;
 	mutable t_mat m_trafo = tl2::unit<t_mat>(4);

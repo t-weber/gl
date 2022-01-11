@@ -306,6 +306,25 @@ void GeometriesBrowser::GeoTreeCurrentItemChanged(QTreeWidgetItem *item, QTreeWi
 				new QTableWidgetItem(ostr.str().c_str()));
 		}
 
+		// boolean value
+		else if(std::holds_alternative<bool>(prop.value))
+		{
+			bool val = std::get<bool>(prop.value);
+
+			std::ostringstream ostr;
+			ostr.precision(g_prec);
+			ostr << val;
+
+			// type
+			auto* itemType = new QTableWidgetItem("boolean");
+			itemType->setFlags(itemType->flags() & ~Qt::ItemIsEditable);
+			m_geosettings->setItem(row, GEOBROWSER_SETTINGS_TYPE, itemType);
+
+			// value
+			m_geosettings->setItem(row, GEOBROWSER_SETTINGS_VALUE,
+				new QTableWidgetItem(ostr.str().c_str()));
+		}
+
 		// string value
 		else if(std::holds_alternative<std::string>(prop.value))
 		{
@@ -401,6 +420,14 @@ void GeometriesBrowser::GeoSettingsItemChanged(QTableWidgetItem *item)
 			if(!parser.parse(val))
 				throw std::logic_error("Could not parse integer expression.");
 			prop.value = parser.eval();
+		}
+
+		// boolean value
+		else if(ty == "boolean")
+		{
+			bool b;
+			std::istringstream{val} >> b;
+			prop.value = b;
 		}
 
 		// string value

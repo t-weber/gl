@@ -160,14 +160,9 @@ bool Scene::DeleteObject(const std::string& id)
  */
 bool Scene::RenameObject(const std::string& oldid, const std::string& newid)
 {
-	// find the object with the given id
-	if(auto iter = std::find_if(m_objs.begin(), m_objs.end(),
-		[&oldid](const std::shared_ptr<Geometry>& obj) -> bool
-		{
-			return obj->GetId() == oldid;
-		}); iter != m_objs.end())
+	if(auto obj = FindObject(oldid); obj)
 	{
-		(*iter)->SetId(newid);
+		obj->SetId(newid);
 		return true;
 	}
 
@@ -181,15 +176,10 @@ bool Scene::RenameObject(const std::string& oldid, const std::string& newid)
 std::tuple<bool, std::shared_ptr<Geometry>> 
 Scene::RotateObject(const std::string& id, t_real angle, char axis)
 {
-	// find the object with the given id
-	if(auto iter = std::find_if(m_objs.begin(), m_objs.end(), 
-		[&id](const std::shared_ptr<Geometry>& obj) -> bool
+	if(auto obj = FindObject(id); obj)
 	{
-		return obj->GetId() == id;
-	}); iter != m_objs.end())
-	{
-		(*iter)->Rotate(angle, axis);
-		return std::make_tuple(true, *iter);
+		obj->Rotate(angle, axis);
+		return std::make_tuple(true, obj);
 	}
 
 	return std::make_tuple(false, nullptr);
@@ -204,10 +194,10 @@ void Scene::DragObject(bool drag_start, const std::string& objid,
 {
 	bool obj_dragged = false;
 
-	for(auto& obj : GetObjects())
+	if(auto obj = FindObject(objid); obj)
 	{
-		if(obj->GetId() != objid)
-			continue;
+		if(obj->IsFixed())
+			return;
 
 		t_vec pos_obj = obj->GetCentre();
 		if(pos_obj.size() < pos_cur.size())
