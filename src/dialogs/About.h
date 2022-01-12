@@ -5,8 +5,8 @@
  * @license GPLv3, see 'LICENSE' file
  */
 
-#ifndef __TAKIN_PATHS_ABOUT_H__
-#define __TAKIN_PATHS_ABOUT_H__
+#ifndef __GLSCENE_ABOUT_H__
+#define __GLSCENE_ABOUT_H__
 
 
 #include <QtWidgets/QDialog>

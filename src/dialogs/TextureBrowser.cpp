@@ -178,7 +178,7 @@ void TextureBrowser::BrowseTextureFiles()
 	QFileDialog filedlg(this, "Open Image File", dirLast,
 		"Images (*.png *.jpg)");
 	filedlg.setAcceptMode(QFileDialog::AcceptOpen);
-	filedlg.setDefaultSuffix("taspaths");
+	filedlg.setDefaultSuffix("png");
 	filedlg.setViewMode(QFileDialog::Detail);
 	filedlg.setFileMode(QFileDialog::ExistingFiles);
 	filedlg.setSidebarUrls(QList<QUrl>({

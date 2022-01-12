@@ -14,8 +14,8 @@
  *   - (Sellers 2014) G. Sellers et al., ISBN: 978-0-321-90294-8 (2014).
  */
 
-#ifndef __PATHS_RENDERER_H__
-#define __PATHS_RENDERER_H__
+#ifndef __GLSCENE_RENDERER_H__
+#define __GLSCENE_RENDERER_H__
 
 #include <unordered_map>
 #include <optional>
@@ -25,8 +25,9 @@
 #include <QtGui/QMouseEvent>
 
 #include "tlibs2/libs/maths.h"
-#include "tlibs2/libs/cam.h"
 #include "tlibs2/libs/qt/gl.h"
+#include "tlibs2/libs/cam.h"
+//#include "Camera.h"
 
 #include "src/Scene.h"
 
@@ -42,12 +43,13 @@ using t_mat_gl = tl2::t_mat_gl;
 /**
  * rendering object structure
  */
-struct PathsObj : public tl2::GlRenderObj
+struct GlSceneObj : public tl2::GlRenderObj
 {
 	t_mat_gl m_mat = tl2::unit<t_mat_gl>();
 
 	bool m_visible = true;		// object shown?
 	bool m_cull = true;		// object faces culled?
+	bool m_lighting = true;		// enable lighting (just draw colour if disabled)
 
 	t_vec3_gl m_boundingSpherePos = tl2::create<t_vec3_gl>({ 0., 0., 0. });
 	t_real_gl m_boundingSphereRad = 0.;
@@ -61,7 +63,7 @@ struct PathsObj : public tl2::GlRenderObj
 /**
  * texture descriptor
  */
-struct PathsTexture
+struct GlSceneTexture
 {
 	std::string filename{};
 	std::shared_ptr<QOpenGLTexture> texture{};
@@ -71,23 +73,23 @@ struct PathsTexture
 /**
  * rendering widget
  */
-class PathsRenderer : public QOpenGLWidget
+class GlSceneRenderer : public QOpenGLWidget
 { Q_OBJECT
 public:
 	// camera type
 	using t_cam = Camera<t_mat_gl, t_vec_gl, t_vec3_gl, t_real_gl>;
 
 	// 3d object and texture types
-	using t_objs = std::unordered_map<std::string, PathsObj>;
-	using t_textures = std::unordered_map<std::string, PathsTexture>;
+	using t_objs = std::unordered_map<std::string, GlSceneObj>;
+	using t_textures = std::unordered_map<std::string, GlSceneTexture>;
 
 
 public:
-	PathsRenderer(QWidget *pParent = nullptr);
-	virtual ~PathsRenderer();
+	GlSceneRenderer(QWidget *pParent = nullptr);
+	virtual ~GlSceneRenderer();
 
-	PathsRenderer(const PathsRenderer&) = delete;
-	const PathsRenderer& operator=(const PathsRenderer&) = delete;
+	GlSceneRenderer(const GlSceneRenderer&) = delete;
+	const GlSceneRenderer& operator=(const GlSceneRenderer&) = delete;
 
 	void Clear();
 	bool LoadScene(const Scene& scene);
@@ -192,6 +194,7 @@ protected:
 	GLint m_uniConstCol = -1;
 	GLint m_uniLightPos = -1;
 	GLint m_uniNumActiveLights = -1;
+	GLint m_uniLightingEnabled = -1;
 	GLint m_uniShadowMap = -1;
 	GLint m_uniShadowRenderingEnabled = -1;
 	GLint m_uniShadowRenderPass = -1;

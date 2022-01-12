@@ -89,6 +89,7 @@ uniform sampler2D texture_image;
 uniform vec4 lights_const_col = vec4(1, 1, 1, 1);
 uniform vec3 lights_pos[MAX_LIGHTS];
 uniform int lights_numactive = 1;	// how many lights to use?
+uniform bool lights_enabled = true;
 
 uniform sampler2DShadow shadow_map;
 uniform bool shadow_enabled = false;
@@ -220,7 +221,10 @@ void main()
 	else
 	{
 		const t_real z_eps = 0.05;
-		t_real I = lighting(frag_in.pos, frag_in.norm);
+
+		t_real I = 1.;
+		if(lights_enabled)
+			I = lighting(frag_in.pos, frag_in.norm);
 
 		frag_out_col.rgb *= frag_in.col.rgb * I;
 		frag_out_col *= lights_const_col;

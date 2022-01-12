@@ -38,7 +38,7 @@ using t_SettingsDlg = SettingsDlg<g_settingsvariables.size(), &g_settingsvariabl
 /**
  * constructor, create UI
  */
-PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
+MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 {
 	setWindowTitle(APPL_TITLE);
 
@@ -72,14 +72,14 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 
 	auto plotpanel = new QWidget(this);
 
-	connect(m_renderer.get(), &PathsRenderer::CursorCoordsChanged, this, &PathsTool::CursorCoordsChanged);
-	connect(m_renderer.get(), &PathsRenderer::PickerIntersection, this, &PathsTool::PickerIntersection);
-	connect(m_renderer.get(), &PathsRenderer::ObjectClicked, this, &PathsTool::ObjectClicked);
-	connect(m_renderer.get(), &PathsRenderer::ObjectDragged, this, &PathsTool::ObjectDragged);
-	connect(m_renderer.get(), &PathsRenderer::AfterGLInitialisation, this, &PathsTool::AfterGLInitialisation);
+	connect(m_renderer.get(), &GlSceneRenderer::CursorCoordsChanged, this, &MainWnd::CursorCoordsChanged);
+	connect(m_renderer.get(), &GlSceneRenderer::PickerIntersection, this, &MainWnd::PickerIntersection);
+	connect(m_renderer.get(), &GlSceneRenderer::ObjectClicked, this, &MainWnd::ObjectClicked);
+	connect(m_renderer.get(), &GlSceneRenderer::ObjectDragged, this, &MainWnd::ObjectDragged);
+	connect(m_renderer.get(), &GlSceneRenderer::AfterGLInitialisation, this, &MainWnd::AfterGLInitialisation);
 
 	// camera position
-	connect(m_renderer.get(), &PathsRenderer::CamPositionChanged,
+	connect(m_renderer.get(), &GlSceneRenderer::CamPositionChanged,
 		[this](t_real_gl _x, t_real_gl _y, t_real_gl _z) -> void
 		{
 			t_real x = t_real(_x);
@@ -91,7 +91,7 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 		});
 
 	// camera rotation
-	connect(m_renderer.get(), &PathsRenderer::CamRotationChanged,
+	connect(m_renderer.get(), &GlSceneRenderer::CamRotationChanged,
 		[this](t_real_gl _phi, t_real_gl _theta) -> void
 		{
 			t_real phi = t_real(_phi);
@@ -106,7 +106,7 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 		});
 
 	// camera zoom
-	connect(m_renderer.get(), &PathsRenderer::CamZoomChanged,
+	connect(m_renderer.get(), &GlSceneRenderer::CamZoomChanged,
 		[this](t_real_gl _zoom) -> void
 		{
 			t_real zoom = t_real(_zoom);
@@ -304,7 +304,7 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 		this->SaveScreenshot();
 	});
 
-	connect(actionQuit, &QAction::triggered, this, &PathsTool::close);
+	connect(actionQuit, &QAction::triggered, this, &MainWnd::close);
 
 
 	menuFile->addAction(actionNew);
@@ -390,16 +390,16 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 	QAction *actionTextureBrowser = new QAction(
 		QIcon::fromTheme("image-x-generic"), "Texture Browser...", menuGeo);
 
-	connect(actionAddPlane, &QAction::triggered, this, &PathsTool::AddPlane);
-	connect(actionAddCuboid, &QAction::triggered, this, &PathsTool::AddCuboid);
-	connect(actionAddSphere, &QAction::triggered, this, &PathsTool::AddSphere);
-	connect(actionAddCylinder, &QAction::triggered, this, &PathsTool::AddCylinder);
-	connect(actionAddTetrahedron, &QAction::triggered, this, &PathsTool::AddTetrahedron);
-	connect(actionAddOctahedron, &QAction::triggered, this, &PathsTool::AddOctahedron);
-	connect(actionAddDodecahedron, &QAction::triggered, this, &PathsTool::AddDodecahedron);
-	connect(actionAddIcosahedron, &QAction::triggered, this, &PathsTool::AddIcosahedron);
-	connect(actionGeoBrowser, &QAction::triggered, this, &PathsTool::ShowGeometryBrowser);
-	connect(actionTextureBrowser, &QAction::triggered, this, &PathsTool::ShowTextureBrowser);
+	connect(actionAddPlane, &QAction::triggered, this, &MainWnd::AddPlane);
+	connect(actionAddCuboid, &QAction::triggered, this, &MainWnd::AddCuboid);
+	connect(actionAddSphere, &QAction::triggered, this, &MainWnd::AddSphere);
+	connect(actionAddCylinder, &QAction::triggered, this, &MainWnd::AddCylinder);
+	connect(actionAddTetrahedron, &QAction::triggered, this, &MainWnd::AddTetrahedron);
+	connect(actionAddOctahedron, &QAction::triggered, this, &MainWnd::AddOctahedron);
+	connect(actionAddDodecahedron, &QAction::triggered, this, &MainWnd::AddDodecahedron);
+	connect(actionAddIcosahedron, &QAction::triggered, this, &MainWnd::AddIcosahedron);
+	connect(actionGeoBrowser, &QAction::triggered, this, &MainWnd::ShowGeometryBrowser);
+	connect(actionTextureBrowser, &QAction::triggered, this, &MainWnd::ShowTextureBrowser);
 
 	menuGeo->addAction(actionAddPlane);
 	menuGeo->addAction(actionAddCuboid);
@@ -424,7 +424,7 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 	actionSettings->setMenuRole(QAction::PreferencesRole);
 
 	// collect garbage
-	connect(actionGarbage, &QAction::triggered, this, &PathsTool::CollectGarbage);
+	connect(actionGarbage, &QAction::triggered, this, &MainWnd::CollectGarbage);
 
 	// clear settings
 	connect(actionClearSettings, &QAction::triggered,
@@ -444,7 +444,7 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 			this->m_dlgSettings = settingsDlg;
 
 			settingsDlg->AddChangedSettingsSlot(
-				[this](){ PathsTool::InitSettings(); });
+				[this](){ MainWnd::InitSettings(); });
 		}
 
 		// sequence to show the dialog,
@@ -574,9 +574,9 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 	connect(actionObjRotZM10, &QAction::triggered,
 		[this]() { RotateCurrentObject(-10./180.*tl2::pi<t_real>, 'z'); });
 	connect(actionObjDel, &QAction::triggered, this,
-		&PathsTool::DeleteCurrentObject);
+		&MainWnd::DeleteCurrentObject);
 	connect(actionObjProp, &QAction::triggered, this,
-		&PathsTool::ShowCurrentObjectProperties);
+		&MainWnd::ShowCurrentObjectProperties);
 	connect(actionObjCentreCam, &QAction::triggered,
 		[this]() { if(m_renderer) m_renderer->CentreCam(m_curContextObj); });
 	// --------------------------------------------------------------------
@@ -635,7 +635,7 @@ PathsTool::PathsTool(QWidget* pParent) : QMainWindow{pParent}
 /**
  * the window is being shown
  */
-void PathsTool::showEvent(QShowEvent *evt)
+void MainWnd::showEvent(QShowEvent *evt)
 {
 	m_renderer->EnableTimer(true);
 
@@ -646,7 +646,7 @@ void PathsTool::showEvent(QShowEvent *evt)
 /**
  * the window is being hidden
  */
-void PathsTool::hideEvent(QHideEvent *evt)
+void MainWnd::hideEvent(QHideEvent *evt)
 {
 	m_renderer->EnableTimer(false);
 
@@ -657,7 +657,7 @@ void PathsTool::hideEvent(QHideEvent *evt)
 /**
  * the window is being closed
  */
-void PathsTool::closeEvent(QCloseEvent *evt)
+void MainWnd::closeEvent(QCloseEvent *evt)
 {
 	CollectGarbage();
 
@@ -675,7 +675,7 @@ void PathsTool::closeEvent(QCloseEvent *evt)
 /**
  * clear all allocated objects
  */
-void PathsTool::CollectGarbage()
+void MainWnd::CollectGarbage()
 {
 	// remove any open dialogs
 	if(m_dlgSettings)
@@ -693,7 +693,7 @@ void PathsTool::CollectGarbage()
  * accept a file dropped onto the main window
  * @see https://doc.qt.io/qt-5/dnd.html
  */
-void PathsTool::dragEnterEvent(QDragEnterEvent *evt)
+void MainWnd::dragEnterEvent(QDragEnterEvent *evt)
 {
 	// accept urls
 	if(evt->mimeData()->hasUrls())
@@ -707,7 +707,7 @@ void PathsTool::dragEnterEvent(QDragEnterEvent *evt)
  * accept a file dropped onto the main window
  * @see https://doc.qt.io/qt-5/dnd.html
  */
-void PathsTool::dropEvent(QDropEvent *evt)
+void MainWnd::dropEvent(QDropEvent *evt)
 {
 	// get mime data dropped on the main window
 	if(const QMimeData* dat = evt->mimeData(); dat && dat->hasUrls())
@@ -732,7 +732,7 @@ void PathsTool::dropEvent(QDropEvent *evt)
 /**
  * File -> New
  */
-void PathsTool::NewFile()
+void MainWnd::NewFile()
 {
 	SetCurrentFile("");
 	m_scene.Clear();
@@ -749,13 +749,13 @@ void PathsTool::NewFile()
 /**
  * File -> Open
  */
-void PathsTool::OpenFile()
+void MainWnd::OpenFile()
 {
 	QString dirLast = m_sett.value("cur_dir",
 		g_docpath.c_str()).toString();
 
 	QFileDialog filedlg(this, "Open Scene File", dirLast,
-		"TAS-Paths Files (*.glscene)");
+		"Gl Scene Files (*.glscene)");
 	filedlg.setAcceptMode(QFileDialog::AcceptOpen);
 	filedlg.setDefaultSuffix("glscene");
 	filedlg.setViewMode(QFileDialog::Detail);
@@ -780,7 +780,7 @@ void PathsTool::OpenFile()
 /**
  * File -> Save
  */
-void PathsTool::SaveFile()
+void MainWnd::SaveFile()
 {
 	if(m_recent.GetCurFile() == "")
 		SaveFileAs();
@@ -792,13 +792,13 @@ void PathsTool::SaveFile()
 /**
  * File -> Save As
  */
-void PathsTool::SaveFileAs()
+void MainWnd::SaveFileAs()
 {
 	QString dirLast = m_sett.value("cur_dir",
 		g_docpath.c_str()).toString();
 
 	QFileDialog filedlg(this, "Save Scene File", dirLast,
-		"TAS-Paths Files (*.glscene)");
+		"Gl Scene Files (*.glscene)");
 	filedlg.setAcceptMode(QFileDialog::AcceptSave);
 	filedlg.setDefaultSuffix("glscene");
 	filedlg.setFileMode(QFileDialog::AnyFile);
@@ -824,7 +824,7 @@ void PathsTool::SaveFileAs()
 /**
  * File -> Save Screenshot
  */
-void PathsTool::SaveScreenshot()
+void MainWnd::SaveScreenshot()
 {
 	QString dirLast = m_sett.value("cur_image_dir",
 		g_imgpath.c_str()).toString();
@@ -857,7 +857,7 @@ void PathsTool::SaveScreenshot()
 /**
  * load file
  */
-bool PathsTool::OpenFile(const QString& file)
+bool MainWnd::OpenFile(const QString& file)
 {
 	// no file given
 	if(file == "")
@@ -983,7 +983,7 @@ bool PathsTool::OpenFile(const QString& file)
 /**
  * save file
  */
-bool PathsTool::SaveFile(const QString &file)
+bool MainWnd::SaveFile(const QString &file)
 {
 	if(file=="")
 		return false;
@@ -1005,7 +1005,7 @@ bool PathsTool::SaveFile(const QString &file)
 	{
 		boost::property_tree::ptree prop_textures;
 
-		const PathsRenderer::t_textures& txts = m_renderer->GetTextures();
+		const GlSceneRenderer::t_textures& txts = m_renderer->GetTextures();
 		for(const auto& pair : txts)
 		{
 			pt::ptree prop_texture;
@@ -1043,7 +1043,7 @@ bool PathsTool::SaveFile(const QString &file)
 /**
  * save screenshot
  */
-bool PathsTool::SaveScreenshot(const QString &file)
+bool MainWnd::SaveScreenshot(const QString &file)
 {
 	if(file=="" || !m_renderer)
 		return false;
@@ -1056,7 +1056,7 @@ bool PathsTool::SaveScreenshot(const QString &file)
 /**
  * remember current file and set window title
  */
-void PathsTool::SetCurrentFile(const QString &file)
+void MainWnd::SetCurrentFile(const QString &file)
 {
 	static const QString title(APPL_TITLE);
 	m_recent.SetCurFile(file);
@@ -1073,7 +1073,7 @@ void PathsTool::SetCurrentFile(const QString &file)
 /**
  * called after the plotter has initialised
  */
-void PathsTool::AfterGLInitialisation()
+void MainWnd::AfterGLInitialisation()
 {
 	// GL device info
 	std::tie(m_gl_ver, m_gl_shader_ver, m_gl_vendor, m_gl_renderer)
@@ -1128,7 +1128,7 @@ void PathsTool::AfterGLInitialisation()
 /**
  * load an initial scene definition
  */
-bool PathsTool::LoadInitialSceneFile()
+bool MainWnd::LoadInitialSceneFile()
 {
 	bool ok = false;
 
@@ -1152,7 +1152,7 @@ bool PathsTool::LoadInitialSceneFile()
 /**
  * mouse coordinates on base plane
  */
-void PathsTool::CursorCoordsChanged(t_real_gl x, t_real_gl y, t_real_gl z)
+void MainWnd::CursorCoordsChanged(t_real_gl x, t_real_gl y, t_real_gl z)
 {
 	m_mouseX = x;
 	m_mouseY = y;
@@ -1164,7 +1164,7 @@ void PathsTool::CursorCoordsChanged(t_real_gl x, t_real_gl y, t_real_gl z)
 /**
  * mouse is over an object
  */
-void PathsTool::PickerIntersection([[maybe_unused]] const t_vec3_gl* pos, std::string obj_name)
+void MainWnd::PickerIntersection([[maybe_unused]] const t_vec3_gl* pos, std::string obj_name)
 {
 	if(pos)
 		m_curInters = *pos;
@@ -1176,7 +1176,7 @@ void PathsTool::PickerIntersection([[maybe_unused]] const t_vec3_gl* pos, std::s
 /**
  * clicked on an object in the scene
  */
-void PathsTool::ObjectClicked(const std::string& obj,
+void MainWnd::ObjectClicked(const std::string& obj,
 	[[maybe_unused]] bool left, bool middle, bool right)
 {
 	if(!m_renderer || obj == "")
@@ -1204,7 +1204,7 @@ void PathsTool::ObjectClicked(const std::string& obj,
 /**
  * dragging an object in the scene
  */
-void PathsTool::ObjectDragged(bool drag_start, const std::string& objid)
+void MainWnd::ObjectDragged(bool drag_start, const std::string& objid)
 {
 	const std::shared_ptr<Geometry> obj = m_scene.FindObject(objid);
 
@@ -1262,7 +1262,7 @@ void PathsTool::ObjectDragged(bool drag_start, const std::string& objid)
 /**
  * set temporary status message, by default for 2 seconds
  */
-void PathsTool::SetTmpStatus(const std::string& msg, int msg_duration)
+void MainWnd::SetTmpStatus(const std::string& msg, int msg_duration)
 {
 	if(!m_statusbar)
 		return;
@@ -1285,7 +1285,7 @@ void PathsTool::SetTmpStatus(const std::string& msg, int msg_duration)
 /**
  * update permanent status message
  */
-void PathsTool::UpdateStatusLabel()
+void MainWnd::UpdateStatusLabel()
 {
 	const t_real maxRange = 1e6;
 
@@ -1311,7 +1311,7 @@ void PathsTool::UpdateStatusLabel()
 /**
  * set the scene file to be initially loaded
  */
-void PathsTool::SetInitialSceneFile(const std::string& file)
+void MainWnd::SetInitialSceneFile(const std::string& file)
 {
 	m_initialSceneFile = file;
 	m_initialSceneFileModified = true;
@@ -1321,7 +1321,7 @@ void PathsTool::SetInitialSceneFile(const std::string& file)
 /**
  * propagate (changed) global settings to each object
  */
-void PathsTool::InitSettings()
+void MainWnd::InitSettings()
 {
 	m_scene.SetEpsilon(g_eps);
 
@@ -1345,7 +1345,7 @@ void PathsTool::InitSettings()
 /**
  * add a plane to the scene
  */
-void PathsTool::AddPlane()
+void MainWnd::AddPlane()
 {
 	auto plane = std::make_shared<PlaneGeometry>();
 	plane->SetWidth(2.);
@@ -1373,7 +1373,7 @@ void PathsTool::AddPlane()
 /**
  * add a cuboid to the scene
  */
-void PathsTool::AddCuboid()
+void MainWnd::AddCuboid()
 {
 	auto cuboid = std::make_shared<BoxGeometry>();
 	cuboid->SetHeight(2.);
@@ -1402,7 +1402,7 @@ void PathsTool::AddCuboid()
 /**
  * add a sphere to the scene
  */
-void PathsTool::AddSphere()
+void MainWnd::AddSphere()
 {
 	auto sphere = std::make_shared<SphereGeometry>();
 	sphere->SetRadius(2.);
@@ -1429,7 +1429,7 @@ void PathsTool::AddSphere()
 /**
  * add a cylinder to the scene
  */
-void PathsTool::AddCylinder()
+void MainWnd::AddCylinder()
 {
 	auto cyl = std::make_shared<CylinderGeometry>();
 	cyl->SetHeight(4.);
@@ -1457,7 +1457,7 @@ void PathsTool::AddCylinder()
 /**
  * add a tetrahedron to the scene
  */
-void PathsTool::AddTetrahedron()
+void MainWnd::AddTetrahedron()
 {
 	auto tetr = std::make_shared<TetrahedronGeometry>();
 	tetr->SetRadius(1.);
@@ -1484,7 +1484,7 @@ void PathsTool::AddTetrahedron()
 /**
  * add an octahedron to the scene
  */
-void PathsTool::AddOctahedron()
+void MainWnd::AddOctahedron()
 {
 	auto octa = std::make_shared<OctahedronGeometry>();
 	octa->SetRadius(1.);
@@ -1511,7 +1511,7 @@ void PathsTool::AddOctahedron()
 /**
  * add an dodecahedron to the scene
  */
-void PathsTool::AddDodecahedron()
+void MainWnd::AddDodecahedron()
 {
 	auto dode = std::make_shared<DodecahedronGeometry>();
 	dode->SetRadius(1.);
@@ -1538,7 +1538,7 @@ void PathsTool::AddDodecahedron()
 /**
  * add an icosahedron to the scene
  */
-void PathsTool::AddIcosahedron()
+void MainWnd::AddIcosahedron()
 {
 	auto icosa = std::make_shared<IcosahedronGeometry>();
 	icosa->SetRadius(1.);
@@ -1566,7 +1566,7 @@ void PathsTool::AddIcosahedron()
 /**
  * delete 3d object under the cursor
  */
-void PathsTool::DeleteCurrentObject()
+void MainWnd::DeleteCurrentObject()
 {
 	DeleteObject(m_curContextObj);
 }
@@ -1575,7 +1575,7 @@ void PathsTool::DeleteCurrentObject()
 /**
  * delete the given object from the scene
  */
-void PathsTool::DeleteObject(const std::string& obj)
+void MainWnd::DeleteObject(const std::string& obj)
 {
 	if(obj == "")
 		return;
@@ -1602,7 +1602,7 @@ void PathsTool::DeleteObject(const std::string& obj)
 /**
  * rotate 3d object under the cursor
  */
-void PathsTool::RotateCurrentObject(t_real angle, char axis)
+void MainWnd::RotateCurrentObject(t_real angle, char axis)
 {
 	RotateObject(m_curContextObj, angle, axis);
 }
@@ -1611,7 +1611,7 @@ void PathsTool::RotateCurrentObject(t_real angle, char axis)
 /**
  * rotate the given object
  */
-void PathsTool::RotateObject(const std::string& objname, t_real angle, char axis)
+void MainWnd::RotateObject(const std::string& objname, t_real angle, char axis)
 {
 	if(objname == "")
 		return;
@@ -1641,7 +1641,7 @@ void PathsTool::RotateObject(const std::string& objname, t_real angle, char axis
 /**
  * open geometries browser and point to currently selected object
  */
-void PathsTool::ShowCurrentObjectProperties()
+void MainWnd::ShowCurrentObjectProperties()
 {
 	ShowGeometryBrowser();
 
@@ -1655,18 +1655,18 @@ void PathsTool::ShowCurrentObjectProperties()
 /**
  * open the geometry browser dialog
  */
-void PathsTool::ShowGeometryBrowser()
+void MainWnd::ShowGeometryBrowser()
 {
 	if(!m_dlgGeoBrowser)
 	{
 		m_dlgGeoBrowser = std::make_shared<GeometriesBrowser>(this, &m_sett);
 
 		connect(m_dlgGeoBrowser.get(), &GeometriesBrowser::SignalDeleteObject,
-			this, &PathsTool::DeleteObject);
+			this, &MainWnd::DeleteObject);
 		connect(m_dlgGeoBrowser.get(), &GeometriesBrowser::SignalRenameObject,
-			this, &PathsTool::RenameObject);
+			this, &MainWnd::RenameObject);
 		connect(m_dlgGeoBrowser.get(), &GeometriesBrowser::SignalChangeObjectProperty,
-			this, &PathsTool::ChangeObjectProperty);
+			this, &MainWnd::ChangeObjectProperty);
 
 		this->m_dlgGeoBrowser->UpdateGeoTree(this->m_scene);
 	}
@@ -1680,7 +1680,7 @@ void PathsTool::ShowGeometryBrowser()
 /**
  * open the texture browser dialog
  */
-void PathsTool::ShowTextureBrowser()
+void MainWnd::ShowTextureBrowser()
 {
 	if(!m_dlgTextureBrowser)
 	{
@@ -1689,7 +1689,7 @@ void PathsTool::ShowTextureBrowser()
 		// get current texture list from renderer
 		if(m_renderer)
 		{
-			const PathsRenderer::t_textures& txts = m_renderer->GetTextures();
+			const GlSceneRenderer::t_textures& txts = m_renderer->GetTextures();
 			for(const auto& pair : txts)
 			{
 				m_dlgTextureBrowser->ChangeTexture(
@@ -1702,9 +1702,9 @@ void PathsTool::ShowTextureBrowser()
 		}
 
 		connect(m_dlgTextureBrowser.get(), &TextureBrowser::SignalChangeTexture,
-			m_renderer.get(), &PathsRenderer::ChangeTextureProperty);
+			m_renderer.get(), &GlSceneRenderer::ChangeTextureProperty);
 		connect(m_dlgTextureBrowser.get(), &TextureBrowser::SignalEnableTextures,
-			m_renderer.get(), &PathsRenderer::EnableTextures);
+			m_renderer.get(), &GlSceneRenderer::EnableTextures);
 	}
 
 	m_dlgTextureBrowser->show();
@@ -1716,7 +1716,7 @@ void PathsTool::ShowTextureBrowser()
 /**
  * rename the given object in the scene
  */
-void PathsTool::RenameObject(const std::string& oldid, const std::string& newid)
+void MainWnd::RenameObject(const std::string& oldid, const std::string& newid)
 {
 	if(oldid == "" || newid == "" || oldid == newid)
 		return;
@@ -1737,7 +1737,7 @@ void PathsTool::RenameObject(const std::string& oldid, const std::string& newid)
 /**
  * change the properties of the given object in scene
  */
-void PathsTool::ChangeObjectProperty(const std::string& objname, const ObjectProperty& prop)
+void MainWnd::ChangeObjectProperty(const std::string& objname, const ObjectProperty& prop)
 {
 	if(objname == "")
 		return;

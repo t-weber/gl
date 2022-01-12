@@ -195,6 +195,7 @@ add_executable(glscene
 	src/common/Recent.cpp src/common/Recent.h
 
 	src/renderer/GlRenderer.cpp src/renderer/GlRenderer.h
+	#src/renderer/Camera.h
 
 	src/dock/CamProperties.cpp src/dock/CamProperties.h
 	src/dock/SelectionProperties.cpp src/dock/SelectionProperties.h

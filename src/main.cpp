@@ -51,13 +51,13 @@ static std::optional<std::string> get_appdir_path(const std::string& _binpath)
 /**
  * main application
  */
-class PathsApp : public QApplication
+class GlSceneApp : public QApplication
 {
 public:
 	/**
 	 * constructor getting command-line arguments
 	 */
-	explicit PathsApp(int& argc, char **argv) : QApplication{argc, argv}
+	explicit GlSceneApp(int& argc, char **argv) : QApplication{argc, argv}
 	{
 		// application settings
 		//QApplication::setAttribute(Qt::AA_NativeWindows, true);
@@ -115,13 +115,13 @@ public:
 	/**
 	 * no default constructor
 	 */
-	PathsApp() = delete;
+	GlSceneApp() = delete;
 
 
 	/**
 	 * default destructor
 	 */
-	virtual ~PathsApp() = default;
+	virtual ~GlSceneApp() = default;
 
 
 	/**
@@ -136,7 +136,7 @@ public:
 	/**
 	 * associate a main window with the application
 	 */
-	void SetMainWnd(const std::shared_ptr<PathsTool>& paths)
+	void SetMainWnd(const std::shared_ptr<MainWnd>& paths)
 	{
 		m_paths = paths;
 	}
@@ -180,7 +180,7 @@ private:
 	QString m_init_file{};
 
 	// main application window
-	std::shared_ptr<PathsTool> m_paths{};
+	std::shared_ptr<MainWnd> m_paths{};
 };
 
 
@@ -231,7 +231,7 @@ int main(int argc, char** argv)
 		tl2::set_locales();
 
 		// create application
-		auto app = std::make_unique<PathsApp>(argc, argv);
+		auto app = std::make_unique<GlSceneApp>(argc, argv);
 
 		// set up resource paths
 		fs::path apppath = g_apppath;
@@ -256,7 +256,7 @@ int main(int argc, char** argv)
 		qRegisterMetaType<std::size_t>("std::size_t");
 
 		// create main window
-		auto mainwnd = std::make_shared<PathsTool>(nullptr);
+		auto mainwnd = std::make_shared<MainWnd>(nullptr);
 
 		// the main window is not yet ready, indirectly open a given file
 		if(argc > 1)

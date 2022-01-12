@@ -1,12 +1,12 @@
 /**
- * TAS paths tool -- settings dialog
+ * settings dialog
  * @author Tobias Weber <tweber@ill.fr>
  * @date apr-2021
  * @license GPLv3, see 'LICENSE' file
  */
 
-#ifndef __TASPATHS_SETTINGS__
-#define __TASPATHS_SETTINGS__
+#ifndef __GLSCENE_SETTINGS__
+#define __GLSCENE_SETTINGS__
 
 #include <QtCore/QSettings>
 #include <QtWidgets/QApplication>

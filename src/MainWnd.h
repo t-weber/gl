@@ -43,17 +43,17 @@
 #include "dock/SelectionProperties.h"
 
 
-class PathsTool : public QMainWindow
+class MainWnd : public QMainWindow
 { Q_OBJECT
 public:
 	/**
 	 * create UI
 	 */
-	PathsTool(QWidget* pParent = nullptr);
-	virtual ~PathsTool() = default;
+	MainWnd(QWidget* pParent = nullptr);
+	virtual ~MainWnd() = default;
 
-	PathsTool(const PathsTool&) = delete;
-	const PathsTool& operator=(const PathsTool&) = delete;
+	MainWnd(const MainWnd&) = delete;
+	const MainWnd& operator=(const MainWnd&) = delete;
 
 	void SetInitialSceneFile(const std::string& file);
 
@@ -69,8 +69,8 @@ private:
 	QByteArray m_initial_state{};
 
 	// renderer
-	std::shared_ptr<PathsRenderer> m_renderer
-		{ std::make_shared<PathsRenderer>(this) };
+	std::shared_ptr<GlSceneRenderer> m_renderer
+		{ std::make_shared<GlSceneRenderer>(this) };
 	int m_multisamples{ 8 };
 
 	// gl info strings

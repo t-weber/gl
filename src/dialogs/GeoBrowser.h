@@ -5,8 +5,8 @@
  * @license GPLv3, see 'LICENSE' file
  */
 
-#ifndef __TAKIN_PATHS_GEOBROWSER_H__
-#define __TAKIN_PATHS_GEOBROWSER_H__
+#ifndef __GLSCENE_GEOBROWSER_H__
+#define __GLSCENE_GEOBROWSER_H__
 
 
 #include <QtCore/QSettings>

@@ -6,8 +6,8 @@
  * @note Forked on 19-dec-2021 from my privately developed "misc" project (https://github.com/t-weber/misc).
  */
 
-#ifndef __TASPATHS_TEXTURE_BROWSER_H__
-#define __TASPATHS_TEXTURE_BROWSER_H__
+#ifndef __GLSCENE_TEXTURE_BROWSER_H__
+#define __GLSCENE_TEXTURE_BROWSER_H__
 
 #include <QtCore/QSettings>
 #include <QtGui/QPixmap>

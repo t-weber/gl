@@ -302,6 +302,7 @@ std::vector<ObjectProperty> Geometry::GetProperties() const
 	props.emplace_back(ObjectProperty{.key="rotation", .value=m_rot});
 	props.emplace_back(ObjectProperty{.key="fixed", .value=m_fixed});
 	props.emplace_back(ObjectProperty{.key="colour", .value=m_colour});
+	props.emplace_back(ObjectProperty{.key="lighting", .value=m_lighting});
 	props.emplace_back(ObjectProperty{.key="texture", .value=m_texture});
 
 	return props;
@@ -323,6 +324,8 @@ void Geometry::SetProperties(const std::vector<ObjectProperty>& props)
 			m_fixed = std::get<bool>(prop.value);
 		else if(prop.key == "colour")
 			m_colour = std::get<t_vec>(prop.value);
+		else if(prop.key == "lighting")
+			m_lighting = std::get<bool>(prop.value);
 		else if(prop.key == "texture")
 			m_texture  = std::get<std::string>(prop.value);
 	}
@@ -359,6 +362,10 @@ bool Geometry::Load(const pt::ptree& prop)
 			m_colour.resize(3);
 	}
 
+	// lighting
+	if(auto optLight = prop.get_optional<bool>("lighting"); optLight)
+		m_lighting = *optLight;
+
 	// texture
 	if(auto texture = prop.get_optional<std::string>("texture"); texture)
 		m_texture = *texture;
@@ -378,6 +385,7 @@ pt::ptree Geometry::Save() const
 	prop.put<std::string>("rotation", geo_mat_to_str(m_rot));
 	prop.put<std::string>("fixed", m_fixed ? "1" : "0");
 	prop.put<std::string>("colour", geo_vec_to_str(m_colour));
+	prop.put<std::string>("lighting", m_lighting ? "1" : "0");
 	prop.put<std::string>("texture", m_texture);
 
 	return prop;

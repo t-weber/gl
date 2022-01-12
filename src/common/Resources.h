@@ -6,8 +6,8 @@
  * @license GPLv3, see 'LICENSE' file
  */
 
-#ifndef __TASPATHS_RESOURCES__
-#define __TASPATHS_RESOURCES__
+#ifndef __GLSCENE_RESOURCES__
+#define __GLSCENE_RESOURCES__
 
 #include <vector>
 #include <string>

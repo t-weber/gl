@@ -39,7 +39,7 @@
 /**
  * initialise the renderer
  */
-PathsRenderer::PathsRenderer(QWidget *pParent) : QOpenGLWidget(pParent)
+GlSceneRenderer::GlSceneRenderer(QWidget *pParent) : QOpenGLWidget(pParent)
 {
 	// timer callback function
 	connect(&m_timer, &QTimer::timeout, [this]()
@@ -57,7 +57,7 @@ PathsRenderer::PathsRenderer(QWidget *pParent) : QOpenGLWidget(pParent)
 /**
  * uninitialise the renderer clean up
  */
-PathsRenderer::~PathsRenderer()
+GlSceneRenderer::~GlSceneRenderer()
 {
 	EnableTimer(false);
 	setMouseTracking(false);
@@ -71,7 +71,7 @@ PathsRenderer::~PathsRenderer()
 /**
  * enable (or disable) timer ticks
  */
-void PathsRenderer::EnableTimer(bool enabled)
+void GlSceneRenderer::EnableTimer(bool enabled)
 {
 	if(enabled)
 		m_timer.start(std::chrono::milliseconds(1000 / g_timer_tps));
@@ -84,7 +84,7 @@ void PathsRenderer::EnableTimer(bool enabled)
  * renderer versions and driver descriptions
  */
 std::tuple<std::string, std::string, std::string, std::string>
-PathsRenderer::GetGlDescr() const
+GlSceneRenderer::GetGlDescr() const
 {
 	return std::make_tuple(
 		m_strGlVer, m_strGlShaderVer,
@@ -95,7 +95,7 @@ PathsRenderer::GetGlDescr() const
 /**
  * clear scene
  */
-void PathsRenderer::Clear()
+void GlSceneRenderer::Clear()
 {
 	BOOST_SCOPE_EXIT(this_)
 	{
@@ -125,7 +125,7 @@ void PathsRenderer::Clear()
 /**
  * enable or disable texture mapping
  */
-void PathsRenderer::EnableTextures(bool b)
+void GlSceneRenderer::EnableTextures(bool b)
 {
 	m_textures_active = b;
 	update();
@@ -135,7 +135,7 @@ void PathsRenderer::EnableTextures(bool b)
 /**
  * add a texture image
  */
-bool PathsRenderer::ChangeTextureProperty(
+bool GlSceneRenderer::ChangeTextureProperty(
 	const QString& ident, const QString& filename)
 {
 	if(!m_initialised)
@@ -170,7 +170,7 @@ bool PathsRenderer::ChangeTextureProperty(
 		// insert new texture
 		if(iter == m_textures.end())
 		{
-			PathsTexture txt
+			GlSceneTexture txt
 			{
 				.filename = filename.toStdString(),
 				.texture = std::make_shared<QOpenGLTexture>(image),
@@ -199,7 +199,7 @@ bool PathsRenderer::ChangeTextureProperty(
 /**
  * create a 3d representation of the scene's objects
  */
-bool PathsRenderer::LoadScene(const Scene& scene)
+bool GlSceneRenderer::LoadScene(const Scene& scene)
 {
 	if(!m_initialised)
 		return false;
@@ -222,7 +222,7 @@ bool PathsRenderer::LoadScene(const Scene& scene)
 /**
  * insert an object into the scene
  */
-void PathsRenderer::AddObject(const Geometry& obj)
+void GlSceneRenderer::AddObject(const Geometry& obj)
 {
 	if(!m_initialised)
 		return;
@@ -242,6 +242,7 @@ void PathsRenderer::AddObject(const Geometry& obj)
 	t_mat_gl mat = tl2::convert<t_mat_gl>(_mat);
 	obj_iter->second.m_mat = mat;
 	obj_iter->second.m_texture = obj.GetTexture();
+	obj_iter->second.m_lighting = obj.IsLightingEnabled();
 
 	update();
 }
@@ -250,7 +251,7 @@ void PathsRenderer::AddObject(const Geometry& obj)
 /**
  * scene has been changed (e.g. objects have been moved)
  */
-void PathsRenderer::UpdateScene(const Scene& scene)
+void GlSceneRenderer::UpdateScene(const Scene& scene)
 {
 	// update object matrices
 	for(const auto& obj : scene.GetObjects())
@@ -265,7 +266,7 @@ void PathsRenderer::UpdateScene(const Scene& scene)
 /**
  * delete an object by name
  */
-void PathsRenderer::DeleteObject(const std::string& obj_name)
+void GlSceneRenderer::DeleteObject(const std::string& obj_name)
 {
 	QMutexLocker _locker{&m_mutexObj};
 	auto iter = m_objs.find(obj_name);
@@ -283,7 +284,7 @@ void PathsRenderer::DeleteObject(const std::string& obj_name)
 /**
  * rename an object
  */
-void PathsRenderer::RenameObject(const std::string& oldname, const std::string& newname)
+void GlSceneRenderer::RenameObject(const std::string& oldname, const std::string& newname)
 {
 	QMutexLocker _locker{&m_mutexObj};
 	auto iter = m_objs.find(oldname);
@@ -303,8 +304,8 @@ void PathsRenderer::RenameObject(const std::string& oldname, const std::string& 
 /**
  * add a polygon-based object
  */
-PathsRenderer::t_objs::iterator
-PathsRenderer::AddTriangleObject(
+GlSceneRenderer::t_objs::iterator
+GlSceneRenderer::AddTriangleObject(
 	const std::string& obj_name,
 	const std::vector<t_vec3_gl>& triag_verts,
 	const std::vector<t_vec3_gl>& triag_norms,
@@ -324,7 +325,7 @@ PathsRenderer::AddTriangleObject(
 
 	QMutexLocker _locker{&m_mutexObj};
 
-	PathsObj obj;
+	GlSceneObj obj;
 	create_triangle_object(this, obj,
 		triag_verts, triag_verts, triag_norms,
 		triag_uvs, col,
@@ -356,13 +357,19 @@ PathsRenderer::AddTriangleObject(
 /**
  * centre camera around a given object
  */
-void PathsRenderer::CentreCam(const std::string& objid)
+void GlSceneRenderer::CentreCam(const std::string& objid)
 {
 	if(auto iter = m_objs.find(objid); iter!=m_objs.end())
 	{
-		PathsObj& obj = iter->second;
-		m_cam.Centre(obj.m_mat);
+		GlSceneObj& obj = iter->second;
 
+		// add object centre to transformation matrix
+		const t_mat_gl& matObj = obj.m_mat;
+		//matObj(0,3) += obj.m_boundingSpherePos[0];
+		//matObj(1,3) += obj.m_boundingSpherePos[1];
+		//matObj(2,3) += obj.m_boundingSpherePos[2];
+
+		m_cam.Centre(matObj);
 		UpdateCam();
 	}
 }
@@ -371,7 +378,7 @@ void PathsRenderer::CentreCam(const std::string& objid)
 /**
  * set the normal vector of the selection plane
  */
-void PathsRenderer::SetSelectionPlaneNorm(const t_vec3_gl& vec)
+void GlSceneRenderer::SetSelectionPlaneNorm(const t_vec3_gl& vec)
 {
 	const t_real_gl len = tl2::norm<t_vec3_gl>(vec);
 
@@ -386,7 +393,7 @@ void PathsRenderer::SetSelectionPlaneNorm(const t_vec3_gl& vec)
 /**
  * set the distance of the selection plane
  */
-void PathsRenderer::SetSelectionPlaneDist(t_real_gl d)
+void GlSceneRenderer::SetSelectionPlaneDist(t_real_gl d)
 {
 	m_selectionPlaneDist = d;
 }
@@ -395,7 +402,7 @@ void PathsRenderer::SetSelectionPlaneDist(t_real_gl d)
 /**
  * set light position
  */
-void PathsRenderer::SetLight(std::size_t idx, const t_vec3_gl& pos)
+void GlSceneRenderer::SetLight(std::size_t idx, const t_vec3_gl& pos)
 {
 	if(m_lights.size() < idx+1)
 		m_lights.resize(idx+1);
@@ -418,7 +425,7 @@ void PathsRenderer::SetLight(std::size_t idx, const t_vec3_gl& pos)
 /**
  * light (and shadows) follow the cursor position
  */
-void PathsRenderer::SetLightFollowsCursor(bool b)
+void GlSceneRenderer::SetLightFollowsCursor(bool b)
 {
 	m_light_follows_cursor = b;
 	update();
@@ -428,7 +435,7 @@ void PathsRenderer::SetLightFollowsCursor(bool b)
 /**
  * enable the rendering of shadows
  */
-void PathsRenderer::EnableShadowRendering(bool b)
+void GlSceneRenderer::EnableShadowRendering(bool b)
 {
 	m_shadowRenderingEnabled = b;
 	update();
@@ -438,7 +445,7 @@ void PathsRenderer::EnableShadowRendering(bool b)
 /**
  * update the light positions and the light camera for shadow rendering
  */
-void PathsRenderer::UpdateLights()
+void GlSceneRenderer::UpdateLights()
 {
 	if(!m_initialised)
 		return;
@@ -505,7 +512,7 @@ void PathsRenderer::UpdateLights()
 /**
  * get the position of the mouse cursor on the selection plane
  */
-std::tuple<t_vec3_gl, int> PathsRenderer::GetSelectionPlaneCursor() const
+std::tuple<t_vec3_gl, int> GlSceneRenderer::GetSelectionPlaneCursor() const
 {
 	auto [org3, dir3] = m_cam.GetPickerRay(m_posMouse.x(), m_posMouse.y());
 
@@ -520,7 +527,7 @@ std::tuple<t_vec3_gl, int> PathsRenderer::GetSelectionPlaneCursor() const
 /**
  * calculate the object the mouse cursor is currently on
  */
-void PathsRenderer::UpdatePicker()
+void GlSceneRenderer::UpdatePicker()
 {
 	if(!m_initialised)
 		return;
@@ -636,7 +643,7 @@ void PathsRenderer::UpdatePicker()
  * this is currently only used for keyboard input
  * (new frames are rendered as needed, not on timer ticks)
  */
-void PathsRenderer::tick(const std::chrono::milliseconds& ms)
+void GlSceneRenderer::tick(const std::chrono::milliseconds& ms)
 {
 	if(!m_initialised)
 		return;
@@ -679,7 +686,7 @@ void PathsRenderer::tick(const std::chrono::milliseconds& ms)
 /**
  * update the camera matrices and redraw the frame
  */
-void PathsRenderer::UpdateCam(bool update_frame)
+void GlSceneRenderer::UpdateCam(bool update_frame)
 {
 	if(m_cam.TransformationNeedsUpdate())
 	{
@@ -717,7 +724,7 @@ void PathsRenderer::UpdateCam(bool update_frame)
 /**
  * initialise renderer widget
  */
-void PathsRenderer::initializeGL()
+void GlSceneRenderer::initializeGL()
 {
 	m_initialised = false;
 
@@ -822,6 +829,7 @@ void PathsRenderer::initializeGL()
 	m_uniConstCol = m_shaders->uniformLocation("lights_const_col");
 	m_uniLightPos = m_shaders->uniformLocation("lights_pos");
 	m_uniNumActiveLights = m_shaders->uniformLocation("lights_numactive");
+	m_uniLightingEnabled = m_shaders->uniformLocation("lights_enabled");
 
 	m_uniShadowRenderingEnabled = m_shaders->uniformLocation("shadow_enabled");
 	m_uniShadowRenderPass = m_shaders->uniformLocation("shadow_renderpass");
@@ -839,7 +847,7 @@ void PathsRenderer::initializeGL()
 /**
  * renderer widget is being resized
  */
-void PathsRenderer::resizeGL(int w, int h)
+void GlSceneRenderer::resizeGL(int w, int h)
 {
 	m_cam.SetScreenDimensions(w, h);
 
@@ -854,7 +862,7 @@ void PathsRenderer::resizeGL(int w, int h)
 /**
  * get the gl functions corresponding to the selected version
  */
-qgl_funcs* PathsRenderer::GetGlFunctions()
+qgl_funcs* GlSceneRenderer::GetGlFunctions()
 {
 	if(!m_initialised)
 		return nullptr;
@@ -868,7 +876,7 @@ qgl_funcs* PathsRenderer::GetGlFunctions()
  * framebuffer for shadow rendering
  * @see (Sellers 2014) pp. 534-540
  */
-void PathsRenderer::UpdateShadowFramebuffer()
+void GlSceneRenderer::UpdateShadowFramebuffer()
 {
 	if(!m_initialised)
 		return;
@@ -923,7 +931,7 @@ void PathsRenderer::UpdateShadowFramebuffer()
 /**
  * draw the scene
  */
-void PathsRenderer::paintGL()
+void GlSceneRenderer::paintGL()
 {
 	if(!m_initialised || thread() != QThread::currentThread())
 		return;
@@ -968,7 +976,7 @@ void PathsRenderer::paintGL()
 /**
  * pure gl drawing
  */
-void PathsRenderer::DoPaintGL(qgl_funcs *pGl)
+void GlSceneRenderer::DoPaintGL(qgl_funcs *pGl)
 {
 	// remove shadow texture
 	BOOST_SCOPE_EXIT(m_fboshadow, pGl)
@@ -1052,6 +1060,10 @@ void PathsRenderer::DoPaintGL(qgl_funcs *pGl)
 	m_shaders->bind();
 	LOGGLERR(pGl);
 
+	// lighting not needed for creation of shadow map
+	if(m_shadowRenderPass)
+		m_shaders->setUniformValue(m_uniLightingEnabled, false);
+
 	m_shaders->setUniformValue(m_uniShadowRenderingEnabled, m_shadowRenderingEnabled);
 	m_shaders->setUniformValue(m_uniShadowRenderPass, m_shadowRenderPass);
 
@@ -1097,6 +1109,9 @@ void PathsRenderer::DoPaintGL(qgl_funcs *pGl)
 		}
 		else
 		{
+			m_shaders->setUniformValue(
+				m_uniLightingEnabled, obj.m_lighting);
+
 			if(m_cam.IsBoundingBoxOutsideFrustum(
 				obj.m_mat, obj.m_boundingBox))
 				continue;
@@ -1199,7 +1214,7 @@ void PathsRenderer::DoPaintGL(qgl_funcs *pGl)
 /**
  * directly draw on a qpainter
  */
-void PathsRenderer::DoPaintQt(QPainter &painter)
+void GlSceneRenderer::DoPaintQt(QPainter &painter)
 {
 	QFont fontOrig = painter.font();
 	QPen penOrig = painter.pen();
@@ -1279,7 +1294,7 @@ void PathsRenderer::DoPaintQt(QPainter &painter)
 /**
  * save the shadow frame buffer to a file
  */
-void PathsRenderer::SaveShadowFramebuffer(const std::string& filename) const
+void GlSceneRenderer::SaveShadowFramebuffer(const std::string& filename) const
 {
 	auto img = m_fboshadow->toImage(true, 0);
 	img.save(filename.c_str());
@@ -1289,7 +1304,7 @@ void PathsRenderer::SaveShadowFramebuffer(const std::string& filename) const
 /**
  * a key has been pressed
  */
-void PathsRenderer::keyPressEvent(QKeyEvent *pEvt)
+void GlSceneRenderer::keyPressEvent(QKeyEvent *pEvt)
 {
 	switch(pEvt->key())
 	{
@@ -1340,7 +1355,7 @@ void PathsRenderer::keyPressEvent(QKeyEvent *pEvt)
 /**
  * a key has been released
  */
-void PathsRenderer::keyReleaseEvent(QKeyEvent *pEvt)
+void GlSceneRenderer::keyReleaseEvent(QKeyEvent *pEvt)
 {
 	switch(pEvt->key())
 	{
@@ -1388,7 +1403,7 @@ void PathsRenderer::keyReleaseEvent(QKeyEvent *pEvt)
 /**
  * the mouse cursor is being moved
  */
-void PathsRenderer::mouseMoveEvent(QMouseEvent *pEvt)
+void GlSceneRenderer::mouseMoveEvent(QMouseEvent *pEvt)
 {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 	m_posMouse = pEvt->position();
@@ -1423,7 +1438,7 @@ void PathsRenderer::mouseMoveEvent(QMouseEvent *pEvt)
 /**
  * get the mouse position on the screen (not in the scene)
  */
-QPoint PathsRenderer::GetMousePosition(bool global_pos) const
+QPoint GlSceneRenderer::GetMousePosition(bool global_pos) const
 {
 	QPoint pos = m_posMouse.toPoint();
 	if(global_pos)
@@ -1435,7 +1450,7 @@ QPoint PathsRenderer::GetMousePosition(bool global_pos) const
 /**
  * mouse button is being pressed
  */
-void PathsRenderer::mousePressEvent(QMouseEvent *pEvt)
+void GlSceneRenderer::mousePressEvent(QMouseEvent *pEvt)
 {
 	m_mouseMovedBetweenDownAndUp = false;
 
@@ -1476,7 +1491,7 @@ void PathsRenderer::mousePressEvent(QMouseEvent *pEvt)
 /**
  * mouse button is released
  */
-void PathsRenderer::mouseReleaseEvent(QMouseEvent *pEvt)
+void GlSceneRenderer::mouseReleaseEvent(QMouseEvent *pEvt)
 {
 	bool mouseDownOld[] = { m_mouseDown[0], m_mouseDown[1], m_mouseDown[2] };
 
@@ -1519,7 +1534,7 @@ void PathsRenderer::mouseReleaseEvent(QMouseEvent *pEvt)
 /**
  * mouse wheel movement
  */
-void PathsRenderer::wheelEvent(QWheelEvent *pEvt)
+void GlSceneRenderer::wheelEvent(QWheelEvent *pEvt)
 {
 	const t_real_gl degrees = pEvt->angleDelta().y() / 8.;
 	if(tl2::equals_0<t_real_gl>(degrees, t_real_gl(g_eps)))
@@ -1538,7 +1553,7 @@ void PathsRenderer::wheelEvent(QWheelEvent *pEvt)
 /**
  * paint event
  */
-void PathsRenderer::paintEvent(QPaintEvent* pEvt)
+void GlSceneRenderer::paintEvent(QPaintEvent* pEvt)
 {
 	QOpenGLWidget::paintEvent(pEvt);
 }

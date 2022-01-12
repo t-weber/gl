@@ -5,8 +5,8 @@
  * @license GPLv3, see 'LICENSE' file
  */
 
-#ifndef __PATHS_GLOBAL_TYPES_H__
-#define __PATHS_GLOBAL_TYPES_H__
+#ifndef __GLSCENE_TYPES_H__
+#define __GLSCENE_TYPES_H__
 
 
 #include "tlibs2/libs/maths.h"

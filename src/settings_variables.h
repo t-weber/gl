@@ -5,8 +5,8 @@
  * @license GPLv3, see 'LICENSE' file
  */
 
-#ifndef __TASPATHS_SETTINGS_VARIABLES__
-#define __TASPATHS_SETTINGS_VARIABLES__
+#ifndef __GLSCENE_SETTINGS_VARIABLES__
+#define __GLSCENE_SETTINGS_VARIABLES__
 
 #include <QtCore/QString>
 

@@ -82,6 +82,9 @@ public:
 	virtual bool IsFixed() const { return m_fixed; }
 	virtual void SetFixed(bool b) { m_fixed = b; }
 
+	virtual bool IsLightingEnabled() const { return m_lighting; }
+	virtual void SetLighting(bool b) { m_lighting = b; }
+
 	virtual const t_vec& GetColour() const { return m_colour; }
 	virtual void SetColour(const t_vec& col) { m_colour = col; }
 
@@ -100,6 +103,7 @@ public:
 protected:
 	std::string m_id{};
 	t_vec m_colour = tl2::create<t_vec>({1, 0, 0});
+	bool m_lighting = true;
 	std::string m_texture{};
 
 	t_mat m_rot = tl2::unit<t_mat>(4);
