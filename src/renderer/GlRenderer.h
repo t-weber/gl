@@ -77,7 +77,7 @@ class GlSceneRenderer : public QOpenGLWidget
 { Q_OBJECT
 public:
 	// camera type
-	using t_cam = Camera<t_mat_gl, t_vec_gl, t_vec3_gl, t_real_gl>;
+	using t_cam = tl2::Camera<t_mat_gl, t_vec_gl, t_vec3_gl, t_real_gl>;
 
 	// 3d object and texture types
 	using t_objs = std::unordered_map<std::string, GlSceneObj>;

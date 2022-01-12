@@ -41,6 +41,8 @@
  */
 GlSceneRenderer::GlSceneRenderer(QWidget *pParent) : QOpenGLWidget(pParent)
 {
+	m_cam.SetDist(15.);
+
 	// timer callback function
 	connect(&m_timer, &QTimer::timeout, [this]()
 	{
