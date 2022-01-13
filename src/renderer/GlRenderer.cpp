@@ -27,6 +27,7 @@
 #include <QtGui/QGuiApplication>
 
 #include <iostream>
+#include <boost/range/combine.hpp>
 #include <boost/scope_exit.hpp>
 
 #include "tlibs2/libs/str.h"
@@ -64,6 +65,9 @@ GlSceneRenderer::~GlSceneRenderer()
 	EnableTimer(false);
 	setMouseTracking(false);
 	Clear();
+
+	// remove selection plane
+	tl2::delete_render_object(m_selectionPlane);
 
 	// delete gl objects within current gl context
 	m_shaders.reset();
@@ -222,6 +226,61 @@ bool GlSceneRenderer::LoadScene(const Scene& scene)
 
 
 /**
+ * calculate the bounding box and sphere
+ */
+template<class t_vec, template<class...> class t_cont = std::vector>
+requires tl2::is_vec<t_vec>
+static void create_bounding_objects(GlSceneObj& obj, const t_cont<t_vec>& triag_verts)
+{
+	// bounding sphere
+	auto [boundingSpherePos, boundingSphereRad] =
+		tl2::bounding_sphere<t_vec3_gl>(triag_verts);
+
+	// bounding box
+	auto [bbMin, bbMax] =
+		tl2::bounding_box<t_vec3_gl>(triag_verts);
+
+	// object bounding sphere
+	obj.m_boundingSpherePos = std::move(boundingSpherePos);
+	obj.m_boundingSphereRad = boundingSphereRad;
+
+	// object bounding box
+	obj.m_boundingBox.reserve(8);
+	obj.m_boundingBox.push_back(tl2::create<t_vec_gl>({bbMin[0], bbMin[1], bbMin[2], 1.}));
+	obj.m_boundingBox.push_back(tl2::create<t_vec_gl>({bbMin[0], bbMin[1], bbMax[2], 1.}));
+	obj.m_boundingBox.push_back(tl2::create<t_vec_gl>({bbMin[0], bbMax[1], bbMin[2], 1.}));
+	obj.m_boundingBox.push_back(tl2::create<t_vec_gl>({bbMin[0], bbMax[1], bbMax[2], 1.}));
+	obj.m_boundingBox.push_back(tl2::create<t_vec_gl>({bbMax[0], bbMin[1], bbMin[2], 1.}));
+	obj.m_boundingBox.push_back(tl2::create<t_vec_gl>({bbMax[0], bbMin[1], bbMax[2], 1.}));
+	obj.m_boundingBox.push_back(tl2::create<t_vec_gl>({bbMax[0], bbMax[1], bbMin[2], 1.}));
+	obj.m_boundingBox.push_back(tl2::create<t_vec_gl>({bbMax[0], bbMax[1], bbMax[2], 1.}));
+}
+
+
+void GlSceneRenderer::CreateSelectionPlane()
+{
+	t_vec3_gl norm = tl2::create<t_vec3_gl>({0, 0, 1});
+	t_real_gl len = 20.;
+	auto solid = tl2::create_plane<t_mat_gl, t_vec3_gl>(norm, len, len);
+	auto [verts, norms, uvs] = tl2::create_triangles<t_vec3_gl>(solid);
+	auto col = tl2::create<t_vec_gl>({0., 0., 1., 1.});
+
+	create_bounding_objects<t_vec3_gl>(m_selectionPlane, verts);
+
+	create_triangle_object(this, m_selectionPlane,
+		verts, verts, norms, uvs, col,
+		false, m_attrVertex, m_attrVertexNorm,
+		m_attrVertexCol, m_attrTexCoords);
+
+	m_selectionPlane.m_visible = true;
+	m_selectionPlane.m_cull = false;
+	m_selectionPlane.m_lighting = false;
+
+        m_selectionPlane.m_mat = tl2::hom_translation<t_mat_gl, t_real_gl>(0., 0., 0.);
+}
+
+
+/**
  * insert an object into the scene
  */
 void GlSceneRenderer::AddObject(const Geometry& obj)
@@ -314,20 +373,14 @@ GlSceneRenderer::AddTriangleObject(
 	const std::vector<t_vec3_gl>& triag_uvs,
 	t_real_gl r, t_real_gl g, t_real_gl b, t_real_gl a)
 {
-	// bounding sphere
-	auto [boundingSpherePos, boundingSphereRad] =
-		tl2::bounding_sphere<t_vec3_gl>(triag_verts);
-
-	// bounding box
-	auto [bbMin, bbMax] =
-		tl2::bounding_box<t_vec3_gl>(triag_verts);
-
 	// colour
 	auto col = tl2::create<t_vec_gl>({r, g, b, a});
 
+	GlSceneObj obj;
+	create_bounding_objects<t_vec3_gl>(obj, triag_verts);
+
 	QMutexLocker _locker{&m_mutexObj};
 
-	GlSceneObj obj;
 	create_triangle_object(this, obj,
 		triag_verts, triag_verts, triag_norms,
 		triag_uvs, col,
@@ -336,21 +389,6 @@ GlSceneRenderer::AddTriangleObject(
 
 	// object transformation matrix
 	obj.m_mat = tl2::hom_translation<t_mat_gl, t_real_gl>(0., 0., 0.);
-
-	// object bounding sphere
-	obj.m_boundingSpherePos = std::move(boundingSpherePos);
-	obj.m_boundingSphereRad = boundingSphereRad;
-
-	// object bounding box
-	obj.m_boundingBox.reserve(8);
-	obj.m_boundingBox.push_back(tl2::create<t_vec_gl>({bbMin[0], bbMin[1], bbMin[2], 1.}));
-	obj.m_boundingBox.push_back(tl2::create<t_vec_gl>({bbMin[0], bbMin[1], bbMax[2], 1.}));
-	obj.m_boundingBox.push_back(tl2::create<t_vec_gl>({bbMin[0], bbMax[1], bbMin[2], 1.}));
-	obj.m_boundingBox.push_back(tl2::create<t_vec_gl>({bbMin[0], bbMax[1], bbMax[2], 1.}));
-	obj.m_boundingBox.push_back(tl2::create<t_vec_gl>({bbMax[0], bbMin[1], bbMin[2], 1.}));
-	obj.m_boundingBox.push_back(tl2::create<t_vec_gl>({bbMax[0], bbMin[1], bbMax[2], 1.}));
-	obj.m_boundingBox.push_back(tl2::create<t_vec_gl>({bbMax[0], bbMax[1], bbMin[2], 1.}));
-	obj.m_boundingBox.push_back(tl2::create<t_vec_gl>({bbMax[0], bbMax[1], bbMax[2], 1.}));
 
 	return m_objs.emplace(std::make_pair(obj_name, std::move(obj))).first;
 }
@@ -839,6 +877,7 @@ void GlSceneRenderer::initializeGL()
 
 	LOGGLERR(pGl);
 
+	CreateSelectionPlane();
 	SetLight(0, tl2::create<t_vec3_gl>({0, 0, 10}));
 
 	m_initialised = true;
@@ -1096,18 +1135,19 @@ void GlSceneRenderer::DoPaintGL(qgl_funcs *pGl)
 	auto colOverride = tl2::create<t_vec_gl>({1,1,1,1});
 
 
-	// render triangle geometry
-	for(const auto& [obj_name, obj] : m_objs)
+	auto render_triangle_geometry = 
+		[this, pGl, &colOverride, &boost_scope_exit_aux_args](
+			const GlSceneObj& obj)
 	{
 		if(!obj.m_visible)
-			continue;
+			return;
 
 		// check if object is in camera frustum
 		if(m_shadowRenderPass)
 		{
 			if(m_lightcam.IsBoundingBoxOutsideFrustum(
 				obj.m_mat, obj.m_boundingBox))
-				continue;
+				return;
 		}
 		else
 		{
@@ -1116,7 +1156,7 @@ void GlSceneRenderer::DoPaintGL(qgl_funcs *pGl)
 
 			if(m_cam.IsBoundingBoxOutsideFrustum(
 				obj.m_mat, obj.m_boundingBox))
-				continue;
+				return;
 		}
 
 		// textures
@@ -1205,8 +1245,11 @@ void GlSceneRenderer::DoPaintGL(qgl_funcs *pGl)
 		else
 			std::cerr << "Unknown plot object type." << std::endl;
 		LOGGLERR(pGl);
-	}
+	};
 
+	for(const auto& [obj_name, obj] : m_objs)
+		render_triangle_geometry(obj);
+	//render_triangle_geometry(m_selectionPlane);
 
 	pGl->glDisable(GL_CULL_FACE);
 	pGl->glDisable(GL_DEPTH_TEST);

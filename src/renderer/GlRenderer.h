@@ -149,6 +149,8 @@ protected:
 
 	qgl_funcs* GetGlFunctions();
 
+	void CreateSelectionPlane();
+
 	void UpdatePicker();
 	void UpdateLights();
 	void UpdateShadowFramebuffer();
@@ -247,9 +249,12 @@ protected:
 	// cursor
 	t_vec3_gl m_selectionPlaneNorm = tl2::create<t_vec3_gl>({0, 0, 1});
 	t_real_gl m_selectionPlaneDist = 0;
+
 	QPointF m_posMouse{};
 	QPointF m_posMouseRotationStart{}, m_posMouseRotationEnd{};
 	bool m_inRotation = false;
+
+	GlSceneObj m_selectionPlane{};
 
 	// timer
 	QTimer m_timer{};
