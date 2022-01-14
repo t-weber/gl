@@ -43,6 +43,9 @@ SelectionPropertiesWidget::SelectionPropertiesWidget(QWidget *parent)
 	m_spinPlaneDist->setValue(0.);
 	m_spinPlaneDist->setToolTip("Selection plane distance.");
 
+	m_checkPlaneVisible = new QCheckBox("Visible", this);
+	m_checkPlaneVisible->setChecked(true);
+
 	QPushButton* btnPlaneNorm[3];
 	const char* pos_btn[] = {"[100]", "[010]", "[001]"};
 	for(int pos=0; pos<3; ++pos)
@@ -68,8 +71,10 @@ SelectionPropertiesWidget::SelectionPropertiesWidget(QWidget *parent)
 		layoutVecs->addWidget(m_spinPlaneNorm[2], y++, 4, 1, 2);
 
 		layoutVecs->addWidget(new QLabel("Distance:", this),
-			y, 0, 1, 3);
-		layoutVecs->addWidget(m_spinPlaneDist, y++, 3, 1, 3);
+			y, 0, 1, 2);
+		layoutVecs->addWidget(m_spinPlaneDist, y, 2, 1, 2);
+
+		layoutVecs->addWidget(m_checkPlaneVisible, y++, 4, 1, 2);
 
 		QFrame *separator = new QFrame(this);
 		separator->setFrameStyle(QFrame::HLine);
@@ -146,6 +151,10 @@ SelectionPropertiesWidget::SelectionPropertiesWidget(QWidget *parent)
 					m_spinPlaneNorm[2]->value());
 				emit PlaneDistChanged(m_spinPlaneDist->value());
 			});
+
+		// plane visible
+		connect(m_checkPlaneVisible, &QCheckBox::toggled,
+			this, &SelectionPropertiesWidget::PlaneVisibilityChanged);
 	}
 }
 
@@ -169,6 +178,14 @@ void SelectionPropertiesWidget::SetPlaneNorm(t_real x, t_real y, t_real z)
 	if(m_spinPlaneNorm[0]) m_spinPlaneNorm[0]->setValue(x);
 	if(m_spinPlaneNorm[1]) m_spinPlaneNorm[1]->setValue(y);
 	if(m_spinPlaneNorm[2]) m_spinPlaneNorm[2]->setValue(z);
+	this->blockSignals(false);
+}
+
+
+void SelectionPropertiesWidget::SetPlaneVisibility(bool visible)
+{
+	this->blockSignals(true);
+	m_checkPlaneVisible->setChecked(visible);
 	this->blockSignals(false);
 }
 

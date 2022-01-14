@@ -47,9 +47,9 @@ struct GlSceneObj : public tl2::GlRenderObj
 {
 	t_mat_gl m_mat = tl2::unit<t_mat_gl>();
 
-	bool m_visible = true;		// object shown?
-	bool m_cull = true;		// object faces culled?
-	bool m_lighting = true;		// enable lighting (just draw colour if disabled)
+	bool m_visible = true;   // object shown?
+	bool m_cull = true;      // object faces culled?
+	bool m_lighting = true;  // enable lighting (just draw colour if disabled)
 
 	t_vec3_gl m_boundingSpherePos = tl2::create<t_vec3_gl>({ 0., 0., 0. });
 	t_real_gl m_boundingSphereRad = 0.;
@@ -120,8 +120,11 @@ public:
 
 	void SetSelectionPlaneNorm(const t_vec3_gl& vec);
 	void SetSelectionPlaneDist(t_real_gl d);
+	void SetSelectionPlaneVisible(bool b) { m_selectionPlane.m_visible = b; update(); }
+
 	const t_vec3_gl& GetSelectionPlaneNorm() const { return m_selectionPlaneNorm; }
 	t_real_gl GetSelectionPlaneDist() const { return m_selectionPlaneDist; }
+	bool GetSelectionPlaneVisible() const { return m_selectionPlane.m_visible; }
 
 	std::tuple<t_vec3_gl, int> GetSelectionPlaneCursor() const;
 	QPoint GetMousePosition(bool global_pos = false) const;
@@ -150,6 +153,7 @@ protected:
 	qgl_funcs* GetGlFunctions();
 
 	void CreateSelectionPlane();
+	void CalcSelectionPlaneMatrix();
 
 	void UpdatePicker();
 	void UpdateLights();

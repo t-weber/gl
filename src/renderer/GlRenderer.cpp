@@ -257,29 +257,6 @@ static void create_bounding_objects(GlSceneObj& obj, const t_cont<t_vec>& triag_
 }
 
 
-void GlSceneRenderer::CreateSelectionPlane()
-{
-	t_vec3_gl norm = tl2::create<t_vec3_gl>({0, 0, 1});
-	t_real_gl len = 20.;
-	auto solid = tl2::create_plane<t_mat_gl, t_vec3_gl>(norm, len, len);
-	auto [verts, norms, uvs] = tl2::create_triangles<t_vec3_gl>(solid);
-	auto col = tl2::create<t_vec_gl>({0., 0., 1., 1.});
-
-	create_bounding_objects<t_vec3_gl>(m_selectionPlane, verts);
-
-	create_triangle_object(this, m_selectionPlane,
-		verts, verts, norms, uvs, col,
-		false, m_attrVertex, m_attrVertexNorm,
-		m_attrVertexCol, m_attrTexCoords);
-
-	m_selectionPlane.m_visible = true;
-	m_selectionPlane.m_cull = false;
-	m_selectionPlane.m_lighting = false;
-
-        m_selectionPlane.m_mat = tl2::hom_translation<t_mat_gl, t_real_gl>(0., 0., 0.);
-}
-
-
 /**
  * insert an object into the scene
  */
@@ -416,6 +393,48 @@ void GlSceneRenderer::CentreCam(const std::string& objid)
 
 
 /**
+ * create the geometry object of the selection plane
+ */
+void GlSceneRenderer::CreateSelectionPlane()
+{
+	t_vec3_gl norm = tl2::create<t_vec3_gl>({0, 0, 1});
+	t_real_gl len = 20.;
+	auto solid = tl2::create_plane<t_mat_gl, t_vec3_gl>(norm, len, len);
+	auto [verts, norms, uvs] = tl2::create_triangles<t_vec3_gl>(solid);
+	auto col = tl2::create<t_vec_gl>({0.5, 0.5, 1., 0.1});
+
+	create_bounding_objects<t_vec3_gl>(m_selectionPlane, verts);
+
+	create_triangle_object(this, m_selectionPlane,
+		verts, verts, norms, uvs, col,
+		false, m_attrVertex, m_attrVertexNorm,
+		m_attrVertexCol, m_attrTexCoords);
+
+	m_selectionPlane.m_visible = false;
+	m_selectionPlane.m_cull = false;
+	m_selectionPlane.m_lighting = false;
+
+	m_selectionPlane.m_mat = tl2::hom_translation<t_mat_gl, t_real_gl>(0., 0., 0.);
+}
+
+
+/**
+ * orient the selection plane and move it to the cursor position
+ */
+void GlSceneRenderer::CalcSelectionPlaneMatrix()
+{
+	// rotate plane object's [001] normal into this vector
+	static const t_vec3_gl obj_norm = tl2::create<t_vec3_gl>({0, 0, 1});
+	t_mat_gl rot = tl2::rotation<t_mat_gl, t_vec3_gl>(obj_norm, m_selectionPlaneNorm);
+
+	t_vec3_gl pos = m_selectionPlaneNorm * m_selectionPlaneDist;
+	t_mat_gl trans = tl2::hom_translation<t_mat_gl>(pos[0], pos[1], pos[2]);
+
+	m_selectionPlane.m_mat = trans * rot;
+}
+
+
+/**
  * set the normal vector of the selection plane
  */
 void GlSceneRenderer::SetSelectionPlaneNorm(const t_vec3_gl& vec)
@@ -426,6 +445,9 @@ void GlSceneRenderer::SetSelectionPlaneNorm(const t_vec3_gl& vec)
 	{
 		m_selectionPlaneNorm = vec;
 		m_selectionPlaneNorm /= len;
+
+		CalcSelectionPlaneMatrix();
+		update();
 	}
 }
 
@@ -436,6 +458,9 @@ void GlSceneRenderer::SetSelectionPlaneNorm(const t_vec3_gl& vec)
 void GlSceneRenderer::SetSelectionPlaneDist(t_real_gl d)
 {
 	m_selectionPlaneDist = d;
+
+	CalcSelectionPlaneMatrix();
+	update();
 }
 
 
@@ -1062,7 +1087,7 @@ void GlSceneRenderer::DoPaintGL(qgl_funcs *pGl)
 	pGl->glEnable(GL_CULL_FACE);
 
 	pGl->glDisable(GL_BLEND);
-	//pGl->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	pGl->glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	if(m_shadowRenderPass)
 		pGl->glDisable(GL_MULTISAMPLE);
@@ -1249,8 +1274,16 @@ void GlSceneRenderer::DoPaintGL(qgl_funcs *pGl)
 
 	for(const auto& [obj_name, obj] : m_objs)
 		render_triangle_geometry(obj);
-	//render_triangle_geometry(m_selectionPlane);
 
+	// render the selection plane
+	if(!m_shadowRenderPass)
+	{
+		m_shaders->setUniformValue(m_uniShadowRenderingEnabled, false);
+		pGl->glEnable(GL_BLEND);
+		render_triangle_geometry(m_selectionPlane);
+	}
+
+	pGl->glDisable(GL_BLEND);
 	pGl->glDisable(GL_CULL_FACE);
 	pGl->glDisable(GL_DEPTH_TEST);
 }

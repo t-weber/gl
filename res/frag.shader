@@ -227,6 +227,7 @@ void main()
 			I = lighting(frag_in.pos, frag_in.norm);
 
 		frag_out_col.rgb *= frag_in.col.rgb * I;
+		frag_out_col.a = frag_in.col.a;
 		frag_out_col *= lights_const_col;
 
 		// shadows, @see (Sellers 2014), pp. 534-540

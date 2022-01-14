@@ -231,16 +231,19 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 
 	// selection plane distance
 	connect(selwidget, &SelectionPropertiesWidget::PlaneDistChanged,
-		[this](t_real _d) -> void
+		[this](t_real d) -> void
 		{
-			t_real_gl d = t_real_gl(_d);
-
 			if(m_renderer)
-			{
-				m_renderer->SetSelectionPlaneDist(d);
-			}
+				m_renderer->SetSelectionPlaneDist(t_real_gl(d));
 		});
 
+	// selection plane visibility
+	connect(selwidget, &SelectionPropertiesWidget::PlaneVisibilityChanged,
+		[this](bool visible) -> void
+		{
+			if(m_renderer)
+				m_renderer->SetSelectionPlaneVisible(visible);
+		});
 	// --------------------------------------------------------------------
 
 
@@ -1075,51 +1078,43 @@ void MainWnd::SetCurrentFile(const QString &file)
  */
 void MainWnd::AfterGLInitialisation()
 {
+	if(!m_renderer)
+		return;
+
 	// GL device info
 	std::tie(m_gl_ver, m_gl_shader_ver, m_gl_vendor, m_gl_renderer)
 		= m_renderer->GetGlDescr();
 
 	// get camera fov
-	t_real viewingAngle = tl2::pi<t_real>*0.5;
-	if(m_renderer)
-		viewingAngle = m_renderer->GetCamera().GetFOV();
+	t_real viewingAngle = m_renderer->GetCamera().GetFOV();
 	m_camProperties->GetWidget()->SetViewingAngle(
 		viewingAngle*t_real{180}/tl2::pi<t_real>);
 
 	// get camera zoom
-	t_real zoom = 1.;
-	if(m_renderer)
-		zoom = m_renderer->GetCamera().GetZoom();
+	t_real zoom = m_renderer->GetCamera().GetZoom();
 	m_camProperties->GetWidget()->SetZoom(zoom);
 
 	// get perspective projection flag
-	bool persp = true;
-	if(m_renderer)
-		persp = m_renderer->GetCamera().GetPerspectiveProjection();
+	bool persp = m_renderer->GetCamera().GetPerspectiveProjection();
 	m_camProperties->GetWidget()->SetPerspectiveProj(persp);
 
 	// get camera position
-	t_vec3_gl campos;
-	if(m_renderer)
-		campos = m_renderer->GetCamera().GetPosition();
-	else
-		campos = tl2::zero<t_vec3_gl>(3);
-	m_camProperties->GetWidget()->SetPosition(t_real(campos[0]), t_real(campos[1]), t_real(campos[2]));
+	t_vec3_gl campos = m_renderer->GetCamera().GetPosition();
+	m_camProperties->GetWidget()->SetPosition(campos[0], campos[1], campos[2]);
 
 	// get camera rotation
-	t_vec2_gl camrot;
-	if(m_renderer)
-	{
-		auto [phi, theta] = m_renderer->GetCamera().GetRotation();
-		camrot = tl2::create<t_vec2_gl>({phi, theta});
-	}
-	else
-	{
-		camrot = tl2::zero<t_vec2_gl>(2);
-	}
+	auto [phi, theta] = m_renderer->GetCamera().GetRotation();
+	t_vec2_gl camrot = tl2::create<t_vec2_gl>({phi, theta});
 	m_camProperties->GetWidget()->SetRotation(
 		t_real(camrot[0])*t_real{180}/tl2::pi<t_real>,
 		t_real(camrot[1])*t_real{180}/tl2::pi<t_real>);
+
+	// get initial selection plane values from the renderer
+	const auto& plane_norm = m_renderer->GetSelectionPlaneNorm();
+
+	m_selProperties->GetWidget()->SetPlaneVisibility(m_renderer->GetSelectionPlaneVisible());
+	m_selProperties->GetWidget()->SetPlaneDist(m_renderer->GetSelectionPlaneDist());
+	m_selProperties->GetWidget()->SetPlaneNorm(plane_norm[0], plane_norm[1], plane_norm[2]);
 
 	LoadInitialSceneFile();
 }

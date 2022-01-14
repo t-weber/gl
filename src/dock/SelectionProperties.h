@@ -38,16 +38,19 @@ public:
 public slots:
 	void SetPlaneDist(t_real dist);
 	void SetPlaneNorm(t_real x, t_real y, t_real z);
+	void SetPlaneVisibility(bool);
 
 
 signals:
 	void PlaneDistChanged(t_real angle);
 	void PlaneNormChanged(t_real x, t_real y, t_real z);
+	void PlaneVisibilityChanged(bool visible);
 
 
 private:
 	QDoubleSpinBox *m_spinPlaneDist{nullptr};
 	QDoubleSpinBox *m_spinPlaneNorm[3]{nullptr, nullptr, nullptr};
+	QCheckBox *m_checkPlaneVisible{nullptr};
 };
 
 
