@@ -175,6 +175,10 @@ t_mat Geometry::GetRotation() const
 void Geometry::SetRotation(const t_mat& rot)
 {
 	tl2::set_submat<t_mat>(m_trafo, rot, 0, 0, 3, 3);
+
+#ifdef USE_BULLET
+	SetStateFromMatrix();
+#endif
 }
 
 
@@ -290,12 +294,7 @@ void Geometry::Rotate(t_real angle, char axis)
 void Geometry::Rotate(t_real angle, const t_vec& axis)
 {
 	t_mat R = tl2::hom_rotation<t_mat, t_vec>(axis, angle);
-
 	SetRotation(R * GetRotation());
-
-#ifdef USE_BULLET
-	SetStateFromMatrix();
-#endif
 }
 
 
@@ -358,7 +357,7 @@ void Geometry::SetStateFromMatrix()
 	};
 
 	btTransform trafo{mat, vec};
-	//m_rigid_body->getMotionState()->setWorldTransform(trafo);
+	m_rigid_body->getMotionState()->setWorldTransform(trafo);
 	m_state->m_graphicsWorldTrans = trafo;
 	m_state->m_startWorldTrans = trafo;
 }
@@ -505,8 +504,10 @@ void BoxGeometry::CreateRigidBody()
 		});
 
 	m_shape->calculateLocalInertia(mass, com);
+
 	m_state = std::make_shared<btDefaultMotionState>();
 	SetStateFromMatrix();
+
 	m_rigid_body = std::make_shared<btRigidBody>(
 		btRigidBody::btRigidBodyConstructionInfo{
 			mass, m_state.get(), m_shape.get(), com});
@@ -640,6 +641,7 @@ void PlaneGeometry::CreateRigidBody()
 {
 	m_state = std::make_shared<btDefaultMotionState>();
 	SetStateFromMatrix();
+
 	m_shape = std::make_shared<btBoxShape>(
 		btVector3
 		{
@@ -712,7 +714,8 @@ pt::ptree PlaneGeometry::Save() const
 std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 PlaneGeometry::GetTriangles() const
 {
-	auto solid = tl2::create_plane<t_mat, t_vec>(m_norm, m_width*0.5, m_height*0.5);
+	auto solid = tl2::create_plane<t_mat, t_vec>(
+		m_norm, m_width*0.5, m_height*0.5);
 	auto [verts, norms, uvs] = tl2::create_triangles<t_vec>(solid);
 
 	//tl2::transform_obj(verts, norms, mat, true);
