@@ -160,9 +160,9 @@ public:
 	t_real GetWidth() const { return m_width; }
 	t_real GetHeight() const { return m_height; }
 
-	void SetNormal(const t_vec& n)  { m_norm = n; }
-	void SetWidth(t_real w)  { m_width = w; }
-	void SetHeight(t_real h) { m_height = h; }
+	void SetNormal(const t_vec& n);
+	void SetWidth(t_real w);
+	void SetHeight(t_real h);
 
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
@@ -195,13 +195,13 @@ public:
 	virtual std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 	GetTriangles() const override;
 
-	t_real GetHeight() const { return m_height; }
-	t_real GetDepth() const { return m_depth; }
 	t_real GetLength() const { return m_length; }
+	t_real GetDepth() const { return m_depth; }
+	t_real GetHeight() const { return m_height; }
 
-	void SetHeight(t_real h) { m_height = h; }
-	void SetDepth(t_real d) { m_depth = d; }
-	void SetLength(t_real l)  { m_length = l; }
+	void SetLength(t_real l);
+	void SetDepth(t_real d);
+	void SetHeight(t_real h);
 
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
@@ -213,7 +213,7 @@ public:
 
 
 private:
-	t_real m_height = 1., m_depth = 1., m_length = 1.;
+	t_real m_length = 1., m_depth = 1., m_height = 1.;
 };
 // ----------------------------------------------------------------------------
 
@@ -235,10 +235,10 @@ public:
 		GetTriangles() const override;
 
 	t_real GetHeight() const { return m_height; }
-	void SetHeight(t_real h) { m_height = h; }
-
 	t_real GetRadius() const { return m_radius; }
-	void SetRadius(t_real rad) { m_radius = rad; }
+
+	void SetHeight(t_real h);
+	void SetRadius(t_real rad);
 
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
@@ -267,7 +267,7 @@ public:
 	GetTriangles() const override;
 
 	t_real GetRadius() const { return m_radius; }
-	void SetRadius(t_real rad) { m_radius = rad; }
+	void SetRadius(t_real rad);
 
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;

@@ -1428,7 +1428,7 @@ void MainWnd::AddCuboid()
 void MainWnd::AddSphere()
 {
 	auto sphere = std::make_shared<SphereGeometry>();
-	sphere->SetRadius(2.);
+	sphere->SetRadius(1.);
 	sphere->SetPosition(tl2::create<t_vec>({0, 0, sphere->GetRadius()}));
 
 	static std::size_t sphcnt = 1;

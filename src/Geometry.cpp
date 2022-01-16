@@ -490,6 +490,36 @@ BoxGeometry::~BoxGeometry()
 }
 
 
+void BoxGeometry::SetLength(t_real l)
+{
+	m_length = l;
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
+}
+
+
+void BoxGeometry::SetDepth(t_real d)
+{
+	m_depth = d;
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
+}
+
+
+void BoxGeometry::SetHeight(t_real h)
+{
+	m_height = h;
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
+}
+
+
 #ifdef USE_BULLET
 void BoxGeometry::CreateRigidBody()
 {
@@ -498,9 +528,9 @@ void BoxGeometry::CreateRigidBody()
 	m_shape = std::make_shared<btBoxShape>(
 		btVector3
 		{
-			btScalar(m_length),
-			btScalar(m_depth),
-			btScalar(m_height),
+			btScalar(m_length * 0.5),
+			btScalar(m_depth * 0.5),
+			btScalar(m_height * 0.5),
 		});
 
 	m_shape->calculateLocalInertia(mass, com);
@@ -525,9 +555,9 @@ void BoxGeometry::UpdateRigidBody()
 	m_shape->setImplicitShapeDimensions(
 		btVector3
 		{
-			btScalar(m_length),
-			btScalar(m_depth),
-			btScalar(m_height),
+			btScalar(m_length * 0.5),
+			btScalar(m_depth * 0.5),
+			btScalar(m_height * 0.5),
 		});
 
 	m_shape->calculateLocalInertia(mass, com);
@@ -633,6 +663,36 @@ PlaneGeometry::PlaneGeometry() : Geometry()
 
 PlaneGeometry::~PlaneGeometry()
 {
+}
+
+
+void PlaneGeometry::SetNormal(const t_vec& n)
+{
+	m_norm = n;
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
+}
+
+
+void PlaneGeometry::SetWidth(t_real w)
+{
+	m_width = w;
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
+}
+
+
+void PlaneGeometry::SetHeight(t_real h)
+{
+	m_height = h;
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
 }
 
 
@@ -778,6 +838,18 @@ CylinderGeometry::~CylinderGeometry()
 }
 
 
+void CylinderGeometry::SetHeight(t_real h)
+{
+	m_height = h;
+}
+
+
+void CylinderGeometry::SetRadius(t_real rad)
+{
+	m_radius = rad;
+}
+
+
 bool CylinderGeometry::Load(const pt::ptree& prop)
 {
 	if(!Geometry::Load(prop))
@@ -859,6 +931,12 @@ SphereGeometry::SphereGeometry() : Geometry()
 
 SphereGeometry::~SphereGeometry()
 {
+}
+
+
+void SphereGeometry::SetRadius(t_real rad)
+{
+	m_radius = rad;
 }
 
 
