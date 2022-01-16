@@ -8,7 +8,7 @@
 		<object id="wall 1">
 			<geometry>
 				<box>
-					<position> 10, 0 </position>
+					<position> 10, 0, 1.5 </position>
 					<height> 3 </height>
 					<depth> 20 </depth>
 					<length> 0.5 </length>
@@ -20,7 +20,7 @@
 		<object id="wall 2">
 			<geometry>
 				<box id="">
-					<position> 0, 10 </position>
+					<position> 0, 10, 1.5 </position>
 					<height> 3 </height>
 					<depth> 0.5 </depth>
 					<length> 20 </length>
@@ -32,7 +32,7 @@
 		<object id="wall 3">
 			<geometry>
 				<box id="">
-					<position> -10, 0 </position>
+					<position> -10, 0; 1.5 </position>
 					<height> 3 </height>
 					<depth> 20 </depth>
 					<length> 0.5 </length>
@@ -44,7 +44,7 @@
 		<object id="wall 4">
 			<geometry>
 				<box id="">
-					<position> 0, -10 </position>
+					<position> 0, -10, 1.5 </position>
 					<height> 3 </height>
 					<depth> 0.5 </depth>
 					<length> 20 </length>
@@ -56,7 +56,7 @@
 		<object id="floor">
 			<geometry>
 				<plane>
-					<position> 0; 0; -1.5 </position>
+					<position> 0; 0; 0 </position>
 					<colour> 0.5; 0.5; 0.5 </colour>
 					<normal> 0; 0; 1 </normal>
 					<width> 20 </width>

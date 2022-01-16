@@ -1278,7 +1278,7 @@ void MainWnd::ObjectDragged(bool drag_start, const std::string& objid)
 	// if the object is a light, set its new position
 	if(objid == "light")
 	{
-		const t_vec& pos = obj->GetCentre();
+		const t_vec& pos = obj->GetPosition();
 		m_renderer->SetLight(0, tl2::convert<t_vec3_gl>(pos));
 	}
 }
@@ -1375,8 +1375,7 @@ void MainWnd::AddPlane()
 	auto plane = std::make_shared<PlaneGeometry>();
 	plane->SetWidth(2.);
 	plane->SetHeight(2.);
-	plane->SetCentre(tl2::create<t_vec>({0, 0, 0}));
-	plane->UpdateTrafo();
+	plane->SetPosition(tl2::create<t_vec>({0, 0, 0}));
 
 	static std::size_t cnt = 1;
 	std::ostringstream ostrId;
@@ -1404,8 +1403,7 @@ void MainWnd::AddCuboid()
 	cuboid->SetHeight(2.);
 	cuboid->SetDepth(2.);
 	cuboid->SetLength(2.);
-	cuboid->SetCentre(tl2::create<t_vec>({0, 0, cuboid->GetHeight()*0.5}));
-	cuboid->UpdateTrafo();
+	cuboid->SetPosition(tl2::create<t_vec>({0, 0, cuboid->GetHeight()*0.5}));
 
 	static std::size_t cuboidcnt = 1;
 	std::ostringstream ostrId;
@@ -1431,8 +1429,7 @@ void MainWnd::AddSphere()
 {
 	auto sphere = std::make_shared<SphereGeometry>();
 	sphere->SetRadius(2.);
-	sphere->SetCentre(tl2::create<t_vec>({0, 0, sphere->GetRadius()}));
-	sphere->UpdateTrafo();
+	sphere->SetPosition(tl2::create<t_vec>({0, 0, sphere->GetRadius()}));
 
 	static std::size_t sphcnt = 1;
 	std::ostringstream ostrId;
@@ -1458,9 +1455,8 @@ void MainWnd::AddCylinder()
 {
 	auto cyl = std::make_shared<CylinderGeometry>();
 	cyl->SetHeight(4.);
-	cyl->SetCentre(tl2::create<t_vec>({0, 0, cyl->GetHeight()*0.5}));
+	cyl->SetPosition(tl2::create<t_vec>({0, 0, cyl->GetHeight()*0.5}));
 	cyl->SetRadius(0.5);
-	cyl->UpdateTrafo();
 
 	static std::size_t cylcnt = 1;
 	std::ostringstream ostrId;
@@ -1486,8 +1482,7 @@ void MainWnd::AddTetrahedron()
 {
 	auto tetr = std::make_shared<TetrahedronGeometry>();
 	tetr->SetRadius(1.);
-	tetr->SetCentre(tl2::create<t_vec>({0, 0, tetr->GetRadius()}));
-	tetr->UpdateTrafo();
+	tetr->SetPosition(tl2::create<t_vec>({0, 0, tetr->GetRadius()}));
 
 	static std::size_t tetrcnt = 1;
 	std::ostringstream ostrId;
@@ -1513,8 +1508,7 @@ void MainWnd::AddOctahedron()
 {
 	auto octa = std::make_shared<OctahedronGeometry>();
 	octa->SetRadius(1.);
-	octa->SetCentre(tl2::create<t_vec>({0, 0, octa->GetRadius()}));
-	octa->UpdateTrafo();
+	octa->SetPosition(tl2::create<t_vec>({0, 0, octa->GetRadius()}));
 
 	static std::size_t tetrcnt = 1;
 	std::ostringstream ostrId;
@@ -1540,8 +1534,7 @@ void MainWnd::AddDodecahedron()
 {
 	auto dode = std::make_shared<DodecahedronGeometry>();
 	dode->SetRadius(1.);
-	dode->SetCentre(tl2::create<t_vec>({0, 0, dode->GetRadius()}));
-	dode->UpdateTrafo();
+	dode->SetPosition(tl2::create<t_vec>({0, 0, dode->GetRadius()}));
 
 	static std::size_t tetrcnt = 1;
 	std::ostringstream ostrId;
@@ -1567,8 +1560,7 @@ void MainWnd::AddIcosahedron()
 {
 	auto icosa = std::make_shared<IcosahedronGeometry>();
 	icosa->SetRadius(1.);
-	icosa->SetCentre(tl2::create<t_vec>({0, 0, icosa->GetRadius()}));
-	icosa->UpdateTrafo();
+	icosa->SetPosition(tl2::create<t_vec>({0, 0, icosa->GetRadius()}));
 
 	static std::size_t tetrcnt = 1;
 	std::ostringstream ostrId;

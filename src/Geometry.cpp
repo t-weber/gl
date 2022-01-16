@@ -146,38 +146,35 @@ Geometry::~Geometry()
 }
 
 
-void Geometry::UpdateTrafo() const
+t_vec Geometry::GetPosition() const
 {
-	m_trafo = tl2::hom_translation<t_mat, t_real>(
-		m_pos[0], m_pos[1], m_pos[2]) * m_rot;
+	t_vec pos = tl2::col<t_mat, t_vec>(m_trafo, 3);
+	pos.resize(3);
+	return pos;
+}
+
+
+void Geometry::SetPosition(const t_vec& vec)
+{
+	tl2::set_col<t_mat, t_vec>(m_trafo, vec, 3);
 
 #ifdef USE_BULLET
-	const_cast<Geometry*>(this)->SetStateFromMatrix();
+	SetStateFromMatrix();
 #endif
-
-	m_trafo_needs_update = false;
 }
 
 
-const t_mat& Geometry::GetTrafo() const
+t_mat Geometry::GetRotation() const
 {
-	if(m_trafo_needs_update)
-		UpdateTrafo();
-
-	return m_trafo;
+	t_mat rot = m_trafo;
+	rot(0,3) = rot(1,3) = rot(2,3) = t_real(0);
+	return rot;
 }
 
 
-t_vec Geometry::GetCentre() const
+void Geometry::SetRotation(const t_mat& rot)
 {
-	return m_pos;
-}
-
-
-void Geometry::SetCentre(const t_vec& vec)
-{
-	m_pos = vec;
-	m_trafo_needs_update = true;
+	tl2::set_submat<t_mat>(m_trafo, rot, 0, 0, 3, 3);
 }
 
 
@@ -294,8 +291,11 @@ void Geometry::Rotate(t_real angle, const t_vec& axis)
 {
 	t_mat R = tl2::hom_rotation<t_mat, t_vec>(axis, angle);
 
-	m_rot = R*m_rot;
-	m_trafo_needs_update = true;
+	SetRotation(R * GetRotation());
+
+#ifdef USE_BULLET
+	SetStateFromMatrix();
+#endif
 }
 
 
@@ -317,17 +317,21 @@ void Geometry::SetMatrixFromState()
 	btTransform trafo;
 	m_rigid_body->getMotionState()->getWorldTransform(trafo);
 	btMatrix3x3 mat = trafo.getBasis();
-	btVector3 pos = trafo.getOrigin();
+	btVector3 vec = trafo.getOrigin();
+
+	t_mat rot = tl2::unit<t_mat>(3);
+	t_vec pos = tl2::zero<t_vec>(3);
 
 	for(int row=0; row<3; ++row)
 	{
 		for(int col=0; col<3; ++col)
-			m_rot(row, col) = mat.getRow(row)[col];
+			rot(row, col) = mat.getRow(row)[col];
 
-		m_pos[row] = pos[row];
+		pos[row] = vec[row];
 	}
 
-	m_trafo_needs_update = true;
+	SetRotation(rot);
+	SetPosition(pos);
 }
 
 
@@ -336,14 +340,23 @@ void Geometry::SetStateFromMatrix()
 	if(!m_rigid_body)
 		return;
 
+	t_mat rot = GetRotation();
+	t_vec pos = GetPosition();
+
 	btMatrix3x3 mat
 	{
-		btScalar(m_rot(0,0)), btScalar(m_rot(0,1)), btScalar(m_rot(0,2)),
-		btScalar(m_rot(1,0)), btScalar(m_rot(1,1)), btScalar(m_rot(1,2)),
-		btScalar(m_rot(2,0)), btScalar(m_rot(2,1)), btScalar(m_rot(2,2))
+		btScalar(rot(0,0)), btScalar(rot(0,1)), btScalar(rot(0,2)),
+		btScalar(rot(1,0)), btScalar(rot(1,1)), btScalar(rot(1,2)),
+		btScalar(rot(2,0)), btScalar(rot(2,1)), btScalar(rot(2,2))
 	};
 
-	btVector3 vec{btScalar(m_pos[0]), btScalar(m_pos[1]), btScalar(m_pos[2])};
+	btVector3 vec
+	{
+		btScalar(pos[0]),
+		btScalar(pos[1]),
+		btScalar(pos[2])
+	};
+
 	btTransform trafo{mat, vec};
 	//m_rigid_body->getMotionState()->setWorldTransform(trafo);
 	m_state->m_graphicsWorldTrans = trafo;
@@ -369,8 +382,8 @@ std::vector<ObjectProperty> Geometry::GetProperties() const
 {
 	std::vector<ObjectProperty> props;
 
-	props.emplace_back(ObjectProperty{.key="position", .value=m_pos});
-	props.emplace_back(ObjectProperty{.key="rotation", .value=m_rot});
+	props.emplace_back(ObjectProperty{.key="position", .value=GetPosition()});
+	props.emplace_back(ObjectProperty{.key="rotation", .value=GetRotation()});
 	props.emplace_back(ObjectProperty{.key="fixed", .value=m_fixed});
 	props.emplace_back(ObjectProperty{.key="colour", .value=m_colour});
 	props.emplace_back(ObjectProperty{.key="lighting", .value=m_lighting});
@@ -388,9 +401,9 @@ void Geometry::SetProperties(const std::vector<ObjectProperty>& props)
 	for(const auto& prop : props)
 	{
 		if(prop.key == "position")
-			m_pos = std::get<t_vec>(prop.value);
+			SetPosition(std::get<t_vec>(prop.value));
 		else if(prop.key == "rotation")
-			m_rot = std::get<t_mat>(prop.value);
+			SetRotation(std::get<t_mat>(prop.value));
 		else if(prop.key == "fixed")
 			m_fixed = std::get<bool>(prop.value);
 		else if(prop.key == "colour")
@@ -400,8 +413,6 @@ void Geometry::SetProperties(const std::vector<ObjectProperty>& props)
 		else if(prop.key == "texture")
 			m_texture  = std::get<std::string>(prop.value);
 	}
-
-	m_trafo_needs_update = true;
 }
 
 
@@ -410,15 +421,13 @@ bool Geometry::Load(const pt::ptree& prop)
 	// position
 	if(auto optPos = prop.get_optional<std::string>("position"); optPos)
 	{
-		m_pos = geo_str_to_vec(*optPos);
-		if(m_pos.size() < 3)
-			m_pos.resize(3);
+		SetPosition(geo_str_to_vec(*optPos));
 	}
 
 	// rotation
 	if(auto optRot = prop.get_optional<std::string>("rotation"); optRot)
 	{
-		m_rot = geo_str_to_mat(*optRot);
+		SetRotation(geo_str_to_mat(*optRot));
 	}
 
 	// fixed
@@ -452,8 +461,8 @@ pt::ptree Geometry::Save() const
 	pt::ptree prop;
 
 	prop.put<std::string>("<xmlattr>.id", GetId());
-	prop.put<std::string>("position", geo_vec_to_str(m_pos));
-	prop.put<std::string>("rotation", geo_mat_to_str(m_rot));
+	prop.put<std::string>("position", geo_vec_to_str(GetPosition()));
+	prop.put<std::string>("rotation", geo_mat_to_str(GetRotation()));
 	prop.put<std::string>("fixed", m_fixed ? "1" : "0");
 	prop.put<std::string>("colour", geo_vec_to_str(m_colour));
 	prop.put<std::string>("lighting", m_lighting ? "1" : "0");
@@ -488,7 +497,13 @@ void BoxGeometry::CreateRigidBody()
 	btScalar mass{1.f};
 	btVector3 com{0, 0, 0};
 	m_shape = std::make_shared<btBoxShape>(
-		btVector3{btScalar(m_length), btScalar(m_height), btScalar(m_depth)});
+		btVector3
+		{
+			btScalar(m_length),
+			btScalar(m_depth),
+			btScalar(m_height),
+		});
+
 	m_shape->calculateLocalInertia(mass, com);
 	m_state = std::make_shared<btDefaultMotionState>();
 	SetStateFromMatrix();
@@ -507,7 +522,13 @@ void BoxGeometry::UpdateRigidBody()
 	btVector3 com{0, 0, 0};
 
 	m_shape->setImplicitShapeDimensions(
-		btVector3{btScalar(m_length), btScalar(m_height), btScalar(m_depth)});
+		btVector3
+		{
+			btScalar(m_length),
+			btScalar(m_depth),
+			btScalar(m_height),
+		});
+
 	m_shape->calculateLocalInertia(mass, com);
 }
 #endif
@@ -518,11 +539,9 @@ bool BoxGeometry::Load(const pt::ptree& prop)
 	if(!Geometry::Load(prop))
 		return false;
 
+	m_length = prop.get<t_real>("length", 1.);
+	m_depth = prop.get<t_real>("depth", 1.);
 	m_height = prop.get<t_real>("height", 1.);
-	m_depth = prop.get<t_real>("depth", 0.1);
-	m_length = prop.get<t_real>("length", 0.1);
-
-	m_trafo_needs_update = true;
 
 #ifdef USE_BULLET
 	UpdateRigidBody();
@@ -536,9 +555,9 @@ pt::ptree BoxGeometry::Save() const
 {
 	pt::ptree prop = Geometry::Save();
 
-	prop.put<t_real>("height", m_height);
-	prop.put<t_real>("depth", m_depth);
 	prop.put<t_real>("length", m_length);
+	prop.put<t_real>("depth", m_depth);
+	prop.put<t_real>("height", m_height);
 
 	pt::ptree propBox;
 	propBox.put_child("box", prop);
@@ -549,7 +568,8 @@ pt::ptree BoxGeometry::Save() const
 std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 BoxGeometry::GetTriangles() const
 {
-	auto solid = tl2::create_cuboid<t_vec>(m_length*0.5, m_depth*0.5, m_height*0.5);
+	auto solid = tl2::create_cuboid<t_vec>(
+		m_length*0.5, m_depth*0.5, m_height*0.5);
 	auto [verts, norms, uvs] = tl2::create_triangles<t_vec>(solid);
 
 	//tl2::transform_obj(verts, norms, mat, true);
@@ -564,9 +584,9 @@ std::vector<ObjectProperty> BoxGeometry::GetProperties() const
 {
 	std::vector<ObjectProperty> props = Geometry::GetProperties();
 
-	props.emplace_back(ObjectProperty{.key="height", .value=m_height});
-	props.emplace_back(ObjectProperty{.key="depth", .value=m_depth});
 	props.emplace_back(ObjectProperty{.key="length", .value=m_length});
+	props.emplace_back(ObjectProperty{.key="depth", .value=m_depth});
+	props.emplace_back(ObjectProperty{.key="height", .value=m_height});
 
 	return props;
 }
@@ -581,15 +601,13 @@ void BoxGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 
 	for(const auto& prop : props)
 	{
-		if(prop.key == "height")
-			m_height = std::get<t_real>(prop.value);
+		if(prop.key == "length")
+			m_length = std::get<t_real>(prop.value);
 		else if(prop.key == "depth")
 			m_depth = std::get<t_real>(prop.value);
-		else if(prop.key == "length")
-			m_length = std::get<t_real>(prop.value);
+		else if(prop.key == "height")
+			m_height = std::get<t_real>(prop.value);
 	}
-
-	m_trafo_needs_update = true;
 
 #ifdef USE_BULLET
 	UpdateRigidBody();
@@ -623,10 +641,17 @@ void PlaneGeometry::CreateRigidBody()
 	m_state = std::make_shared<btDefaultMotionState>();
 	SetStateFromMatrix();
 	m_shape = std::make_shared<btBoxShape>(
-		btVector3{btScalar(m_width), btScalar(m_height), btScalar(0.01)});
+		btVector3
+		{
+			btScalar(m_width * 0.5),
+			btScalar(m_height * 0.5),
+			btScalar(0.01)
+		});
+
 	m_rigid_body = std::make_shared<btRigidBody>(
 		btRigidBody::btRigidBodyConstructionInfo{
-			0, m_state.get(), m_shape.get(), {0, 0, 0}});
+			0, m_state.get(), m_shape.get(), 
+			{0, 0, 0}});
 }
 
 
@@ -636,7 +661,12 @@ void PlaneGeometry::UpdateRigidBody()
 		return;
 
 	m_shape->setImplicitShapeDimensions(
-		btVector3{btScalar(m_width), btScalar(m_height), btScalar(0.01)});
+		btVector3
+		{
+			btScalar(m_width * 0.5),
+			btScalar(m_height * 0.5),
+			btScalar(0.01)
+		});
 }
 #endif
 
@@ -654,10 +684,8 @@ bool PlaneGeometry::Load(const pt::ptree& prop)
 			m_norm.resize(3);
 	}
 
-	m_width = prop.get<t_real>("width", 0.1);
+	m_width = prop.get<t_real>("width", 1.);
 	m_height = prop.get<t_real>("height", 1.);
-
-	m_trafo_needs_update = true;
 
 #ifdef USE_BULLET
 	UpdateRigidBody();
@@ -724,8 +752,6 @@ void PlaneGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 			m_height = std::get<t_real>(prop.value);
 	}
 
-	m_trafo_needs_update = true;
-
 #ifdef USE_BULLET
 	UpdateRigidBody();
 #endif
@@ -757,7 +783,6 @@ bool CylinderGeometry::Load(const pt::ptree& prop)
 	m_height = prop.get<t_real>("height", 1.);
 	m_radius = prop.get<t_real>("radius", 0.1);
 
-	m_trafo_needs_update = true;
 	return true;
 }
 
@@ -814,8 +839,6 @@ void CylinderGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 		else if(prop.key == "radius")
 			m_radius = std::get<t_real>(prop.value);
 	}
-
-	m_trafo_needs_update = true;
 }
 
 // ----------------------------------------------------------------------------
@@ -843,7 +866,6 @@ bool SphereGeometry::Load(const pt::ptree& prop)
 
 	m_radius = prop.get<t_real>("radius", 0.1);
 
-	m_trafo_needs_update = true;
 	return true;
 }
 
@@ -901,8 +923,6 @@ void SphereGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 		if(prop.key == "radius")
 			m_radius = std::get<t_real>(prop.value);
 	}
-
-	m_trafo_needs_update = true;
 }
 
 // ----------------------------------------------------------------------------
@@ -930,7 +950,6 @@ bool TetrahedronGeometry::Load(const pt::ptree& prop)
 
 	m_radius = prop.get<t_real>("radius", 0.1);
 
-	m_trafo_needs_update = true;
 	return true;
 }
 
@@ -983,8 +1002,6 @@ void TetrahedronGeometry::SetProperties(const std::vector<ObjectProperty>& props
 		if(prop.key == "radius")
 			m_radius = std::get<t_real>(prop.value);
 	}
-
-	m_trafo_needs_update = true;
 }
 // ----------------------------------------------------------------------------
 
@@ -1011,7 +1028,6 @@ bool OctahedronGeometry::Load(const pt::ptree& prop)
 
 	m_radius = prop.get<t_real>("radius", 0.1);
 
-	m_trafo_needs_update = true;
 	return true;
 }
 
@@ -1064,8 +1080,6 @@ void OctahedronGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 		if(prop.key == "radius")
 			m_radius = std::get<t_real>(prop.value);
 	}
-
-	m_trafo_needs_update = true;
 }
 // ----------------------------------------------------------------------------
 
@@ -1092,7 +1106,6 @@ bool DodecahedronGeometry::Load(const pt::ptree& prop)
 
 	m_radius = prop.get<t_real>("radius", 0.1);
 
-	m_trafo_needs_update = true;
 	return true;
 }
 
@@ -1145,8 +1158,6 @@ void DodecahedronGeometry::SetProperties(const std::vector<ObjectProperty>& prop
 		if(prop.key == "radius")
 			m_radius = std::get<t_real>(prop.value);
 	}
-
-	m_trafo_needs_update = true;
 }
 // ----------------------------------------------------------------------------
 
@@ -1173,7 +1184,6 @@ bool IcosahedronGeometry::Load(const pt::ptree& prop)
 
 	m_radius = prop.get<t_real>("radius", 0.1);
 
-	m_trafo_needs_update = true;
 	return true;
 }
 
@@ -1226,7 +1236,5 @@ void IcosahedronGeometry::SetProperties(const std::vector<ObjectProperty>& props
 		if(prop.key == "radius")
 			m_radius = std::get<t_real>(prop.value);
 	}
-
-	m_trafo_needs_update = true;
 }
 // ----------------------------------------------------------------------------

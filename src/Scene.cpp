@@ -256,7 +256,7 @@ void Scene::DragObject(bool drag_start, const std::string& objid,
 		if(obj->IsFixed())
 			return;
 
-		t_vec pos_obj = obj->GetCentre();
+		t_vec pos_obj = obj->GetPosition();
 		if(pos_obj.size() < pos_cur.size())
 			pos_obj.resize(pos_cur.size());
 
@@ -264,7 +264,7 @@ void Scene::DragObject(bool drag_start, const std::string& objid,
 			m_drag_pos_axis_start = pos_obj;
 
 		pos_obj = pos_cur - pos_startcur + m_drag_pos_axis_start;
-		obj->SetCentre(pos_obj);
+		obj->SetPosition(pos_obj);
 		obj_dragged = true;
 	}
 

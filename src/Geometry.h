@@ -75,16 +75,20 @@ public:
 	virtual bool Load(const boost::property_tree::ptree& prop);
 	virtual boost::property_tree::ptree Save() const;
 
-	virtual void UpdateTrafo() const;
-	virtual const t_mat& GetTrafo() const;
+	virtual const t_mat& GetTrafo() const { return m_trafo; }
+	virtual void SetTrafo(const t_mat& trafo) { m_trafo = trafo; }
+
+	virtual t_vec GetPosition() const;
+	virtual void SetPosition(const t_vec& vec);
+
+	virtual t_mat GetRotation() const;
+	virtual void SetRotation(const t_mat& rot);
+
 	virtual std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 		GetTriangles() const = 0;
 
 	virtual const std::string& GetId() const { return m_id; }
 	virtual void SetId(const std::string& id) { m_id = id; }
-
-	virtual t_vec GetCentre() const;
-	virtual void SetCentre(const t_vec& vec);
 
 	virtual bool IsFixed() const { return m_fixed; }
 	virtual void SetFixed(bool b) { m_fixed = b; }
@@ -124,12 +128,8 @@ protected:
 	bool m_lighting = true;
 	std::string m_texture{};
 
-	t_mat m_rot = tl2::unit<t_mat>(4);
-	t_vec m_pos = tl2::create<t_vec>({0, 0, 0});
 	bool m_fixed = false;
-
-	mutable bool m_trafo_needs_update = true;
-	mutable t_mat m_trafo = tl2::unit<t_mat>(4);
+	t_mat m_trafo = tl2::unit<t_mat>(4);
 
 #ifdef USE_BULLET
 	std::shared_ptr<btPolyhedralConvexShape> m_shape{};
@@ -160,9 +160,9 @@ public:
 	t_real GetWidth() const { return m_width; }
 	t_real GetHeight() const { return m_height; }
 
-	void SetNormal(const t_vec& n)  { m_norm = n; m_trafo_needs_update = true; }
-	void SetWidth(t_real w)  { m_width = w; m_trafo_needs_update = true; }
-	void SetHeight(t_real h) { m_height = h; m_trafo_needs_update = true; }
+	void SetNormal(const t_vec& n)  { m_norm = n; }
+	void SetWidth(t_real w)  { m_width = w; }
+	void SetHeight(t_real h) { m_height = h; }
 
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
@@ -199,9 +199,9 @@ public:
 	t_real GetDepth() const { return m_depth; }
 	t_real GetLength() const { return m_length; }
 
-	void SetHeight(t_real h) { m_height = h; m_trafo_needs_update = true; }
-	void SetDepth(t_real d) { m_depth = d; m_trafo_needs_update = true; }
-	void SetLength(t_real l)  { m_length = l; m_trafo_needs_update = true; }
+	void SetHeight(t_real h) { m_height = h; }
+	void SetDepth(t_real d) { m_depth = d; }
+	void SetLength(t_real l)  { m_length = l; }
 
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
@@ -235,10 +235,10 @@ public:
 		GetTriangles() const override;
 
 	t_real GetHeight() const { return m_height; }
-	void SetHeight(t_real h) { m_height = h; m_trafo_needs_update = true; }
+	void SetHeight(t_real h) { m_height = h; }
 
 	t_real GetRadius() const { return m_radius; }
-	void SetRadius(t_real rad) { m_radius = rad; m_trafo_needs_update = true; }
+	void SetRadius(t_real rad) { m_radius = rad; }
 
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
@@ -267,7 +267,7 @@ public:
 	GetTriangles() const override;
 
 	t_real GetRadius() const { return m_radius; }
-	void SetRadius(t_real rad) { m_radius = rad; m_trafo_needs_update = true; }
+	void SetRadius(t_real rad) { m_radius = rad; }
 
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
@@ -296,7 +296,7 @@ public:
 	GetTriangles() const override;
 
 	t_real GetRadius() const { return m_radius; }
-	void SetRadius(t_real rad) { m_radius = rad; m_trafo_needs_update = true; }
+	void SetRadius(t_real rad) { m_radius = rad; }
 
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
@@ -325,7 +325,7 @@ public:
 	GetTriangles() const override;
 
 	t_real GetRadius() const { return m_radius; }
-	void SetRadius(t_real rad) { m_radius = rad; m_trafo_needs_update = true; }
+	void SetRadius(t_real rad) { m_radius = rad; }
 
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
@@ -354,7 +354,7 @@ public:
 	GetTriangles() const override;
 
 	t_real GetRadius() const { return m_radius; }
-	void SetRadius(t_real rad) { m_radius = rad; m_trafo_needs_update = true; }
+	void SetRadius(t_real rad) { m_radius = rad; }
 
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
@@ -383,7 +383,7 @@ public:
 	GetTriangles() const override;
 
 	t_real GetRadius() const { return m_radius; }
-	void SetRadius(t_real rad) { m_radius = rad; m_trafo_needs_update = true; }
+	void SetRadius(t_real rad) { m_radius = rad; }
 
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
