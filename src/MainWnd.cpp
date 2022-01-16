@@ -632,6 +632,38 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 	// --------------------------------------------------------------------
 
 	setAcceptDrops(true);
+
+
+	// timer callback function
+	connect(&m_timer, &QTimer::timeout, [this]()
+	{
+		this->tick(std::chrono::milliseconds(1000 / g_timer_tps));
+	});
+
+	EnableTimer(true);
+}
+
+
+/**
+ * timer ticks
+ */
+void MainWnd::tick(const std::chrono::milliseconds& ms)
+{
+	m_scene.tick(ms);
+	if(m_renderer)
+		m_renderer->tick(ms);
+}
+
+
+/**
+ * enable (or disable) timer ticks
+ */
+void MainWnd::EnableTimer(bool enabled)
+{
+	if(enabled)
+		m_timer.start(std::chrono::milliseconds(1000 / g_timer_tps));
+	else
+		m_timer.stop();
 }
 
 
@@ -640,8 +672,7 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
  */
 void MainWnd::showEvent(QShowEvent *evt)
 {
-	m_renderer->EnableTimer(true);
-
+	EnableTimer(true);
 	QMainWindow::showEvent(evt);
 }
 
@@ -651,8 +682,7 @@ void MainWnd::showEvent(QShowEvent *evt)
  */
 void MainWnd::hideEvent(QHideEvent *evt)
 {
-	m_renderer->EnableTimer(false);
-
+	EnableTimer(false);
 	QMainWindow::hideEvent(evt);
 }
 

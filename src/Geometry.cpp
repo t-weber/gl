@@ -2,7 +2,11 @@
  * geometry objects
  * @author Tobias Weber <tweber@ill.fr>
  * @date mar-2021
+ * @note some code forked from my private "misc" project: https://github.com/t-weber/misc
  * @license GPLv3, see 'LICENSE' file
+ *
+ * Reference for Bullet:
+ *  - https://github.com/bulletphysics/bullet3/blob/master/examples/HelloWorld/HelloWorld.cpp
  */
 
 #include "Geometry.h"
@@ -146,6 +150,10 @@ void Geometry::UpdateTrafo() const
 {
 	m_trafo = tl2::hom_translation<t_mat, t_real>(
 		m_pos[0], m_pos[1], m_pos[2]) * m_rot;
+
+#ifdef USE_BULLET
+	const_cast<Geometry*>(this)->SetStateFromMatrix();
+#endif
 
 	m_trafo_needs_update = false;
 }
@@ -291,6 +299,69 @@ void Geometry::Rotate(t_real angle, const t_vec& axis)
 }
 
 
+void Geometry::tick([[maybe_unused]] const std::chrono::milliseconds& ms)
+{
+#ifdef USE_BULLET
+	SetMatrixFromState();
+#endif
+}
+
+
+
+#ifdef USE_BULLET
+void Geometry::SetMatrixFromState()
+{
+	if(!m_rigid_body)
+		return;
+
+	btTransform trafo;
+	m_rigid_body->getMotionState()->getWorldTransform(trafo);
+	btMatrix3x3 mat = trafo.getBasis();
+	btVector3 pos = trafo.getOrigin();
+
+	for(int row=0; row<3; ++row)
+	{
+		for(int col=0; col<3; ++col)
+			m_rot(row, col) = mat.getRow(row)[col];
+
+		m_pos[row] = pos[row];
+	}
+
+	m_trafo_needs_update = true;
+}
+
+
+void Geometry::SetStateFromMatrix()
+{
+	if(!m_rigid_body)
+		return;
+
+	btMatrix3x3 mat
+	{
+		btScalar(m_rot(0,0)), btScalar(m_rot(0,1)), btScalar(m_rot(0,2)),
+		btScalar(m_rot(1,0)), btScalar(m_rot(1,1)), btScalar(m_rot(1,2)),
+		btScalar(m_rot(2,0)), btScalar(m_rot(2,1)), btScalar(m_rot(2,2))
+	};
+
+	btVector3 vec{btScalar(m_pos[0]), btScalar(m_pos[1]), btScalar(m_pos[2])};
+	btTransform trafo{mat, vec};
+	//m_rigid_body->getMotionState()->setWorldTransform(trafo);
+	m_state->m_graphicsWorldTrans = trafo;
+	m_state->m_startWorldTrans = trafo;
+}
+
+
+void Geometry::CreateRigidBody()
+{
+}
+
+
+void Geometry::UpdateRigidBody()
+{
+}
+#endif
+
+
 /**
  * obtain the general properties of the geometry object
  */
@@ -398,14 +469,48 @@ pt::ptree Geometry::Save() const
 // box
 // ----------------------------------------------------------------------------
 
-BoxGeometry::BoxGeometry()
+BoxGeometry::BoxGeometry() : Geometry()
 {
+#ifdef USE_BULLET
+	CreateRigidBody();
+#endif
 }
 
 
 BoxGeometry::~BoxGeometry()
 {
 }
+
+
+#ifdef USE_BULLET
+void BoxGeometry::CreateRigidBody()
+{
+	btScalar mass{1.f};
+	btVector3 com{0, 0, 0};
+	m_shape = std::make_shared<btBoxShape>(
+		btVector3{btScalar(m_length), btScalar(m_height), btScalar(m_depth)});
+	m_shape->calculateLocalInertia(mass, com);
+	m_state = std::make_shared<btDefaultMotionState>();
+	SetStateFromMatrix();
+	m_rigid_body = std::make_shared<btRigidBody>(
+		btRigidBody::btRigidBodyConstructionInfo{
+			mass, m_state.get(), m_shape.get(), com});
+}
+
+
+void BoxGeometry::UpdateRigidBody()
+{
+	if(!m_rigid_body)
+		return;
+
+	btScalar mass{1.f};
+	btVector3 com{0, 0, 0};
+
+	m_shape->setImplicitShapeDimensions(
+		btVector3{btScalar(m_length), btScalar(m_height), btScalar(m_depth)});
+	m_shape->calculateLocalInertia(mass, com);
+}
+#endif
 
 
 bool BoxGeometry::Load(const pt::ptree& prop)
@@ -418,6 +523,11 @@ bool BoxGeometry::Load(const pt::ptree& prop)
 	m_length = prop.get<t_real>("length", 0.1);
 
 	m_trafo_needs_update = true;
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
+
 	return true;
 }
 
@@ -480,6 +590,10 @@ void BoxGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 	}
 
 	m_trafo_needs_update = true;
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -490,14 +604,41 @@ void BoxGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 // plane
 // ----------------------------------------------------------------------------
 
-PlaneGeometry::PlaneGeometry()
+PlaneGeometry::PlaneGeometry() : Geometry()
 {
+#ifdef USE_BULLET
+	CreateRigidBody();
+#endif
 }
 
 
 PlaneGeometry::~PlaneGeometry()
 {
 }
+
+
+#ifdef USE_BULLET
+void PlaneGeometry::CreateRigidBody()
+{
+	m_state = std::make_shared<btDefaultMotionState>();
+	SetStateFromMatrix();
+	m_shape = std::make_shared<btBoxShape>(
+		btVector3{btScalar(m_width), btScalar(m_height), btScalar(0.01)});
+	m_rigid_body = std::make_shared<btRigidBody>(
+		btRigidBody::btRigidBodyConstructionInfo{
+			0, m_state.get(), m_shape.get(), {0, 0, 0}});
+}
+
+
+void PlaneGeometry::UpdateRigidBody()
+{
+	if(!m_rigid_body)
+		return;
+
+	m_shape->setImplicitShapeDimensions(
+		btVector3{btScalar(m_width), btScalar(m_height), btScalar(0.01)});
+}
+#endif
 
 
 bool PlaneGeometry::Load(const pt::ptree& prop)
@@ -517,6 +658,11 @@ bool PlaneGeometry::Load(const pt::ptree& prop)
 	m_height = prop.get<t_real>("height", 1.);
 
 	m_trafo_needs_update = true;
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
+
 	return true;
 }
 
@@ -579,6 +725,10 @@ void PlaneGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 	}
 
 	m_trafo_needs_update = true;
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -589,7 +739,7 @@ void PlaneGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 // cylinder
 // ----------------------------------------------------------------------------
 
-CylinderGeometry::CylinderGeometry()
+CylinderGeometry::CylinderGeometry() : Geometry()
 {
 }
 
@@ -676,7 +826,7 @@ void CylinderGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 // sphere
 // ----------------------------------------------------------------------------
 
-SphereGeometry::SphereGeometry()
+SphereGeometry::SphereGeometry() : Geometry()
 {
 }
 
@@ -763,7 +913,7 @@ void SphereGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 // tetrahedron
 // ----------------------------------------------------------------------------
 
-TetrahedronGeometry::TetrahedronGeometry()
+TetrahedronGeometry::TetrahedronGeometry() : Geometry()
 {
 }
 
@@ -844,7 +994,7 @@ void TetrahedronGeometry::SetProperties(const std::vector<ObjectProperty>& props
 // octahedron
 // ----------------------------------------------------------------------------
 
-OctahedronGeometry::OctahedronGeometry()
+OctahedronGeometry::OctahedronGeometry() : Geometry()
 {
 }
 
@@ -925,7 +1075,7 @@ void OctahedronGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 // dodecahedron
 // ----------------------------------------------------------------------------
 
-DodecahedronGeometry::DodecahedronGeometry()
+DodecahedronGeometry::DodecahedronGeometry() : Geometry()
 {
 }
 
@@ -1006,7 +1156,7 @@ void DodecahedronGeometry::SetProperties(const std::vector<ObjectProperty>& prop
 // icosahedron
 // ----------------------------------------------------------------------------
 
-IcosahedronGeometry::IcosahedronGeometry()
+IcosahedronGeometry::IcosahedronGeometry() : Geometry()
 {
 }
 

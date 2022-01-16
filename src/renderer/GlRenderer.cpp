@@ -44,14 +44,6 @@ GlSceneRenderer::GlSceneRenderer(QWidget *pParent) : QOpenGLWidget(pParent)
 {
 	m_cam.SetDist(15.);
 
-	// timer callback function
-	connect(&m_timer, &QTimer::timeout, [this]()
-	{
-		this->tick(std::chrono::milliseconds(1000 / g_timer_tps));
-	});
-
-	EnableTimer(true);
-
 	setMouseTracking(true);
 	setFocusPolicy(Qt::StrongFocus);
 }
@@ -62,7 +54,6 @@ GlSceneRenderer::GlSceneRenderer(QWidget *pParent) : QOpenGLWidget(pParent)
  */
 GlSceneRenderer::~GlSceneRenderer()
 {
-	EnableTimer(false);
 	setMouseTracking(false);
 	Clear();
 
@@ -71,18 +62,6 @@ GlSceneRenderer::~GlSceneRenderer()
 
 	// delete gl objects within current gl context
 	m_shaders.reset();
-}
-
-
-/**
- * enable (or disable) timer ticks
- */
-void GlSceneRenderer::EnableTimer(bool enabled)
-{
-	if(enabled)
-		m_timer.start(std::chrono::milliseconds(1000 / g_timer_tps));
-	else
-		m_timer.stop();
 }
 
 
@@ -265,6 +244,7 @@ void GlSceneRenderer::AddObject(const Geometry& obj)
 	if(!m_initialised)
 		return;
 
+	QMutexLocker _locker{&m_mutexObj};
 	auto [_verts, _norms, _uvs] = obj.GetTriangles();
 
 	auto verts = tl2::convert<t_vec3_gl>(_verts);
@@ -291,6 +271,11 @@ void GlSceneRenderer::AddObject(const Geometry& obj)
  */
 void GlSceneRenderer::UpdateScene(const Scene& scene)
 {
+	if(!m_initialised)
+		return;
+
+	//QMutexLocker _locker{&m_mutexObj};
+
 	// update object matrices
 	for(const auto& obj : scene.GetObjects())
 	{
@@ -745,6 +730,10 @@ void GlSceneRenderer::tick(const std::chrono::milliseconds& ms)
 	// update camera and frame
 	if(needs_update)
 		UpdateCam();
+
+#ifdef USE_BULLET
+	update();
+#endif
 }
 
 

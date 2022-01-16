@@ -2,6 +2,7 @@
  * geometry objects
  * @author Tobias Weber <tweber@ill.fr>
  * @date mar-2021
+ * @note some code forked from my private "misc" project: https://github.com/t-weber/misc
  * @license GPLv3, see 'LICENSE' file
  */
 
@@ -13,8 +14,14 @@
 #include <string>
 #include <variant>
 #include <vector>
+#include <chrono>
 
 #include <boost/property_tree/ptree.hpp>
+
+#ifdef USE_BULLET
+	#include <BulletDynamics/btBulletDynamicsCommon.h>
+	#include <BulletCollision/CollisionDispatch/btCollisionDispatcherMt.h>
+#endif
 
 #include "types.h"
 
@@ -97,8 +104,19 @@ public:
 	virtual std::vector<ObjectProperty> GetProperties() const ;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props);
 
+	virtual void tick(const std::chrono::milliseconds& ms);
+
 	static std::tuple<bool, std::vector<std::shared_ptr<Geometry>>>
 		load(const boost::property_tree::ptree& prop);
+
+#ifdef USE_BULLET
+	virtual void SetMatrixFromState();
+	virtual void SetStateFromMatrix();
+	virtual void CreateRigidBody();
+	virtual void UpdateRigidBody();
+	virtual std::shared_ptr<btRigidBody> GetRigidBody() { return m_rigid_body; }
+#endif
+
 
 protected:
 	std::string m_id{};
@@ -112,6 +130,12 @@ protected:
 
 	mutable bool m_trafo_needs_update = true;
 	mutable t_mat m_trafo = tl2::unit<t_mat>(4);
+
+#ifdef USE_BULLET
+	std::shared_ptr<btPolyhedralConvexShape> m_shape{};
+	std::shared_ptr<btDefaultMotionState> m_state{};
+	std::shared_ptr<btRigidBody> m_rigid_body{};
+#endif
 };
 // ----------------------------------------------------------------------------
 
@@ -143,9 +167,14 @@ public:
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
 
+#ifdef USE_BULLET
+	virtual void CreateRigidBody() override;
+	virtual void UpdateRigidBody() override;
+#endif
+
 private:
 	t_vec m_norm = tl2::create<t_vec>({0, 0, 1});
-	t_real m_width = 0, m_height = 0;
+	t_real m_width = 1., m_height = 1.;
 };
 // ----------------------------------------------------------------------------
 
@@ -177,8 +206,14 @@ public:
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
 
+#ifdef USE_BULLET
+	virtual void CreateRigidBody() override;
+	virtual void UpdateRigidBody() override;
+#endif
+
+
 private:
-	t_real m_height = 0, m_depth = 0, m_length = 0;
+	t_real m_height = 1., m_depth = 1., m_length = 1.;
 };
 // ----------------------------------------------------------------------------
 
@@ -199,9 +234,6 @@ public:
 	virtual std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 		GetTriangles() const override;
 
-	const t_vec& GetPos() const { return m_pos; }
-	void SetPos(const t_vec& vec) { m_pos = vec; m_trafo_needs_update = true; }
-
 	t_real GetHeight() const { return m_height; }
 	void SetHeight(t_real h) { m_height = h; m_trafo_needs_update = true; }
 
@@ -211,8 +243,9 @@ public:
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
 
+
 private:
-	t_real m_height = 0, m_radius = 0;
+	t_real m_height = 1., m_radius = 1.;
 };
 // ----------------------------------------------------------------------------
 
@@ -233,17 +266,15 @@ public:
 	virtual std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 	GetTriangles() const override;
 
-	const t_vec& GetPos() const { return m_pos; }
-	void SetPos(const t_vec& vec) { m_pos = vec; m_trafo_needs_update = true; }
-
 	t_real GetRadius() const { return m_radius; }
 	void SetRadius(t_real rad) { m_radius = rad; m_trafo_needs_update = true; }
 
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
 
+
 private:
-	t_real m_radius = 0;
+	t_real m_radius = 1.;
 };
 // ----------------------------------------------------------------------------
 
@@ -264,17 +295,15 @@ public:
 	virtual std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 	GetTriangles() const override;
 
-	const t_vec& GetPos() const { return m_pos; }
-	void SetPos(const t_vec& vec) { m_pos = vec; m_trafo_needs_update = true; }
-
 	t_real GetRadius() const { return m_radius; }
 	void SetRadius(t_real rad) { m_radius = rad; m_trafo_needs_update = true; }
 
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
 
+
 private:
-	t_real m_radius = 0;
+	t_real m_radius = 1.;
 };
 // ----------------------------------------------------------------------------
 
@@ -295,17 +324,15 @@ public:
 	virtual std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 	GetTriangles() const override;
 
-	const t_vec& GetPos() const { return m_pos; }
-	void SetPos(const t_vec& vec) { m_pos = vec; m_trafo_needs_update = true; }
-
 	t_real GetRadius() const { return m_radius; }
 	void SetRadius(t_real rad) { m_radius = rad; m_trafo_needs_update = true; }
 
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
 
+
 private:
-	t_real m_radius = 0;
+	t_real m_radius = 1.;
 };
 // ----------------------------------------------------------------------------
 
@@ -326,17 +353,15 @@ public:
 	virtual std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 	GetTriangles() const override;
 
-	const t_vec& GetPos() const { return m_pos; }
-	void SetPos(const t_vec& vec) { m_pos = vec; m_trafo_needs_update = true; }
-
 	t_real GetRadius() const { return m_radius; }
 	void SetRadius(t_real rad) { m_radius = rad; m_trafo_needs_update = true; }
 
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
 
+
 private:
-	t_real m_radius = 0;
+	t_real m_radius = 1.;
 };
 // ----------------------------------------------------------------------------
 
@@ -357,17 +382,15 @@ public:
 	virtual std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 	GetTriangles() const override;
 
-	const t_vec& GetPos() const { return m_pos; }
-	void SetPos(const t_vec& vec) { m_pos = vec; m_trafo_needs_update = true; }
-
 	t_real GetRadius() const { return m_radius; }
 	void SetRadius(t_real rad) { m_radius = rad; m_trafo_needs_update = true; }
 
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
 
+
 private:
-	t_real m_radius = 0;
+	t_real m_radius = 1.;
 };
 // ----------------------------------------------------------------------------
 

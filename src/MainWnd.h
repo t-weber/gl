@@ -10,6 +10,7 @@
 
 #include <QtCore/QSettings>
 #include <QtCore/QByteArray>
+#include <QtCore/QTimer>
 #include <QtWidgets/QMainWindow>
 #include <QtWidgets/QMenuBar>
 #include <QtWidgets/QMenu>
@@ -115,6 +116,9 @@ private:
 	// scene configuration
 	Scene m_scene{};
 
+	// timer
+	QTimer m_timer{};
+
 	// mouse picker
 	t_vec m_drag_start = tl2::create<t_vec>({0, 0, 0});
 	t_real m_mouseX{}, m_mouseY{}, m_mouseZ{};
@@ -129,6 +133,10 @@ protected:
 	virtual void closeEvent(QCloseEvent *) override;
 	virtual void dragEnterEvent(QDragEnterEvent *) override;
 	virtual void dropEvent(QDropEvent *) override;
+
+	// timer ticks
+	void tick(const std::chrono::milliseconds& ms);
+	void EnableTimer(bool enabled = true);
 
 	// save a screenshot of the scene 3d view
 	bool SaveScreenshot(const QString& file);

@@ -2,7 +2,11 @@
  * scene
  * @author Tobias Weber <tweber@ill.fr>
  * @date feb-2021
+ * @note some code forked from my private "misc" project: https://github.com/t-weber/misc
  * @license GPLv3, see 'LICENSE' file
+ *
+ * Reference for Bullet:
+ *  - https://github.com/bulletphysics/bullet3/blob/master/examples/HelloWorld/HelloWorld.cpp
  */
 
 #include <unordered_map>
@@ -18,6 +22,16 @@ namespace pt = boost::property_tree;
 Scene::Scene()
 	: m_sigUpdate{std::make_shared<t_sig_update>()}
 {
+#ifdef USE_BULLET
+	m_coll = std::make_shared<btDefaultCollisionConfiguration>(
+		btDefaultCollisionConstructionInfo{});
+	m_disp = std::make_shared<btCollisionDispatcher/*Mt*/>(m_coll.get());
+	m_cache = std::make_shared<btDbvtBroadphase>();
+	m_solver = std::make_shared<btSequentialImpulseConstraintSolver>();
+	m_world = std::make_shared<btDiscreteDynamicsWorld>(
+		m_disp.get(), m_cache.get(), m_solver.get(), m_coll.get());
+	m_world->setGravity({0, 0, -9.81});
+#endif
 }
 
 
@@ -55,11 +69,38 @@ const Scene& Scene::operator=(const Scene& scene)
  */
 void Scene::Clear()
 {
+#ifdef USE_BULLET
+	for(auto& obj : m_objs)
+	{
+		if(m_world)
+		{
+			if(auto *rigidbody = obj->GetRigidBody().get(); rigidbody)
+				m_world->removeRigidBody(rigidbody);
+		}
+	}
+#endif
+
 	// clear
 	m_objs.clear();
 
 	// remove listeners
 	m_sigUpdate = std::make_shared<t_sig_update>();
+}
+
+
+void Scene::tick(const std::chrono::milliseconds& ms)
+{
+#ifdef USE_BULLET
+	if(m_world)
+		m_world->stepSimulation(t_real(ms.count()) / 1000.);
+#endif
+
+	for(auto& obj : m_objs)
+		obj->tick(ms);
+
+#ifdef USE_BULLET
+	EmitUpdate();
+#endif
 }
 
 
@@ -131,6 +172,14 @@ void Scene::AddObject(
 		if(obj->GetId() == "")
 			obj->SetId(id);
 		m_objs.push_back(obj);
+
+#ifdef USE_BULLET
+		if(m_world)
+		{
+			if(auto *rigidbody = obj->GetRigidBody().get(); rigidbody)
+				m_world->addRigidBody(rigidbody);
+		}
+#endif
 	}
 }
 
@@ -147,6 +196,14 @@ bool Scene::DeleteObject(const std::string& id)
 		return obj->GetId() == id;
 	}); iter != m_objs.end())
 	{
+#ifdef USE_BULLET
+		if(m_world)
+		{
+			if(auto *rigidbody = (*iter)->GetRigidBody().get(); rigidbody)
+				m_world->removeRigidBody(rigidbody);
+		}
+#endif
+
 		m_objs.erase(iter);
 		return true;
 	}

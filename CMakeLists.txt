@@ -37,6 +37,7 @@ list(APPEND CMAKE_MODULE_PATH
 
 option(USE_QT6 "use qt 6" FALSE)
 option(USE_LAPACK "use lapack" FALSE)
+option(USE_BULLET "use bullet physics" FALSE)
 
 
 if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Release")
@@ -60,7 +61,7 @@ message("Selected Qt version ${QT_VER}.")
 message("Selected GL version ${GL_MAJOR_VER}.${GL_MINOR_VER}.")
 
 
-set(WARN_OPTS -Wall -Wextra -Weffc++)
+set(WARN_OPTS -Wall -Wextra)
 add_compile_options(${WARN_OPTS})
 
 
@@ -144,6 +145,13 @@ if(USE_LAPACK)
 endif()
 
 
+if(USE_BULLET)
+	find_package(Bullet REQUIRED)
+	include_directories("${BULLET_INCLUDE_DIRS}")
+	add_definitions(-DUSE_BULLET)
+endif()
+
+
 if(QT_VER EQUAL 6)
 	find_package(Qt6 REQUIRED
 		COMPONENTS Core Gui Svg Widgets
@@ -220,4 +228,5 @@ target_link_libraries(glscene
 	"${MINGW_WINSOCK}"
 	Threads::Threads
 	"${QtAllLibraries}"
+	"${BULLET_LIBRARIES}"
 )

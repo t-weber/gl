@@ -20,7 +20,6 @@
 #include <unordered_map>
 #include <optional>
 
-#include <QtCore/QTimer>
 #include <QtWidgets/QDialog>
 #include <QtGui/QMouseEvent>
 
@@ -136,6 +135,8 @@ public:
 
 	void UpdateCam(bool update_frame = true);
 
+	void tick(const std::chrono::milliseconds& ms);
+
 
 protected:
 	virtual void paintEvent(QPaintEvent*) override;
@@ -161,8 +162,6 @@ protected:
 
 	void DoPaintGL(qgl_funcs *pGL);
 	void DoPaintQt(QPainter &painter);
-
-	void tick(const std::chrono::milliseconds& ms);
 
 
 private:
@@ -260,13 +259,8 @@ protected:
 
 	GlSceneObj m_selectionPlane{};
 
-	// timer
-	QTimer m_timer{};
-
 
 public slots:
-	void EnableTimer(bool enable=true);
-
 	void EnableTextures(bool b);
 	bool ChangeTextureProperty(const QString& ident, const QString& filename);
 
