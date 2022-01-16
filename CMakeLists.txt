@@ -37,7 +37,7 @@ list(APPEND CMAKE_MODULE_PATH
 
 option(USE_QT6 "use qt 6" FALSE)
 option(USE_LAPACK "use lapack" FALSE)
-option(USE_BULLET "use bullet physics" FALSE)
+option(USE_BULLET "use bullet physics" TRUE)
 
 
 if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Release")

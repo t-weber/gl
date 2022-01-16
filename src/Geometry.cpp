@@ -318,25 +318,19 @@ void Geometry::SetMatrixFromState()
 	btMatrix3x3 mat = trafo.getBasis();
 	btVector3 vec = trafo.getOrigin();
 
-	t_mat rot = tl2::unit<t_mat>(3);
-	t_vec pos = tl2::zero<t_vec>(3);
-
 	for(int row=0; row<3; ++row)
 	{
 		for(int col=0; col<3; ++col)
-			rot(row, col) = mat.getRow(row)[col];
+			m_trafo(row, col) = mat.getRow(row)[col];
 
-		pos[row] = vec[row];
+		m_trafo(row, 3) = vec[row];
 	}
-
-	SetRotation(rot);
-	SetPosition(pos);
 }
 
 
 void Geometry::SetStateFromMatrix()
 {
-	if(!m_rigid_body)
+	if(!m_state)
 		return;
 
 	t_mat rot = GetRotation();
@@ -357,9 +351,17 @@ void Geometry::SetStateFromMatrix()
 	};
 
 	btTransform trafo{mat, vec};
-	m_rigid_body->getMotionState()->setWorldTransform(trafo);
-	m_state->m_graphicsWorldTrans = trafo;
-	m_state->m_startWorldTrans = trafo;
+
+	if(m_rigid_body)
+	{
+		m_rigid_body->setWorldTransform(trafo);
+		m_rigid_body->getMotionState()->setWorldTransform(trafo);
+	}
+	else
+	{
+		m_state->m_graphicsWorldTrans = trafo;
+		m_state->m_startWorldTrans = trafo;
+	}
 }
 
 
@@ -388,6 +390,10 @@ std::vector<ObjectProperty> Geometry::GetProperties() const
 	props.emplace_back(ObjectProperty{.key="lighting", .value=m_lighting});
 	props.emplace_back(ObjectProperty{.key="texture", .value=m_texture});
 
+#ifdef USE_BULLET
+	props.emplace_back(ObjectProperty{.key="mass", .value=m_mass});
+#endif
+
 	return props;
 }
 
@@ -410,7 +416,11 @@ void Geometry::SetProperties(const std::vector<ObjectProperty>& props)
 		else if(prop.key == "lighting")
 			m_lighting = std::get<bool>(prop.value);
 		else if(prop.key == "texture")
-			m_texture  = std::get<std::string>(prop.value);
+			m_texture = std::get<std::string>(prop.value);
+#ifdef USE_BULLET
+		else if(prop.key == "mass")
+			m_mass = std::get<t_real>(prop.value);
+#endif
 	}
 }
 
@@ -419,15 +429,11 @@ bool Geometry::Load(const pt::ptree& prop)
 {
 	// position
 	if(auto optPos = prop.get_optional<std::string>("position"); optPos)
-	{
 		SetPosition(geo_str_to_vec(*optPos));
-	}
 
 	// rotation
 	if(auto optRot = prop.get_optional<std::string>("rotation"); optRot)
-	{
 		SetRotation(geo_str_to_mat(*optRot));
-	}
 
 	// fixed
 	if(auto optFixed = prop.get_optional<bool>("fixed"); optFixed)
@@ -451,6 +457,11 @@ bool Geometry::Load(const pt::ptree& prop)
 	else
 		m_texture = "";
 
+#ifdef USE_BULLET
+	if(auto optMass = prop.get_optional<t_real>("mass"); optMass)
+		m_mass = *optMass;
+#endif
+
 	return true;
 }
 
@@ -466,6 +477,10 @@ pt::ptree Geometry::Save() const
 	prop.put<std::string>("colour", geo_vec_to_str(m_colour));
 	prop.put<std::string>("lighting", m_lighting ? "1" : "0");
 	prop.put<std::string>("texture", m_texture);
+
+#ifdef USE_BULLET
+	prop.put<t_real>("mass", m_mass);
+#endif
 
 	return prop;
 }
@@ -523,8 +538,9 @@ void BoxGeometry::SetHeight(t_real h)
 #ifdef USE_BULLET
 void BoxGeometry::CreateRigidBody()
 {
-	btScalar mass{1.f};
+	btScalar mass = m_fixed ? btScalar(0) : btScalar(m_mass);
 	btVector3 com{0, 0, 0};
+
 	m_shape = std::make_shared<btBoxShape>(
 		btVector3
 		{
@@ -540,7 +556,9 @@ void BoxGeometry::CreateRigidBody()
 
 	m_rigid_body = std::make_shared<btRigidBody>(
 		btRigidBody::btRigidBodyConstructionInfo{
-			mass, m_state.get(), m_shape.get(), com});
+			mass,
+			m_state.get(), m_shape.get(),
+			com});
 }
 
 
@@ -548,9 +566,6 @@ void BoxGeometry::UpdateRigidBody()
 {
 	if(!m_rigid_body)
 		return;
-
-	btScalar mass{1.f};
-	btVector3 com{0, 0, 0};
 
 	m_shape->setImplicitShapeDimensions(
 		btVector3
@@ -560,7 +575,11 @@ void BoxGeometry::UpdateRigidBody()
 			btScalar(m_height * 0.5),
 		});
 
+	btScalar mass = m_fixed ? btScalar(0) : btScalar(m_mass);
+	btVector3 com{0, 0, 0};
+
 	m_shape->calculateLocalInertia(mass, com);
+	m_rigid_body->setMassProps(mass, com);
 }
 #endif
 

@@ -135,6 +135,8 @@ protected:
 	std::shared_ptr<btPolyhedralConvexShape> m_shape{};
 	std::shared_ptr<btDefaultMotionState> m_state{};
 	std::shared_ptr<btRigidBody> m_rigid_body{};
+
+	t_real m_mass = 1.;
 #endif
 };
 // ----------------------------------------------------------------------------

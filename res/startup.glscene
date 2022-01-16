@@ -13,6 +13,7 @@
 					<depth> 20 </depth>
 					<length> 0.5 </length>
 					<colour> 1, 0, 0 </colour>
+					<fixed> 1 </fixed>
 				</box>
 			</geometry>
 		</object>
@@ -25,6 +26,7 @@
 					<depth> 0.5 </depth>
 					<length> 20 </length>
 					<colour> 1, 0, 0 </colour>
+					<fixed> 1 </fixed>
 				</box>
 			</geometry>
 		</object>
@@ -37,6 +39,7 @@
 					<depth> 20 </depth>
 					<length> 0.5 </length>
 					<colour> 1, 0, 0 </colour>
+					<fixed> 1 </fixed>
 				</box>
 			</geometry>
 		</object>
@@ -49,6 +52,7 @@
 					<depth> 0.5 </depth>
 					<length> 20 </length>
 					<colour> 1, 0, 0 </colour>
+					<fixed> 1 </fixed>
 				</box>
 			</geometry>
 		</object>
@@ -61,6 +65,7 @@
 					<normal> 0; 0; 1 </normal>
 					<width> 20 </width>
 					<height> 20 </height>
+					<fixed> 1 </fixed>
 				</plane>
 			</geometry>
 		</object>
