@@ -77,6 +77,8 @@
 					<colour> 1; 0.8; 0 </colour>
 					<radius> 0.25 </radius>
 					<lighting> 0 </lighting>
+					<fixed> 0 </fixed>
+					<mass> 0 </mass>
 				</sphere>
 			</geometry>
 		</object>

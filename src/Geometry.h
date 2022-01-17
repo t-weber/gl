@@ -132,7 +132,7 @@ protected:
 	t_mat m_trafo = tl2::unit<t_mat>(4);
 
 #ifdef USE_BULLET
-	std::shared_ptr<btPolyhedralConvexShape> m_shape{};
+	std::shared_ptr<btConvexInternalShape> m_shape{};
 	std::shared_ptr<btDefaultMotionState> m_state{};
 	std::shared_ptr<btRigidBody> m_rigid_body{};
 
@@ -245,6 +245,11 @@ public:
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
 
+#ifdef USE_BULLET
+	virtual void CreateRigidBody() override;
+	virtual void UpdateRigidBody() override;
+#endif
+
 
 private:
 	t_real m_height = 1., m_radius = 1.;
@@ -273,6 +278,11 @@ public:
 
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
+
+#ifdef USE_BULLET
+	virtual void CreateRigidBody() override;
+	virtual void UpdateRigidBody() override;
+#endif
 
 
 private:

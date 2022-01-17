@@ -356,6 +356,7 @@ void Geometry::SetStateFromMatrix()
 	{
 		m_rigid_body->setWorldTransform(trafo);
 		m_rigid_body->getMotionState()->setWorldTransform(trafo);
+		m_rigid_body->activate();
 	}
 	else
 	{
@@ -484,6 +485,181 @@ pt::ptree Geometry::Save() const
 
 	return prop;
 }
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
+// plane
+// ----------------------------------------------------------------------------
+
+PlaneGeometry::PlaneGeometry() : Geometry()
+{
+#ifdef USE_BULLET
+	CreateRigidBody();
+#endif
+}
+
+
+PlaneGeometry::~PlaneGeometry()
+{
+}
+
+
+void PlaneGeometry::SetNormal(const t_vec& n)
+{
+	m_norm = n;
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
+}
+
+
+void PlaneGeometry::SetWidth(t_real w)
+{
+	m_width = w;
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
+}
+
+
+void PlaneGeometry::SetHeight(t_real h)
+{
+	m_height = h;
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
+}
+
+
+#ifdef USE_BULLET
+void PlaneGeometry::CreateRigidBody()
+{
+	m_state = std::make_shared<btDefaultMotionState>();
+	SetStateFromMatrix();
+
+	m_shape = std::make_shared<btBoxShape>(
+		btVector3
+		{
+			btScalar(m_width * 0.5),
+			btScalar(m_height * 0.5),
+			btScalar(0.01)
+		});
+
+	m_rigid_body = std::make_shared<btRigidBody>(
+		btRigidBody::btRigidBodyConstructionInfo{
+			0, m_state.get(), m_shape.get(),
+			{0, 0, 0}});
+}
+
+
+void PlaneGeometry::UpdateRigidBody()
+{
+	if(!m_rigid_body)
+		return;
+
+	m_shape->setImplicitShapeDimensions(
+		btVector3
+		{
+			btScalar(m_width * 0.5),
+			btScalar(m_height * 0.5),
+			btScalar(0.01)
+		});
+}
+#endif
+
+
+bool PlaneGeometry::Load(const pt::ptree& prop)
+{
+	if(!Geometry::Load(prop))
+		return false;
+
+	// normal
+	if(auto optPos = prop.get_optional<std::string>("normal"); optPos)
+	{
+		m_norm = geo_str_to_vec(*optPos);
+		if(m_norm.size() < 3)
+			m_norm.resize(3);
+	}
+
+	m_width = prop.get<t_real>("width", 1.);
+	m_height = prop.get<t_real>("height", 1.);
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
+
+	return true;
+}
+
+
+pt::ptree PlaneGeometry::Save() const
+{
+	pt::ptree prop = Geometry::Save();
+
+	prop.put<std::string>("normal", geo_vec_to_str(m_norm));
+	prop.put<t_real>("width", m_width);
+	prop.put<t_real>("height", m_height);
+
+	pt::ptree propPlane;
+	propPlane.put_child("plane", prop);
+	return propPlane;
+}
+
+
+std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
+PlaneGeometry::GetTriangles() const
+{
+	auto solid = tl2::create_plane<t_mat, t_vec>(
+		m_norm, m_width*0.5, m_height*0.5);
+	auto [verts, norms, uvs] = tl2::create_triangles<t_vec>(solid);
+
+	//tl2::transform_obj(verts, norms, mat, true);
+	return std::make_tuple(verts, norms, uvs);
+}
+
+
+/**
+ * obtain all defining properties of the geometry object
+ */
+std::vector<ObjectProperty> PlaneGeometry::GetProperties() const
+{
+	std::vector<ObjectProperty> props = Geometry::GetProperties();
+
+	props.emplace_back(ObjectProperty{.key="normal", .value=m_norm});
+	props.emplace_back(ObjectProperty{.key="width", .value=m_width});
+	props.emplace_back(ObjectProperty{.key="height", .value=m_height});
+
+	return props;
+}
+
+
+/**
+ * set the properties of the geometry object
+ */
+void PlaneGeometry::SetProperties(const std::vector<ObjectProperty>& props)
+{
+	Geometry::SetProperties(props);
+
+	for(const auto& prop : props)
+	{
+		if(prop.key == "normal")
+			m_norm = std::get<t_vec>(prop.value);
+		else if(prop.key == "width")
+			m_width = std::get<t_real>(prop.value);
+		else if(prop.key == "height")
+			m_height = std::get<t_real>(prop.value);
+	}
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
+}
+
 // ----------------------------------------------------------------------------
 
 
@@ -669,186 +845,14 @@ void BoxGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 
 
 // ----------------------------------------------------------------------------
-// plane
-// ----------------------------------------------------------------------------
-
-PlaneGeometry::PlaneGeometry() : Geometry()
-{
-#ifdef USE_BULLET
-	CreateRigidBody();
-#endif
-}
-
-
-PlaneGeometry::~PlaneGeometry()
-{
-}
-
-
-void PlaneGeometry::SetNormal(const t_vec& n)
-{
-	m_norm = n;
-
-#ifdef USE_BULLET
-	UpdateRigidBody();
-#endif
-}
-
-
-void PlaneGeometry::SetWidth(t_real w)
-{
-	m_width = w;
-
-#ifdef USE_BULLET
-	UpdateRigidBody();
-#endif
-}
-
-
-void PlaneGeometry::SetHeight(t_real h)
-{
-	m_height = h;
-
-#ifdef USE_BULLET
-	UpdateRigidBody();
-#endif
-}
-
-
-#ifdef USE_BULLET
-void PlaneGeometry::CreateRigidBody()
-{
-	m_state = std::make_shared<btDefaultMotionState>();
-	SetStateFromMatrix();
-
-	m_shape = std::make_shared<btBoxShape>(
-		btVector3
-		{
-			btScalar(m_width * 0.5),
-			btScalar(m_height * 0.5),
-			btScalar(0.01)
-		});
-
-	m_rigid_body = std::make_shared<btRigidBody>(
-		btRigidBody::btRigidBodyConstructionInfo{
-			0, m_state.get(), m_shape.get(), 
-			{0, 0, 0}});
-}
-
-
-void PlaneGeometry::UpdateRigidBody()
-{
-	if(!m_rigid_body)
-		return;
-
-	m_shape->setImplicitShapeDimensions(
-		btVector3
-		{
-			btScalar(m_width * 0.5),
-			btScalar(m_height * 0.5),
-			btScalar(0.01)
-		});
-}
-#endif
-
-
-bool PlaneGeometry::Load(const pt::ptree& prop)
-{
-	if(!Geometry::Load(prop))
-		return false;
-
-	// normal
-	if(auto optPos = prop.get_optional<std::string>("normal"); optPos)
-	{
-		m_norm = geo_str_to_vec(*optPos);
-		if(m_norm.size() < 3)
-			m_norm.resize(3);
-	}
-
-	m_width = prop.get<t_real>("width", 1.);
-	m_height = prop.get<t_real>("height", 1.);
-
-#ifdef USE_BULLET
-	UpdateRigidBody();
-#endif
-
-	return true;
-}
-
-
-pt::ptree PlaneGeometry::Save() const
-{
-	pt::ptree prop = Geometry::Save();
-
-	prop.put<std::string>("normal", geo_vec_to_str(m_norm));
-	prop.put<t_real>("width", m_width);
-	prop.put<t_real>("height", m_height);
-
-	pt::ptree propPlane;
-	propPlane.put_child("plane", prop);
-	return propPlane;
-}
-
-
-std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
-PlaneGeometry::GetTriangles() const
-{
-	auto solid = tl2::create_plane<t_mat, t_vec>(
-		m_norm, m_width*0.5, m_height*0.5);
-	auto [verts, norms, uvs] = tl2::create_triangles<t_vec>(solid);
-
-	//tl2::transform_obj(verts, norms, mat, true);
-	return std::make_tuple(verts, norms, uvs);
-}
-
-
-/**
- * obtain all defining properties of the geometry object
- */
-std::vector<ObjectProperty> PlaneGeometry::GetProperties() const
-{
-	std::vector<ObjectProperty> props = Geometry::GetProperties();
-
-	props.emplace_back(ObjectProperty{.key="normal", .value=m_norm});
-	props.emplace_back(ObjectProperty{.key="width", .value=m_width});
-	props.emplace_back(ObjectProperty{.key="height", .value=m_height});
-
-	return props;
-}
-
-
-/**
- * set the properties of the geometry object
- */
-void PlaneGeometry::SetProperties(const std::vector<ObjectProperty>& props)
-{
-	Geometry::SetProperties(props);
-
-	for(const auto& prop : props)
-	{
-		if(prop.key == "normal")
-			m_norm = std::get<t_vec>(prop.value);
-		else if(prop.key == "width")
-			m_width = std::get<t_real>(prop.value);
-		else if(prop.key == "height")
-			m_height = std::get<t_real>(prop.value);
-	}
-
-#ifdef USE_BULLET
-	UpdateRigidBody();
-#endif
-}
-
-// ----------------------------------------------------------------------------
-
-
-
-// ----------------------------------------------------------------------------
 // cylinder
 // ----------------------------------------------------------------------------
 
 CylinderGeometry::CylinderGeometry() : Geometry()
 {
+#ifdef USE_BULLET
+	CreateRigidBody();
+#endif
 }
 
 
@@ -860,13 +864,70 @@ CylinderGeometry::~CylinderGeometry()
 void CylinderGeometry::SetHeight(t_real h)
 {
 	m_height = h;
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
 }
 
 
 void CylinderGeometry::SetRadius(t_real rad)
 {
 	m_radius = rad;
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
 }
+
+
+#ifdef USE_BULLET
+void CylinderGeometry::CreateRigidBody()
+{
+	btScalar mass = m_fixed ? btScalar(0) : btScalar(m_mass);
+	btVector3 com{0, 0, 0};
+
+	m_shape = std::make_shared<btCylinderShapeZ>(
+		btVector3
+		{
+			btScalar(m_radius),
+			btScalar(0.),
+			btScalar(m_height * 0.5),
+		});
+
+	m_shape->calculateLocalInertia(mass, com);
+
+	m_state = std::make_shared<btDefaultMotionState>();
+	SetStateFromMatrix();
+
+	m_rigid_body = std::make_shared<btRigidBody>(
+		btRigidBody::btRigidBodyConstructionInfo{
+			mass,
+			m_state.get(), m_shape.get(),
+			com});
+}
+
+
+void CylinderGeometry::UpdateRigidBody()
+{
+	if(!m_rigid_body)
+		return;
+
+	m_shape->setImplicitShapeDimensions(
+		btVector3
+		{
+			btScalar(m_radius),
+			btScalar(0.),
+			btScalar(m_height * 0.5),
+		});
+
+	btScalar mass = m_fixed ? btScalar(0) : btScalar(m_mass);
+	btVector3 com{0, 0, 0};
+
+	m_shape->calculateLocalInertia(mass, com);
+	m_rigid_body->setMassProps(mass, com);
+}
+#endif
 
 
 bool CylinderGeometry::Load(const pt::ptree& prop)
@@ -876,6 +937,10 @@ bool CylinderGeometry::Load(const pt::ptree& prop)
 
 	m_height = prop.get<t_real>("height", 1.);
 	m_radius = prop.get<t_real>("radius", 0.1);
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
 
 	return true;
 }
@@ -933,6 +998,10 @@ void CylinderGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 		else if(prop.key == "radius")
 			m_radius = std::get<t_real>(prop.value);
 	}
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -945,6 +1014,9 @@ void CylinderGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 
 SphereGeometry::SphereGeometry() : Geometry()
 {
+#ifdef USE_BULLET
+	CreateRigidBody();
+#endif
 }
 
 
@@ -956,7 +1028,52 @@ SphereGeometry::~SphereGeometry()
 void SphereGeometry::SetRadius(t_real rad)
 {
 	m_radius = rad;
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
 }
+
+
+#ifdef USE_BULLET
+void SphereGeometry::CreateRigidBody()
+{
+	btScalar mass = m_fixed ? btScalar(0) : btScalar(m_mass);
+	btVector3 com{0, 0, 0};
+
+	m_shape = std::make_shared<btSphereShape>(btScalar(m_radius));
+	m_shape->calculateLocalInertia(mass, com);
+	m_state = std::make_shared<btDefaultMotionState>();
+	SetStateFromMatrix();
+
+	m_rigid_body = std::make_shared<btRigidBody>(
+		btRigidBody::btRigidBodyConstructionInfo{
+			mass,
+			m_state.get(), m_shape.get(),
+			com});
+}
+
+
+void SphereGeometry::UpdateRigidBody()
+{
+	if(!m_rigid_body)
+		return;
+
+	m_shape->setImplicitShapeDimensions(
+		btVector3
+		{
+			btScalar(m_radius),
+			btScalar(m_radius),
+			btScalar(m_radius),
+		});
+
+	btScalar mass = m_fixed ? btScalar(0) : btScalar(m_mass);
+	btVector3 com{0, 0, 0};
+
+	m_shape->calculateLocalInertia(mass, com);
+	m_rigid_body->setMassProps(mass, com);
+}
+#endif
 
 
 bool SphereGeometry::Load(const pt::ptree& prop)
@@ -965,6 +1082,10 @@ bool SphereGeometry::Load(const pt::ptree& prop)
 		return false;
 
 	m_radius = prop.get<t_real>("radius", 0.1);
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
 
 	return true;
 }
@@ -1023,6 +1144,10 @@ void SphereGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 		if(prop.key == "radius")
 			m_radius = std::get<t_real>(prop.value);
 	}
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
 }
 
 // ----------------------------------------------------------------------------

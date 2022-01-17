@@ -61,7 +61,7 @@ message("Selected Qt version ${QT_VER}.")
 message("Selected GL version ${GL_MAJOR_VER}.${GL_MINOR_VER}.")
 
 
-set(WARN_OPTS -Wall -Wextra)
+set(WARN_OPTS -Wall -Wextra -Weffc++)
 add_compile_options(${WARN_OPTS})
 
 
@@ -112,9 +112,9 @@ endif()
 include_directories("${PROJECT_SOURCE_DIR}" "${PROJECT_SOURCE_DIR}/externals")
 
 if(QT_VER EQUAL 6)
-	include_directories("${Qt6Core_INCLUDE_DIRS}/..")
+	include_directories(SYSTEM "${Qt6Core_INCLUDE_DIRS}/..")
 elseif(QT_VER EQUAL 5)
-	include_directories("${Qt5Core_INCLUDE_DIRS}/..")
+	include_directories(SYSTEM "${Qt5Core_INCLUDE_DIRS}/..")
 endif()
 # -----------------------------------------------------------------------------
 
@@ -130,7 +130,7 @@ set(Boost_FIND_QUIETLY FALSE)
 
 find_package(Boost REQUIRED COMPONENTS filesystem${BOOST_SUFFIX})
 message("Using Boost version ${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boost_SUBMINOR_VERSION}.")
-include_directories("${Boost_INCLUDE_DIRS}/..")
+include_directories(SYSTEM "${Boost_INCLUDE_DIRS}/..")
 
 
 if(USE_LAPACK)
@@ -138,7 +138,7 @@ if(USE_LAPACK)
 	if(Lapacke_FOUND)
 		message("Lapacke enabled.")
 		add_definitions(-DUSE_LAPACK)
-		include_directories("${Lapacke_INCLUDE_DIRS}")
+		include_directories(SYSTEM "${Lapacke_INCLUDE_DIRS}")
 	else()
 		message("Lapacke disabled.")
 	endif()
@@ -146,9 +146,14 @@ endif()
 
 
 if(USE_BULLET)
-	find_package(Bullet REQUIRED)
-	include_directories("${BULLET_INCLUDE_DIRS}")
-	add_definitions(-DUSE_BULLET)
+	find_package(Bullet)
+	if(Bullet_FOUND)
+		message("Bullet enabled.")
+		add_definitions(-DUSE_BULLET)
+		include_directories(SYSTEM "${BULLET_INCLUDE_DIRS}")
+	else()
+		message("Bullet disabled.")
+	endif()
 endif()
 
 
