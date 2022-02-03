@@ -68,6 +68,8 @@ TextureBrowser::TextureBrowser(QWidget* pParent, QSettings *sett)
 
 	QPushButton *btnAddImage = new QPushButton("Add Image...", this);
 	QPushButton *btnDelImage = new QPushButton("Remove Image", this);
+	btnAddImage->setIcon(QIcon::fromTheme("list-add"));
+	btnDelImage->setIcon(QIcon::fromTheme("list-remove"));
 
 	// list widget grid
 	QWidget *widget_list = new QWidget(this);
