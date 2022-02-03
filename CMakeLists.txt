@@ -205,7 +205,6 @@ add_executable(glscene
 	src/settings_variables.cpp src/settings_variables.h
 
 	src/common/Resources.cpp src/common/Resources.h
-	src/common/Recent.cpp src/common/Recent.h
 
 	src/renderer/GlRenderer.cpp src/renderer/GlRenderer.h
 	#src/renderer/Camera.h
@@ -223,6 +222,7 @@ add_executable(glscene
 	src/types.h
 
 	tlibs2/libs/qt/gl.cpp tlibs2/libs/qt/gl.h
+	tlibs2/libs/qt/recent.cpp tlibs2/libs/qt/recent.h
 	tlibs2/libs/maths.h tlibs2/libs/cam.h
 )
 

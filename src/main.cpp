@@ -23,7 +23,7 @@
 #include "settings_variables.h"
 #include "tlibs2/libs/file.h"
 #include "tlibs2/libs/str.h"
-#include "tlibs2/libs/helper.h"
+#include "tlibs2/libs/qt/helper.h"
 
 
 /**

@@ -693,7 +693,7 @@ protected:
 		if(var.is_angle)
 			finalval = finalval / tl2::pi<t_real>*180;
 
-		QTableWidgetItem *item = new NumericTableWidgetItem<t_value>(finalval, 10);
+		QTableWidgetItem *item = new tl2::NumericTableWidgetItem<t_value>(finalval, 10);
 		table->setItem((int)idx, 0, new QTableWidgetItem{var.description});
 		table->setItem((int)idx, 1, new QTableWidgetItem{get_type_str<t_value>()});
 		table->setItem((int)idx, 2, item);
@@ -849,7 +849,7 @@ protected:
 		constexpr auto* value = std::get<var.value.index()>(var.value);
 		using t_value = std::decay_t<decltype(*value)>;
 
-		t_value finalval = dynamic_cast<NumericTableWidgetItem<t_value>*>(
+		t_value finalval = dynamic_cast<tl2::NumericTableWidgetItem<t_value>*>(
 			table->item((int)idx, 2))->GetValue();
 		if(var.is_angle)
 			finalval = finalval / 180.*tl2::pi<t_real>;

@@ -62,8 +62,8 @@ CamPropertiesWidget::CamPropertiesWidget(QWidget *parent)
 	m_spinRot[0]->setToolTip("Camera φ rotation [deg].");
 
 	m_spinRot[1] = new QDoubleSpinBox(this);
-	m_spinRot[1]->setMinimum(-90);
-	m_spinRot[1]->setMaximum(0);
+	m_spinRot[1]->setMinimum(-180);
+	m_spinRot[1]->setMaximum(180);
 	m_spinRot[1]->setDecimals(g_prec_gui);
 	m_spinRot[1]->setSingleStep(1);
 	m_spinRot[1]->setSuffix("°");

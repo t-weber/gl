@@ -25,13 +25,13 @@
 #include <functional>
 
 #include "tlibs2/libs/maths.h"
+#include "tlibs2/libs/qt/recent.h"
 
 #include "types.h"
 #include "Scene.h"
-#include "settings_variables.h"
 
+#include "settings_variables.h"
 #include "common/Resources.h"
-#include "common/Recent.h"
 
 #include "renderer/GlRenderer.h"
 
@@ -104,7 +104,7 @@ private:
 	bool m_initialSceneFileModified = false;
 
 	// recently opened files
-	RecentFiles m_recent{};
+	tl2::RecentFiles m_recent{};
 
 	// function to call for the recent file menu items
 	std::function<bool(const QString& filename)> m_open_func
