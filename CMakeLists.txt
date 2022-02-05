@@ -160,20 +160,18 @@ endif()
 if(QT_VER EQUAL 6)
 	find_package(Qt6 REQUIRED
 		COMPONENTS Core Gui Svg Widgets
-			OpenGL OpenGLWidgets
-			PrintSupport)
+			OpenGLWidgets PrintSupport)
 	list(APPEND QtBaseLibraries Qt6::Core Qt6::Gui Qt6::Widgets
 		Qt6::Svg)
 	list(APPEND QtAllLibraries Qt6::Core Qt6::Gui Qt6::Widgets
-		Qt6::Svg Qt6::OpenGL Qt6::OpenGLWidgets Qt6::PrintSupport)
+		Qt6::Svg Qt6::OpenGLWidgets Qt6::PrintSupport)
 elseif(QT_VER EQUAL 5)
 	find_package(Qt5 REQUIRED
-		COMPONENTS Core Gui Svg Widgets OpenGL
-			PrintSupport)
+		COMPONENTS Core Gui Svg Widgets PrintSupport)
 	list(APPEND QtBaseLibraries Qt5::Core Qt5::Gui Qt5::Widgets
 		Qt5::Svg)
 	list(APPEND QtAllLibraries Qt5::Core Qt5::Gui Qt5::Widgets
-		Qt5::Svg Qt5::OpenGL Qt5::PrintSupport)
+		Qt5::Svg Qt5::PrintSupport)
 else()
 	message(FATAL_ERROR "Unknown Qt version selected: ${QT_VER}")
 endif()
