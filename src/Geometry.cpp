@@ -23,7 +23,7 @@ namespace pt = boost::property_tree;
 // ----------------------------------------------------------------------------
 
 /**
- * convert a serialised string to a vector
+ * convert a serialised string to a value
  */
 template<class t_var = t_real>
 t_var geo_str_to_val(const std::string& str)
