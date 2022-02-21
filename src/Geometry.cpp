@@ -23,6 +23,19 @@ namespace pt = boost::property_tree;
 // ----------------------------------------------------------------------------
 
 /**
+ * convert a serialised string to a vector
+ */
+template<class t_var = t_real>
+t_var geo_str_to_val(const std::string& str)
+{
+	tl2::ExprParser<t_var> parser;
+	if(!parser.parse(str))
+		throw std::logic_error("Could not parse expression.");
+	return parser.eval();
+}
+
+
+/**
  * convert a vector to a serialisable string
  */
 std::string geo_vec_to_str(const t_vec& vec, const char* sep)
@@ -459,8 +472,8 @@ bool Geometry::Load(const pt::ptree& prop)
 		m_texture = "";
 
 #ifdef USE_BULLET
-	if(auto optMass = prop.get_optional<t_real>("mass"); optMass)
-		m_mass = *optMass;
+	if(auto optMass = prop.get_optional<std::string>("mass"); optMass)
+		m_mass = geo_str_to_val<t_real>(*optMass);
 #endif
 
 	return true;
@@ -586,8 +599,8 @@ bool PlaneGeometry::Load(const pt::ptree& prop)
 			m_norm.resize(3);
 	}
 
-	m_width = prop.get<t_real>("width", 1.);
-	m_height = prop.get<t_real>("height", 1.);
+	m_width = geo_str_to_val<t_real>(prop.get<std::string>("width", "1."));
+	m_height = geo_str_to_val<t_real>(prop.get<std::string>("height", "1."));
 
 #ifdef USE_BULLET
 	UpdateRigidBody();
@@ -765,9 +778,9 @@ bool BoxGeometry::Load(const pt::ptree& prop)
 	if(!Geometry::Load(prop))
 		return false;
 
-	m_length = prop.get<t_real>("length", 1.);
-	m_depth = prop.get<t_real>("depth", 1.);
-	m_height = prop.get<t_real>("height", 1.);
+	m_length = geo_str_to_val<t_real>(prop.get<std::string>("length", "1."));
+	m_depth = geo_str_to_val<t_real>(prop.get<std::string>("depth", "1."));
+	m_height = geo_str_to_val<t_real>(prop.get<std::string>("height", "1."));
 
 #ifdef USE_BULLET
 	UpdateRigidBody();
@@ -935,8 +948,8 @@ bool CylinderGeometry::Load(const pt::ptree& prop)
 	if(!Geometry::Load(prop))
 		return false;
 
-	m_height = prop.get<t_real>("height", 1.);
-	m_radius = prop.get<t_real>("radius", 0.1);
+	m_height = geo_str_to_val<t_real>(prop.get<std::string>("height", "1."));
+	m_radius = geo_str_to_val<t_real>(prop.get<std::string>("radius", "0.1"));
 
 #ifdef USE_BULLET
 	UpdateRigidBody();
@@ -1081,7 +1094,7 @@ bool SphereGeometry::Load(const pt::ptree& prop)
 	if(!Geometry::Load(prop))
 		return false;
 
-	m_radius = prop.get<t_real>("radius", 0.1);
+	m_radius = geo_str_to_val<t_real>(prop.get<std::string>("radius", "0.1"));
 
 #ifdef USE_BULLET
 	UpdateRigidBody();
@@ -1173,7 +1186,7 @@ bool TetrahedronGeometry::Load(const pt::ptree& prop)
 	if(!Geometry::Load(prop))
 		return false;
 
-	m_radius = prop.get<t_real>("radius", 0.1);
+	m_radius = geo_str_to_val<t_real>(prop.get<std::string>("radius", "0.1"));
 
 	return true;
 }
@@ -1251,7 +1264,7 @@ bool OctahedronGeometry::Load(const pt::ptree& prop)
 	if(!Geometry::Load(prop))
 		return false;
 
-	m_radius = prop.get<t_real>("radius", 0.1);
+	m_radius = geo_str_to_val<t_real>(prop.get<std::string>("radius", "0.1"));
 
 	return true;
 }
@@ -1329,7 +1342,7 @@ bool DodecahedronGeometry::Load(const pt::ptree& prop)
 	if(!Geometry::Load(prop))
 		return false;
 
-	m_radius = prop.get<t_real>("radius", 0.1);
+	m_radius = geo_str_to_val<t_real>(prop.get<std::string>("radius", "0.1"));
 
 	return true;
 }
@@ -1407,7 +1420,7 @@ bool IcosahedronGeometry::Load(const pt::ptree& prop)
 	if(!Geometry::Load(prop))
 		return false;
 
-	m_radius = prop.get<t_real>("radius", 0.1);
+	m_radius = geo_str_to_val<t_real>(prop.get<std::string>("radius", "0.1"));
 
 	return true;
 }
