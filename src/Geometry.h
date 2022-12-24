@@ -93,6 +93,12 @@ public:
 	virtual bool IsFixed() const { return m_fixed; }
 	virtual void SetFixed(bool b) { m_fixed = b; }
 
+	virtual bool IsPortal() const { return m_portal; }
+	virtual void SetPortal(bool b) { m_portal = b; }
+
+	virtual const t_mat& GetPortalTrafo() const { return m_portaltrafo; }
+	virtual void SetPortalTrafo(const t_mat& trafo) { m_portaltrafo = trafo; }
+
 	virtual bool IsLightingEnabled() const { return m_lighting; }
 	virtual void SetLighting(bool b) { m_lighting = b; }
 
@@ -130,6 +136,9 @@ protected:
 
 	bool m_fixed = false;
 	t_mat m_trafo = tl2::unit<t_mat>(4);
+
+	bool m_portal = false;
+	t_mat m_portaltrafo = tl2::unit<t_mat>(4);
 
 #ifdef USE_BULLET
 	std::shared_ptr<btConvexInternalShape> m_shape{};

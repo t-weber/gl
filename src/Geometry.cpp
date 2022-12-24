@@ -399,10 +399,12 @@ std::vector<ObjectProperty> Geometry::GetProperties() const
 
 	props.emplace_back(ObjectProperty{.key="position", .value=GetPosition()});
 	props.emplace_back(ObjectProperty{.key="rotation", .value=GetRotation()});
-	props.emplace_back(ObjectProperty{.key="fixed", .value=m_fixed});
-	props.emplace_back(ObjectProperty{.key="colour", .value=m_colour});
-	props.emplace_back(ObjectProperty{.key="lighting", .value=m_lighting});
-	props.emplace_back(ObjectProperty{.key="texture", .value=m_texture});
+	props.emplace_back(ObjectProperty{.key="fixed", .value=IsFixed()});
+	props.emplace_back(ObjectProperty{.key="colour", .value=GetColour()});
+	props.emplace_back(ObjectProperty{.key="lighting", .value=IsLightingEnabled()});
+	props.emplace_back(ObjectProperty{.key="texture", .value=GetTexture()});
+	props.emplace_back(ObjectProperty{.key="portal", .value=IsPortal()});
+	props.emplace_back(ObjectProperty{.key="portal_trafo", .value=GetPortalTrafo()});
 
 #ifdef USE_BULLET
 	props.emplace_back(ObjectProperty{.key="mass", .value=m_mass});
@@ -424,13 +426,17 @@ void Geometry::SetProperties(const std::vector<ObjectProperty>& props)
 		else if(prop.key == "rotation")
 			SetRotation(std::get<t_mat>(prop.value));
 		else if(prop.key == "fixed")
-			m_fixed = std::get<bool>(prop.value);
+			SetFixed(std::get<bool>(prop.value));
 		else if(prop.key == "colour")
-			m_colour = std::get<t_vec>(prop.value);
+			SetColour(std::get<t_vec>(prop.value));
 		else if(prop.key == "lighting")
-			m_lighting = std::get<bool>(prop.value);
+			SetLighting(std::get<bool>(prop.value));
 		else if(prop.key == "texture")
-			m_texture = std::get<std::string>(prop.value);
+			SetTexture(std::get<std::string>(prop.value));
+		else if(prop.key == "portal")
+			SetPortal(std::get<bool>(prop.value));
+		else if(prop.key == "portal_trafo")
+			SetPortalTrafo(std::get<t_mat>(prop.value));
 #ifdef USE_BULLET
 		else if(prop.key == "mass")
 			m_mass = std::get<t_real>(prop.value);
@@ -451,7 +457,7 @@ bool Geometry::Load(const pt::ptree& prop)
 
 	// fixed
 	if(auto optFixed = prop.get_optional<bool>("fixed"); optFixed)
-		m_fixed = *optFixed;
+		SetFixed(*optFixed);
 
 	// colour
 	if(auto col = prop.get_optional<std::string>("colour"); col)
@@ -463,13 +469,19 @@ bool Geometry::Load(const pt::ptree& prop)
 
 	// lighting
 	if(auto optLight = prop.get_optional<bool>("lighting"); optLight)
-		m_lighting = *optLight;
+		SetLighting(*optLight);
 
 	// texture
 	if(auto texture = prop.get_optional<std::string>("texture"); texture)
-		m_texture = *texture;
+		SetTexture(*texture);
 	else
-		m_texture = "";
+		SetTexture("");
+
+	// portal
+	if(auto optPort = prop.get_optional<bool>("portal"); optPort)
+		SetPortal(*optPort);
+	if(auto optPort = prop.get_optional<std::string>("portal_trafo"); optPort)
+		SetPortalTrafo(geo_str_to_mat(*optPort));
 
 #ifdef USE_BULLET
 	if(auto optMass = prop.get_optional<std::string>("mass"); optMass)
@@ -487,10 +499,12 @@ pt::ptree Geometry::Save() const
 	prop.put<std::string>("<xmlattr>.id", GetId());
 	prop.put<std::string>("position", geo_vec_to_str(GetPosition()));
 	prop.put<std::string>("rotation", geo_mat_to_str(GetRotation()));
-	prop.put<std::string>("fixed", m_fixed ? "1" : "0");
-	prop.put<std::string>("colour", geo_vec_to_str(m_colour));
-	prop.put<std::string>("lighting", m_lighting ? "1" : "0");
-	prop.put<std::string>("texture", m_texture);
+	prop.put<std::string>("fixed", IsFixed() ? "1" : "0");
+	prop.put<std::string>("colour", geo_vec_to_str(GetColour()));
+	prop.put<std::string>("lighting", IsLightingEnabled() ? "1" : "0");
+	prop.put<std::string>("texture", GetTexture());
+	prop.put<std::string>("portal", IsPortal() ? "1" : "0");
+	prop.put<std::string>("portal_trafo", geo_mat_to_str(GetPortalTrafo()));
 
 #ifdef USE_BULLET
 	prop.put<t_real>("mass", m_mass);
