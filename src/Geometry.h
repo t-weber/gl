@@ -93,8 +93,10 @@ public:
 	virtual bool IsFixed() const { return m_fixed; }
 	virtual void SetFixed(bool b) { m_fixed = b; }
 
-	virtual bool IsPortal() const { return m_portal; }
-	virtual void SetPortal(bool b) { m_portal = b; }
+	//virtual bool IsPortal() const { return m_portal; }
+	//virtual void SetPortal(bool b) { m_portal = b; }
+	virtual int GetPortalId() const { return m_portal_id; }
+	virtual void SetPortalId(int id) { m_portal_id = id; }
 
 	virtual const t_mat& GetPortalTrafo() const { return m_portaltrafo; }
 	virtual void SetPortalTrafo(const t_mat& trafo) { m_portaltrafo = trafo; }
@@ -137,7 +139,8 @@ protected:
 	bool m_fixed = false;
 	t_mat m_trafo = tl2::unit<t_mat>(4);
 
-	bool m_portal = false;
+	//bool m_portal = false;
+	int m_portal_id = -1;  // <0 -> deactivated
 	t_mat m_portaltrafo = tl2::unit<t_mat>(4);
 
 #ifdef USE_BULLET

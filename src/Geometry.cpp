@@ -10,6 +10,7 @@
  */
 
 #include "Geometry.h"
+#include "settings_variables.h" 
 #include "tlibs2/libs/expr.h"
 #include "tlibs2/libs/str.h"
 
@@ -21,6 +22,19 @@ namespace pt = boost::property_tree;
 // ----------------------------------------------------------------------------
 // helper functions
 // ----------------------------------------------------------------------------
+
+/**
+ * convert a serialised string to a value
+ */
+template<class t_val>
+std::string geo_val_to_str(const t_val& val)
+{
+	std::ostringstream ostr;
+	ostr.precision(g_prec);
+	ostr << val;
+	return ostr.str();
+}
+
 
 /**
  * convert a serialised string to a value
@@ -41,7 +55,7 @@ t_var geo_str_to_val(const std::string& str)
 std::string geo_vec_to_str(const t_vec& vec, const char* sep)
 {
 	std::ostringstream ostr;
-	ostr.precision(8);
+	ostr.precision(g_prec);
 
 	for(std::size_t i=0; i<vec.size(); ++i)
 	{
@@ -83,7 +97,7 @@ t_vec geo_str_to_vec(const std::string& str, const char* seps)
 std::string geo_mat_to_str(const t_mat& mat, const char* seprow, const char* sepcol)
 {
 	std::ostringstream ostr;
-	ostr.precision(8);
+	ostr.precision(g_prec);
 
 	for(std::size_t i=0; i<mat.size1(); ++i)
 	{
@@ -403,7 +417,8 @@ std::vector<ObjectProperty> Geometry::GetProperties() const
 	props.emplace_back(ObjectProperty{.key="colour", .value=GetColour()});
 	props.emplace_back(ObjectProperty{.key="lighting", .value=IsLightingEnabled()});
 	props.emplace_back(ObjectProperty{.key="texture", .value=GetTexture()});
-	props.emplace_back(ObjectProperty{.key="portal", .value=IsPortal()});
+	//props.emplace_back(ObjectProperty{.key="portal", .value=IsPortal()});
+	props.emplace_back(ObjectProperty{.key="portal_id", .value=GetPortalId()});
 	props.emplace_back(ObjectProperty{.key="portal_trafo", .value=GetPortalTrafo()});
 
 #ifdef USE_BULLET
@@ -433,8 +448,10 @@ void Geometry::SetProperties(const std::vector<ObjectProperty>& props)
 			SetLighting(std::get<bool>(prop.value));
 		else if(prop.key == "texture")
 			SetTexture(std::get<std::string>(prop.value));
-		else if(prop.key == "portal")
-			SetPortal(std::get<bool>(prop.value));
+		//else if(prop.key == "portal")
+		//	SetPortal(std::get<bool>(prop.value));
+		else if(prop.key == "portal_id")
+			SetPortalId(std::get<int>(prop.value));
 		else if(prop.key == "portal_trafo")
 			SetPortalTrafo(std::get<t_mat>(prop.value));
 #ifdef USE_BULLET
@@ -478,8 +495,10 @@ bool Geometry::Load(const pt::ptree& prop)
 		SetTexture("");
 
 	// portal
-	if(auto optPort = prop.get_optional<bool>("portal"); optPort)
-		SetPortal(*optPort);
+	//if(auto optPort = prop.get_optional<bool>("portal"); optPort)
+	//	SetPortal(*optPort);
+	if(auto optPort = prop.get_optional<int>("portal_id"); optPort)
+		SetPortalId(*optPort);
 	if(auto optPort = prop.get_optional<std::string>("portal_trafo"); optPort)
 		SetPortalTrafo(geo_str_to_mat(*optPort));
 
@@ -503,7 +522,8 @@ pt::ptree Geometry::Save() const
 	prop.put<std::string>("colour", geo_vec_to_str(GetColour()));
 	prop.put<std::string>("lighting", IsLightingEnabled() ? "1" : "0");
 	prop.put<std::string>("texture", GetTexture());
-	prop.put<std::string>("portal", IsPortal() ? "1" : "0");
+	//prop.put<std::string>("portal", IsPortal() ? "1" : "0");
+	prop.put<std::string>("portal_id", geo_val_to_str(GetPortalId()));
 	prop.put<std::string>("portal_trafo", geo_mat_to_str(GetPortalTrafo()));
 
 #ifdef USE_BULLET
