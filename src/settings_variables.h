@@ -60,6 +60,8 @@ extern unsigned int g_timer_tps;
 extern int g_light_follows_cursor;
 extern int g_enable_shadow_rendering;
 
+extern int g_enable_portal_rendering;
+
 extern int g_draw_bounding_rectangles;
 
 // camera translation scaling factor
@@ -100,7 +102,7 @@ extern int g_nested_docks;
 // ----------------------------------------------------------------------------
 // variables register
 // ----------------------------------------------------------------------------
-constexpr std::array<SettingsVariable, 10> g_settingsvariables
+constexpr std::array<SettingsVariable, 11> g_settingsvariables
 {{
 	// epsilons and precisions
 	{
@@ -153,6 +155,12 @@ constexpr std::array<SettingsVariable, 10> g_settingsvariables
 		.description = "Enable shadow rendering.",
 		.key = "settings/enable_shadow_rendering",
 		.value = &g_enable_shadow_rendering,
+		.editor = SettingsVariableEditor::YESNO,
+	},
+	{
+		.description = "Enable portal rendering.",
+		.key = "settings/enable_portal_rendering",
+		.value = &g_enable_portal_rendering,
 		.editor = SettingsVariableEditor::YESNO,
 	},
 	{

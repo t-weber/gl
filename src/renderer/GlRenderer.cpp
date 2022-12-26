@@ -34,7 +34,7 @@
 #include "tlibs2/libs/file.h"
 
 
-#define MAX_LIGHTS           4  // max. number allowed in shader
+#define MAX_LIGHTS 4  // max. number allowed in shader
 
 
 /**
@@ -261,6 +261,8 @@ void GlSceneRenderer::AddObject(const Geometry& obj)
 	obj_iter->second.m_mat = mat;
 	obj_iter->second.m_texture = obj.GetTexture();
 	obj_iter->second.m_lighting = obj.IsLightingEnabled();
+	obj_iter->second.m_portal_id = obj.GetPortalId();
+	obj_iter->second.m_portal_mat = obj.GetPortalTrafo();
 
 	update();
 }
@@ -488,6 +490,16 @@ void GlSceneRenderer::SetLightFollowsCursor(bool b)
 void GlSceneRenderer::EnableShadowRendering(bool b)
 {
 	m_shadowRenderingEnabled = b;
+	update();
+}
+
+
+/**
+ * enable the stencik rendering passes
+ */
+void GlSceneRenderer::EnablePortalRendering(bool b)
+{
+	m_portalRenderingEnabled = b;
 	update();
 }
 
@@ -984,6 +996,32 @@ void GlSceneRenderer::UpdateShadowFramebuffer()
 
 
 /**
+ * find objects that are marked as portals
+ */
+void GlSceneRenderer::CreateActivePortals()
+{
+	m_active_portal = nullptr;
+	m_active_portals.clear();
+
+	for(const auto& [obj_name, obj] : m_objs)
+	{
+		if(bool obj_is_portal = (obj.m_portal_id >= 0); obj_is_portal)
+		{
+			// remember current portal for subsequent rendering passes
+			ActivePortal active_portal{
+				.id = obj.m_portal_id,
+				.mat = obj.m_portal_mat };
+
+			//std::cout << "portal " << active_portal.id << ":\n";
+			//tl2::niceprint(std::cout, active_portal.mat);
+
+			m_active_portals.emplace_back(std::move(active_portal));
+		}
+	}
+}
+
+
+/**
  * draw the scene
  */
 void GlSceneRenderer::paintGL()
@@ -999,6 +1037,7 @@ void GlSceneRenderer::paintGL()
 	// shadow framebuffer render pass
 	if(m_shadowRenderingEnabled)
 	{
+		m_portalRenderPass = -1;
 		m_shadowRenderPass = true;
 		DoPaintGL(pGl);
 		m_shadowRenderPass = false;
@@ -1018,7 +1057,37 @@ void GlSceneRenderer::paintGL()
 		} BOOST_SCOPE_EXIT_END
 		painter.beginNativePainting();
 
-		DoPaintGL(pGl);
+		if(m_portalRenderingEnabled)
+		{
+			CreateActivePortals();
+
+			m_firstpass = true;
+			for(const ActivePortal& active_portal : m_active_portals)
+			{
+				m_active_portal = &active_portal;
+
+				// pass 0: draw portal masks into stencil buffer
+				m_portalRenderPass = 0;
+				DoPaintGL(pGl);
+
+				// pass 1: draw scene that is only visible through portals
+				m_portalRenderPass = 1;
+				DoPaintGL(pGl);
+
+				m_firstpass = false;
+			}
+
+			// pass 2: draw the rest of the scene without portals
+			m_portalRenderPass = 2;
+			m_active_portal = nullptr;
+			DoPaintGL(pGl);
+		}
+		else
+		{
+			m_portalRenderPass = -1;
+			m_firstpass = true;
+			DoPaintGL(pGl);
+		}
 	}
 
 	// qt painting pass
@@ -1088,9 +1157,48 @@ void GlSceneRenderer::DoPaintGL(qgl_funcs *pGl)
 	pGl->glHint(GL_POLYGON_SMOOTH_HINT, GL_NICEST);
 
 	// clear
-	pGl->glClearColor(1., 1., 1., 1.);
-	pGl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	pGl->glDisable(GL_DEPTH_TEST);
+	pGl->glDisable(GL_STENCIL_TEST);
+
+	// don't write colours when creating portal stencil maps
+	if(m_portalRenderPass == 0)
+		pGl->glColorMask(false, false, false, false);
+	else
+		pGl->glColorMask(true, true, true, true);
+
+	if(m_portalRenderPass < 2)
+	{
+		pGl->glClearColor(1., 1., 1., 1.);
+		pGl->glClearStencil(0);
+
+		GLuint clear_bits = 0;
+		if(m_firstpass)
+			clear_bits |= GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT;
+
+		if(m_portalRenderPass == 0)
+		{
+			pGl->glStencilMask(~0);
+			clear_bits |= GL_STENCIL_BUFFER_BIT;
+		}
+		pGl->glClear(clear_bits);
+	}
+
 	pGl->glEnable(GL_DEPTH_TEST);
+	pGl->glStencilMask(0);
+
+	if(m_portalRenderPass == 0)
+	{
+		pGl->glEnable(GL_STENCIL_TEST);
+		pGl->glStencilOp(
+			GL_KEEP,     // stencil test failed
+			GL_KEEP,     // stencil test passed, depth test failed
+			GL_REPLACE); // both tests passed
+	}
+	else if(m_portalRenderPass == 1)
+	{
+		pGl->glEnable(GL_STENCIL_TEST);
+		pGl->glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+	}
 
 	if(m_viewportNeedsUpdate)
 	{
@@ -1146,15 +1254,36 @@ void GlSceneRenderer::DoPaintGL(qgl_funcs *pGl)
 	//m_shaders->setUniformValue(m_uniTextureActive, m_textures_active);
 	m_shaders->setUniformValue(m_uniTexture, 1);
 
-	auto colOverride = tl2::create<t_vec_gl>({1,1,1,1});
+	auto colOverride = tl2::create<t_vec_gl>({ 1, 1, 1, 1 });
 
-
+	// render object
 	auto render_triangle_geometry = 
 		[this, pGl, &colOverride, &boost_scope_exit_aux_args](
 			const GlSceneObj& obj)
 	{
 		if(!obj.m_visible)
 			return;
+		const bool obj_is_portal = (obj.m_portal_id >= 0);
+
+		// pass 0: draw portal masks into stencil buffer
+		if(m_portalRenderPass == 0)
+		{
+			if(m_active_portal && obj_is_portal && obj.m_portal_id == m_active_portal->id)
+			{
+				pGl->glStencilMask(~0);
+				pGl->glStencilFunc(GL_ALWAYS, 1, ~0);
+			}
+			else
+			{
+				// don't write non-portals to stencil buffer
+				pGl->glStencilMask(0);
+			}
+		}
+		else if(obj_is_portal)
+		{
+			// ignore portals
+			return;
+		}
 
 		// check if object is in camera frustum
 		if(m_shadowRenderPass)
@@ -1221,9 +1350,17 @@ void GlSceneRenderer::DoPaintGL(qgl_funcs *pGl)
 		else
 			pGl->glDisable(GL_CULL_FACE);
 
+		// pass 1: draw scene that is only visible through portals
 		// set object matrix
-		m_shaders->setUniformValue(m_uniMatrixObj, obj.m_mat);
-
+		if(m_portalRenderPass == 1 && m_active_portal)
+		{
+			pGl->glStencilFunc(GL_EQUAL, 1, ~0);
+			m_shaders->setUniformValue(m_uniMatrixObj, m_active_portal->mat * obj.m_mat);
+		}
+		else
+		{
+			m_shaders->setUniformValue(m_uniMatrixObj, obj.m_mat);
+		}
 
 		// main vertex array object
 		obj.m_vertex_array->bind();
@@ -1275,6 +1412,7 @@ void GlSceneRenderer::DoPaintGL(qgl_funcs *pGl)
 	pGl->glDisable(GL_BLEND);
 	pGl->glDisable(GL_CULL_FACE);
 	pGl->glDisable(GL_DEPTH_TEST);
+	pGl->glDisable(GL_STENCIL_TEST);
 }
 
 

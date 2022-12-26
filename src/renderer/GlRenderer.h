@@ -45,17 +45,20 @@ using t_mat_gl = tl2::t_mat_gl;
 struct GlSceneObj : public tl2::GlRenderObj
 {
 	t_mat_gl m_mat = tl2::unit<t_mat_gl>();
+	t_mat_gl m_portal_mat = tl2::unit<t_mat_gl>();
 
-	bool m_visible = true;   // object shown?
-	bool m_cull = true;      // object faces culled?
-	bool m_lighting = true;  // enable lighting (just draw colour if disabled)
+	GLint m_portal_id = -1;
+
+	bool m_visible = true;      // object shown?
+	bool m_cull = true;         // object faces culled?
+	bool m_lighting = true;     // enable lighting (just draw colour if disabled)
 
 	t_vec3_gl m_boundingSpherePos = tl2::create<t_vec3_gl>({ 0., 0., 0. });
 	t_real_gl m_boundingSphereRad = 0.;
 
 	std::vector<t_vec_gl> m_boundingBox = {};
 
-	std::string m_texture = "";	// texture identifier
+	std::string m_texture = ""; // texture identifier
 };
 
 
@@ -66,6 +69,16 @@ struct GlSceneTexture
 {
 	std::string filename{};
 	std::shared_ptr<QOpenGLTexture> texture{};
+};
+
+
+/**
+ * active portal infos
+ */
+struct ActivePortal
+{
+	GLint id = -1;
+	t_mat_gl mat = tl2::unit<t_mat_gl>();
 };
 
 
@@ -112,6 +125,7 @@ public:
 	void SetLight(std::size_t idx, const t_vec3_gl& pos);
 	void SetLightFollowsCursor(bool b);
 	void EnableShadowRendering(bool b);
+	void EnablePortalRendering(bool b);
 
 	const t_cam& GetCamera() const { return m_cam; }
 	t_cam& GetCamera() { return m_cam; }
@@ -155,6 +169,8 @@ protected:
 
 	void CreateSelectionPlane();
 	void CalcSelectionPlaneMatrix();
+
+	void CreateActivePortals();
 
 	void UpdatePicker();
 	void UpdateLights();
@@ -239,6 +255,9 @@ protected:
 	std::atomic<bool> m_shadowFramebufferNeedsUpdate = false;
 	std::atomic<bool> m_shadowRenderingEnabled = true;
 	std::atomic<bool> m_shadowRenderPass = false;
+	std::atomic<bool> m_portalRenderingEnabled = true;
+	std::atomic<bool> m_firstpass = true;
+	std::atomic<int> m_portalRenderPass = -1;
 
 	// 3d objects
 	t_objs m_objs{};
@@ -248,6 +267,9 @@ protected:
 
 	// texture map
 	t_textures m_textures{};
+
+	std::vector<ActivePortal> m_active_portals{};
+	const ActivePortal* m_active_portal = nullptr;
 
 	// cursor
 	t_vec3_gl m_selectionPlaneNorm = tl2::create<t_vec3_gl>({0, 0, 1});

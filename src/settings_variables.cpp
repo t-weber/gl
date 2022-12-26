@@ -52,6 +52,8 @@ tl2::t_real_gl g_rotation_scale = tl2::t_real_gl(0.02);
 int g_light_follows_cursor = 0;
 int g_enable_shadow_rendering = 1;
 
+int g_enable_portal_rendering = 0;
+
 int g_draw_bounding_rectangles = 0;
 
 

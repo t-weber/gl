@@ -1362,6 +1362,7 @@ void MainWnd::InitSettings()
 	{
 		m_renderer->SetLightFollowsCursor(g_light_follows_cursor);
 		m_renderer->EnableShadowRendering(g_enable_shadow_rendering);
+		m_renderer->EnablePortalRendering(g_enable_portal_rendering);
 	}
 }
 
