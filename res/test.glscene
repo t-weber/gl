@@ -1,0 +1,379 @@
+<?xml version="1.0" encoding="utf-8"?>
+<glscene>
+	<objects>
+		<object id="object 1">
+			<geometry>
+				<box id="wall 1">
+					<position>10; 0; 1.5</position>
+					<rotation>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</rotation>
+					<fixed>1</fixed>
+					<colour>1; 0; 0</colour>
+					<lighting>1</lighting>
+					<light_id>-1</light_id>
+					<texture/>
+					<portal_id>-1</portal_id>
+					<portal_trafo>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</portal_trafo>
+					<mass>1</mass>
+					<length>0.5</length>
+					<depth>20</depth>
+					<height>4</height>
+				</box>
+			</geometry>
+		</object>
+		<object id="object 2">
+			<geometry>
+				<box id="wall 2a">
+					<position>-6.5; 10; 1.5</position>
+					<rotation>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</rotation>
+					<fixed>1</fixed>
+					<colour>1; 0; 0</colour>
+					<lighting>1</lighting>
+					<light_id>-1</light_id>
+					<texture/>
+					<portal_id>-1</portal_id>
+					<portal_trafo>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</portal_trafo>
+					<mass>1</mass>
+					<length>7</length>
+					<depth>0.5</depth>
+					<height>4</height>
+				</box>
+			</geometry>
+		</object>
+		<object id="object 3">
+			<geometry>
+				<box id="wall 2b">
+					<position>6.5; 10; 1.5</position>
+					<rotation>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</rotation>
+					<fixed>1</fixed>
+					<colour>1; 0; 0</colour>
+					<lighting>1</lighting>
+					<light_id>-1</light_id>
+					<texture/>
+					<portal_id>-1</portal_id>
+					<portal_trafo>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</portal_trafo>
+					<mass>1</mass>
+					<length>7</length>
+					<depth>0.5</depth>
+					<height>4</height>
+				</box>
+			</geometry>
+		</object>
+		<object id="object 4">
+			<geometry>
+				<box id="wall 3">
+					<position>-10; 0; 1.5</position>
+					<rotation>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</rotation>
+					<fixed>1</fixed>
+					<colour>1; 0; 0</colour>
+					<lighting>1</lighting>
+					<light_id>-1</light_id>
+					<texture/>
+					<portal_id>-1</portal_id>
+					<portal_trafo>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</portal_trafo>
+					<mass>1</mass>
+					<length>0.5</length>
+					<depth>20</depth>
+					<height>4</height>
+				</box>
+			</geometry>
+		</object>
+		<object id="object 5">
+			<geometry>
+				<box id="wall 4">
+					<position>0; -10; 1.5</position>
+					<rotation>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</rotation>
+					<fixed>1</fixed>
+					<colour>1; 0; 0</colour>
+					<lighting>1</lighting>
+					<light_id>-1</light_id>
+					<texture/>
+					<portal_id>-1</portal_id>
+					<portal_trafo>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</portal_trafo>
+					<mass>1</mass>
+					<length>20</length>
+					<depth>0.5</depth>
+					<height>4</height>
+				</box>
+			</geometry>
+		</object>
+		<object id="object 6">
+			<geometry>
+				<plane id="floor">
+					<position>0; 0; 0</position>
+					<rotation>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</rotation>
+					<fixed>1</fixed>
+					<colour>0.5; 0.5; 0.5</colour>
+					<lighting>1</lighting>
+					<light_id>-1</light_id>
+					<texture/>
+					<portal_id>-1</portal_id>
+					<portal_trafo>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</portal_trafo>
+					<mass>1</mass>
+					<normal>0; 0; 1</normal>
+					<width>20</width>
+					<height>20</height>
+				</plane>
+			</geometry>
+		</object>
+		<object id="object 7">
+			<geometry>
+				<sphere id="light 1">
+					<position>0; 0; 10</position>
+					<rotation>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</rotation>
+					<fixed>0</fixed>
+					<colour>1; 0.8; 0</colour>
+					<lighting>0</lighting>
+					<light_id>0</light_id>
+					<texture/>
+					<portal_id>-1</portal_id>
+					<portal_trafo>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</portal_trafo>
+					<mass>0</mass>
+					<radius>0.25</radius>
+				</sphere>
+			</geometry>
+		</object>
+		<object id="object 8">
+			<geometry>
+				<box id="wall 2-1">
+					<position>35; 0; 1.5</position>
+					<rotation>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</rotation>
+					<fixed>1</fixed>
+					<colour>1; 1; 0</colour>
+					<lighting>1</lighting>
+					<light_id>-1</light_id>
+					<texture/>
+					<portal_id>-1</portal_id>
+					<portal_trafo>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</portal_trafo>
+					<mass>1</mass>
+					<length>0.5</length>
+					<depth>20</depth>
+					<height>4</height>
+				</box>
+			</geometry>
+		</object>
+		<object id="object 9">
+			<geometry>
+				<box id="wall 2-2a">
+					<position>18.5; -10; 1.5</position>
+					<rotation>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</rotation>
+					<fixed>1</fixed>
+					<colour>1; 1; 0</colour>
+					<lighting>1</lighting>
+					<light_id>-1</light_id>
+					<texture/>
+					<portal_id>-1</portal_id>
+					<portal_trafo>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</portal_trafo>
+					<mass>1</mass>
+					<length>7</length>
+					<depth>0.5</depth>
+					<height>4</height>
+				</box>
+			</geometry>
+		</object>
+		<object id="object 10">
+			<geometry>
+				<box id="wall 2-2b">
+					<position>31.5; -10; 1.5</position>
+					<rotation>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</rotation>
+					<fixed>1</fixed>
+					<colour>1; 1; 0</colour>
+					<lighting>1</lighting>
+					<light_id>-1</light_id>
+					<texture/>
+					<portal_id>-1</portal_id>
+					<portal_trafo>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</portal_trafo>
+					<mass>1</mass>
+					<length>7</length>
+					<depth>0.5</depth>
+					<height>4</height>
+				</box>
+			</geometry>
+		</object>
+		<object id="object 11">
+			<geometry>
+				<box id="wall 2-3">
+					<position>15; 0; 1.5</position>
+					<rotation>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</rotation>
+					<fixed>1</fixed>
+					<colour>1; 1; 0</colour>
+					<lighting>1</lighting>
+					<light_id>-1</light_id>
+					<texture/>
+					<portal_id>-1</portal_id>
+					<portal_trafo>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</portal_trafo>
+					<mass>1</mass>
+					<length>0.5</length>
+					<depth>20</depth>
+					<height>4</height>
+				</box>
+			</geometry>
+		</object>
+		<object id="object 12">
+			<geometry>
+				<box id="wall 2-4">
+					<position>25; 10; 1.5</position>
+					<rotation>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</rotation>
+					<fixed>1</fixed>
+					<colour>1; 1; 0</colour>
+					<lighting>1</lighting>
+					<light_id>-1</light_id>
+					<texture/>
+					<portal_id>-1</portal_id>
+					<portal_trafo>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</portal_trafo>
+					<mass>1</mass>
+					<length>20</length>
+					<depth>0.5</depth>
+					<height>4</height>
+				</box>
+			</geometry>
+		</object>
+		<object id="object 13">
+			<geometry>
+				<plane id="floor 2">
+					<position>25; 0; 0</position>
+					<rotation>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</rotation>
+					<fixed>1</fixed>
+					<colour>0.5; 0.5; 0.5</colour>
+					<lighting>1</lighting>
+					<light_id>-1</light_id>
+					<texture/>
+					<portal_id>-1</portal_id>
+					<portal_trafo>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</portal_trafo>
+					<mass>1</mass>
+					<normal>0; 0; 1</normal>
+					<width>20</width>
+					<height>20</height>
+				</plane>
+			</geometry>
+		</object>
+		<object id="object 14">
+			<geometry>
+				<plane id="portal 1">
+					<position>0; 10; 1.5</position>
+					<rotation>1; 0; 0; 0| 0; -9.73365e-09; -1; 0| 0; 1; -9.73365e-09; 0| 0; 0; 0; 1</rotation>
+					<fixed>1</fixed>
+					<colour>1; 1; 0</colour>
+					<lighting>1</lighting>
+					<light_id>-1</light_id>
+					<texture/>
+					<portal_id>1</portal_id>
+					<portal_trafo>1; 0; 0; -25| 0; 1; 0; 20| 0; 0; 1; 0| 0; 0; 0; 1</portal_trafo>
+					<mass>1</mass>
+					<normal>0; 0; 1</normal>
+					<width>6</width>
+					<height>4</height>
+				</plane>
+			</geometry>
+		</object>
+		<object id="object 15">
+			<geometry>
+				<cylinder id="cylinder 1">
+					<position>20.0024; -6.00227; 2.01101</position>
+					<rotation>1; 0.000546995; 1.12306e-05; 0| -0.000546994; 1; -2.66034e-05; 0| -1.12452e-05; 2.65972e-05; 1; 0| 0; 0; 0; 1</rotation>
+					<fixed>0</fixed>
+					<colour>1; 1; 0</colour>
+					<lighting>1</lighting>
+					<light_id>-1</light_id>
+					<texture/>
+					<portal_id>-1</portal_id>
+					<portal_trafo>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</portal_trafo>
+					<mass>1</mass>
+					<height>4</height>
+					<radius>0.5</radius>
+				</cylinder>
+			</geometry>
+		</object>
+		<object id="object 16">
+			<geometry>
+				<cylinder id="cylinder 2">
+					<position>29.9954; 3.99777; 2.01105</position>
+					<rotation>0.99994; -0.0109854; 0.000502158; 0| 0.0109852; 0.99994; 0.000265027; 0| -0.000505039; -0.000259495; 1; 0| 0; 0; 0; 1</rotation>
+					<fixed>0</fixed>
+					<colour>1; 1; 0</colour>
+					<lighting>1</lighting>
+					<light_id>-1</light_id>
+					<texture/>
+					<portal_id>-1</portal_id>
+					<portal_trafo>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</portal_trafo>
+					<mass>1</mass>
+					<height>4</height>
+					<radius>0.5</radius>
+				</cylinder>
+			</geometry>
+		</object>
+		<object id="object 17">
+			<geometry>
+				<cylinder id="cylinder 3">
+					<position>20.0002; 3.99678; 2.011</position>
+					<rotation>0.999953; -0.0096521; -4.92498e-05; 0| 0.0096521; 0.999953; 1.69313e-05; 0| 4.90841e-05; -1.74059e-05; 1; 0| 0; 0; 0; 1</rotation>
+					<fixed>0</fixed>
+					<colour>1; 1; 0</colour>
+					<lighting>1</lighting>
+					<light_id>-1</light_id>
+					<texture/>
+					<portal_id>-1</portal_id>
+					<portal_trafo>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</portal_trafo>
+					<mass>1</mass>
+					<height>4</height>
+					<radius>0.5</radius>
+				</cylinder>
+			</geometry>
+		</object>
+		<object id="object 18">
+			<geometry>
+				<cylinder id="cylinder 4">
+					<position>30.1214; -6.00188; 2.011</position>
+					<rotation>0.999999; -0.00131706; 9.43486e-06; 0| 0.00131706; 0.999999; 1.31939e-05; 0| -9.45223e-06; -1.31815e-05; 1; 0| 0; 0; 0; 1</rotation>
+					<fixed>0</fixed>
+					<colour>1; 1; 0</colour>
+					<lighting>1</lighting>
+					<light_id>-1</light_id>
+					<texture/>
+					<portal_id>-1</portal_id>
+					<portal_trafo>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</portal_trafo>
+					<mass>1</mass>
+					<height>4</height>
+					<radius>0.5</radius>
+				</cylinder>
+			</geometry>
+		</object>
+		<object id="object 19">
+			<geometry>
+				<sphere id="light 2">
+					<position>25; 0; 10</position>
+					<rotation>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</rotation>
+					<fixed>0</fixed>
+					<colour>1; 0.8; 0</colour>
+					<lighting>0</lighting>
+					<light_id>1</light_id>
+					<texture/>
+					<portal_id>-1</portal_id>
+					<portal_trafo>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</portal_trafo>
+					<mass>0</mass>
+					<radius>0.25</radius>
+				</sphere>
+			</geometry>
+		</object>
+	</objects>
+	<configuration>
+		<camera>
+			<x>0</x>
+			<y>-10</y>
+			<z>-1.5</z>
+			<phi>1.458</phi>
+			<theta>-60.206</theta>
+			<viewing_angle>90</viewing_angle>
+			<zoom>0.369</zoom>
+			<perspective_proj>1</perspective_proj>
+		</camera>
+		<selection_plane>
+			<x>0</x>
+			<y>0</y>
+			<z>1</z>
+			<d>10</d>
+		</selection_plane>
+		<textures enabled="false"/>
+	</configuration>
+	<ident>glscene</ident>
+	<timestamp>1672081148.974705</timestamp>
+</glscene>

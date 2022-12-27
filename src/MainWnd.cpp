@@ -1275,10 +1275,10 @@ void MainWnd::ObjectDragged(bool drag_start, const std::string& objid)
 
 
 	// if the object is a light, set its new position
-	if(objid == "light")
+	if(obj->GetLightId() >= 0)
 	{
 		const t_vec& pos = obj->GetPosition();
-		m_renderer->SetLight(0, tl2::convert<t_vec3_gl>(pos));
+		m_renderer->SetLight(obj->GetLightId(), tl2::convert<t_vec3_gl>(pos));
 	}
 }
 

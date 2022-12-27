@@ -72,6 +72,16 @@ struct GlSceneTexture
 };
 
 
+enum class PortalRenderPass
+{
+	CREATE_STENCIL,
+	RENDER_PORTALS,
+	CREATE_Z,
+	RENDER_NONPORTALS,
+	IGNORE,
+};
+
+
 /**
  * active portal infos
  */
@@ -257,7 +267,7 @@ protected:
 	std::atomic<bool> m_shadowRenderPass = false;
 	std::atomic<bool> m_portalRenderingEnabled = true;
 	std::atomic<bool> m_firstpass = true;
-	std::atomic<int> m_portalRenderPass = -1;
+	std::atomic<PortalRenderPass> m_portalRenderPass = PortalRenderPass::IGNORE;
 
 	// 3d objects
 	t_objs m_objs{};

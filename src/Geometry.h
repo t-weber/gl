@@ -103,6 +103,8 @@ public:
 
 	virtual bool IsLightingEnabled() const { return m_lighting; }
 	virtual void SetLighting(bool b) { m_lighting = b; }
+	virtual int GetLightId() const { return m_light_id; }
+	virtual void SetLightId(int id) { m_light_id = id; }
 
 	virtual const t_vec& GetColour() const { return m_colour; }
 	virtual void SetColour(const t_vec& col) { m_colour = col; }
@@ -132,8 +134,11 @@ public:
 
 protected:
 	std::string m_id{};
+
 	t_vec m_colour = tl2::create<t_vec>({1, 0, 0});
 	bool m_lighting = true;
+	int m_light_id = -1;  // <0 -> not a light source
+
 	std::string m_texture{};
 
 	bool m_fixed = false;

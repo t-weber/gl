@@ -416,6 +416,7 @@ std::vector<ObjectProperty> Geometry::GetProperties() const
 	props.emplace_back(ObjectProperty{.key="fixed", .value=IsFixed()});
 	props.emplace_back(ObjectProperty{.key="colour", .value=GetColour()});
 	props.emplace_back(ObjectProperty{.key="lighting", .value=IsLightingEnabled()});
+	props.emplace_back(ObjectProperty{.key="light_id", .value=GetLightId()});
 	props.emplace_back(ObjectProperty{.key="texture", .value=GetTexture()});
 	//props.emplace_back(ObjectProperty{.key="portal", .value=IsPortal()});
 	props.emplace_back(ObjectProperty{.key="portal_id", .value=GetPortalId()});
@@ -446,6 +447,8 @@ void Geometry::SetProperties(const std::vector<ObjectProperty>& props)
 			SetColour(std::get<t_vec>(prop.value));
 		else if(prop.key == "lighting")
 			SetLighting(std::get<bool>(prop.value));
+		else if(prop.key == "light_id")
+			SetLightId(std::get<int>(prop.value));
 		else if(prop.key == "texture")
 			SetTexture(std::get<std::string>(prop.value));
 		//else if(prop.key == "portal")
@@ -487,6 +490,8 @@ bool Geometry::Load(const pt::ptree& prop)
 	// lighting
 	if(auto optLight = prop.get_optional<bool>("lighting"); optLight)
 		SetLighting(*optLight);
+	if(auto optLight = prop.get_optional<int>("light_id"); optLight)
+		SetLightId(*optLight);
 
 	// texture
 	if(auto texture = prop.get_optional<std::string>("texture"); texture)
@@ -521,6 +526,7 @@ pt::ptree Geometry::Save() const
 	prop.put<std::string>("fixed", IsFixed() ? "1" : "0");
 	prop.put<std::string>("colour", geo_vec_to_str(GetColour()));
 	prop.put<std::string>("lighting", IsLightingEnabled() ? "1" : "0");
+	prop.put<std::string>("light_id", geo_val_to_str(GetLightId()));
 	prop.put<std::string>("texture", GetTexture());
 	//prop.put<std::string>("portal", IsPortal() ? "1" : "0");
 	prop.put<std::string>("portal_id", geo_val_to_str(GetPortalId()));
