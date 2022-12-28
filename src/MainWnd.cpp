@@ -549,6 +549,7 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 	QAction *actionObjRotZM10 = new QAction(QIcon::fromTheme("object-rotate-right"), "Rotate Object by -10° around z", m_contextMenuObj);
 	QAction *actionObjCentreCam = new QAction(QIcon::fromTheme("camera-video"), "Centre Camera on Object", m_contextMenuObj);
 	QAction *actionObjDel = new QAction(QIcon::fromTheme("edit-delete"), "Delete Object", m_contextMenuObj);
+	QAction *actionObjClone = new QAction(QIcon::fromTheme("edit-copy"), "Clone Object", m_contextMenuObj);
 	QAction *actionObjProp = new QAction(QIcon::fromTheme("document-properties"), "Object Properties...", m_contextMenuObj);
 
 	m_contextMenuObj->addAction(actionObjRotXP10);
@@ -561,6 +562,7 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 	m_contextMenuObj->addAction(actionObjCentreCam);
 	m_contextMenuObj->addSeparator();
 	m_contextMenuObj->addAction(actionObjDel);
+	m_contextMenuObj->addAction(actionObjClone);
 	m_contextMenuObj->addAction(actionObjProp);
 
 	connect(actionObjRotXP10, &QAction::triggered,
@@ -577,6 +579,8 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 		[this]() { RotateCurrentObject(-10./180.*tl2::pi<t_real>, 'z'); });
 	connect(actionObjDel, &QAction::triggered, this,
 		&MainWnd::DeleteCurrentObject);
+	connect(actionObjClone, &QAction::triggered, this,
+		&MainWnd::CloneCurrentObject);
 	connect(actionObjProp, &QAction::triggered, this,
 		&MainWnd::ShowCurrentObjectProperties);
 	connect(actionObjCentreCam, &QAction::triggered,
@@ -1590,6 +1594,15 @@ void MainWnd::DeleteCurrentObject()
 
 
 /**
+ * clone 3d object under the cursor
+ */
+void MainWnd::CloneCurrentObject()
+{
+	CloneObject(m_curContextObj);
+}
+
+
+/**
  * delete the given object from the scene
  */
 void MainWnd::DeleteObject(const std::string& obj)
@@ -1612,6 +1625,33 @@ void MainWnd::DeleteObject(const std::string& obj)
 	{
 		QMessageBox::warning(this, "Warning",
 			QString("Object \"") + obj.c_str() + QString("\" cannot be deleted."));
+	}
+}
+
+
+/**
+ * clone the given object from the scene
+ */
+void MainWnd::CloneObject(const std::string& obj)
+{
+	if(obj == "")
+		return;
+
+	// remove object from scene
+	if(auto geo = m_scene.CloneObject(obj); geo)
+	{
+		// update object browser tree
+		if(m_dlgGeoBrowser)
+			m_dlgGeoBrowser->UpdateGeoTree(m_scene);
+
+		// add a 3d representation of the object
+		if(m_renderer)
+			m_renderer->AddObject(*geo);
+	}
+	else
+	{
+		QMessageBox::warning(this, "Warning",
+			QString("Object \"") + obj.c_str() + QString("\" cannot be cloned."));
 	}
 }
 
@@ -1680,6 +1720,8 @@ void MainWnd::ShowGeometryBrowser()
 
 		connect(m_dlgGeoBrowser.get(), &GeometriesBrowser::SignalDeleteObject,
 			this, &MainWnd::DeleteObject);
+		connect(m_dlgGeoBrowser.get(), &GeometriesBrowser::SignalCloneObject,
+			this, &MainWnd::CloneObject);
 		connect(m_dlgGeoBrowser.get(), &GeometriesBrowser::SignalRenameObject,
 			this, &MainWnd::RenameObject);
 		connect(m_dlgGeoBrowser.get(), &GeometriesBrowser::SignalChangeObjectProperty,
@@ -1744,7 +1786,7 @@ void MainWnd::RenameObject(const std::string& oldid, const std::string& newid)
 		if(m_dlgGeoBrowser)
 			m_dlgGeoBrowser->UpdateGeoTree(m_scene);
 
-		// remove 3d representation of object
+		// rename 3d representation of object
 		if(m_renderer)
 			m_renderer->RenameObject(oldid, newid);
 	}

@@ -213,6 +213,52 @@ bool Scene::DeleteObject(const std::string& id)
 
 
 /**
+ * clone an object
+ */
+std::shared_ptr<Geometry> Scene::CloneObject(const std::string& id)
+{
+	// find the object with the given id
+	if(auto iter = std::find_if(m_objs.begin(), m_objs.end(),
+		[&id](const std::shared_ptr<Geometry>& obj) -> bool
+	{
+		return obj->GetId() == id;
+	}); iter != m_objs.end())
+	{
+		auto obj = (*iter)->clone();
+
+		// assign a new, unique object id
+		std::size_t nr = 1;
+		while(true)
+		{
+			std::ostringstream ostrid;
+			ostrid << id << " (clone " << (nr++) << ")";
+
+			bool already_assigned = false;
+			for(const auto& oldobj : m_objs)
+			{
+				if(oldobj->GetId() == ostrid.str())
+				{
+					already_assigned = true;
+					break;
+				}
+			}
+
+			if(!already_assigned)
+			{
+				obj->SetId(ostrid.str());
+				break;
+			}
+		}
+
+		AddObject(std::vector<std::shared_ptr<Geometry>>{{obj}}, obj->GetId());
+		return obj;
+	}
+
+	return nullptr;
+}
+
+
+/**
  * rename an object
  */
 bool Scene::RenameObject(const std::string& oldid, const std::string& newid)

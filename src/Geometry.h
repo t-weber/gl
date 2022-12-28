@@ -72,6 +72,9 @@ public:
 	Geometry();
 	virtual ~Geometry();
 
+	virtual Geometry& operator=(const Geometry& geo);
+	virtual std::shared_ptr<Geometry> clone() const = 0;
+
 	virtual bool Load(const boost::property_tree::ptree& prop);
 	virtual boost::property_tree::ptree Save() const;
 
@@ -93,13 +96,11 @@ public:
 	virtual bool IsFixed() const { return m_fixed; }
 	virtual void SetFixed(bool b) { m_fixed = b; }
 
-	//virtual bool IsPortal() const { return m_portal; }
-	//virtual void SetPortal(bool b) { m_portal = b; }
 	virtual int GetPortalId() const { return m_portal_id; }
 	virtual void SetPortalId(int id) { m_portal_id = id; }
 
-	virtual const t_mat& GetPortalTrafo() const { return m_portaltrafo; }
-	virtual void SetPortalTrafo(const t_mat& trafo) { m_portaltrafo = trafo; }
+	virtual const t_mat& GetPortalTrafo() const { return m_portal_trafo; }
+	virtual void SetPortalTrafo(const t_mat& trafo) { m_portal_trafo = trafo; }
 
 	virtual bool IsLightingEnabled() const { return m_lighting; }
 	virtual void SetLighting(bool b) { m_lighting = b; }
@@ -144,9 +145,8 @@ protected:
 	bool m_fixed = false;
 	t_mat m_trafo = tl2::unit<t_mat>(4);
 
-	//bool m_portal = false;
 	int m_portal_id = -1;  // <0 -> deactivated
-	t_mat m_portaltrafo = tl2::unit<t_mat>(4);
+	t_mat m_portal_trafo = tl2::unit<t_mat>(4);
 
 #ifdef USE_BULLET
 	std::shared_ptr<btConvexInternalShape> m_shape{};
@@ -168,6 +168,9 @@ class PlaneGeometry : public Geometry
 public:
 	PlaneGeometry();
 	virtual ~PlaneGeometry();
+
+	virtual Geometry& operator=(const Geometry& geo) override;
+	virtual std::shared_ptr<Geometry> clone() const override;
 
 	virtual bool Load(const boost::property_tree::ptree& prop) override;
 	virtual boost::property_tree::ptree Save() const override;
@@ -208,6 +211,9 @@ public:
 	BoxGeometry();
 	virtual ~BoxGeometry();
 
+	virtual Geometry& operator=(const Geometry& geo) override;
+	virtual std::shared_ptr<Geometry> clone() const override;
+
 	virtual bool Load(const boost::property_tree::ptree& prop) override;
 	virtual boost::property_tree::ptree Save() const override;
 
@@ -247,6 +253,9 @@ public:
 	CylinderGeometry();
 	virtual ~CylinderGeometry();
 
+	virtual Geometry& operator=(const Geometry& geo) override;
+	virtual std::shared_ptr<Geometry> clone() const override;
+
 	virtual bool Load(const boost::property_tree::ptree& prop) override;
 	virtual boost::property_tree::ptree Save() const override;
 
@@ -284,6 +293,9 @@ public:
 	SphereGeometry();
 	virtual ~SphereGeometry();
 
+	virtual Geometry& operator=(const Geometry& geo) override;
+	virtual std::shared_ptr<Geometry> clone() const override;
+
 	virtual bool Load(const boost::property_tree::ptree& prop) override;
 	virtual boost::property_tree::ptree Save() const override;
 
@@ -318,6 +330,9 @@ public:
 	TetrahedronGeometry();
 	virtual ~TetrahedronGeometry();
 
+	virtual Geometry& operator=(const Geometry& geo) override;
+	virtual std::shared_ptr<Geometry> clone() const override;
+
 	virtual bool Load(const boost::property_tree::ptree& prop) override;
 	virtual boost::property_tree::ptree Save() const override;
 
@@ -346,6 +361,9 @@ class OctahedronGeometry : public Geometry
 public:
 	OctahedronGeometry();
 	virtual ~OctahedronGeometry();
+
+	virtual Geometry& operator=(const Geometry& geo) override;
+	virtual std::shared_ptr<Geometry> clone() const override;
 
 	virtual bool Load(const boost::property_tree::ptree& prop) override;
 	virtual boost::property_tree::ptree Save() const override;
@@ -376,6 +394,9 @@ public:
 	DodecahedronGeometry();
 	virtual ~DodecahedronGeometry();
 
+	virtual Geometry& operator=(const Geometry& geo) override;
+	virtual std::shared_ptr<Geometry> clone() const override;
+
 	virtual bool Load(const boost::property_tree::ptree& prop) override;
 	virtual boost::property_tree::ptree Save() const override;
 
@@ -404,6 +425,9 @@ class IcosahedronGeometry : public Geometry
 public:
 	IcosahedronGeometry();
 	virtual ~IcosahedronGeometry();
+
+	virtual Geometry& operator=(const Geometry& geo) override;
+	virtual std::shared_ptr<Geometry> clone() const override;
 
 	virtual bool Load(const boost::property_tree::ptree& prop) override;
 	virtual boost::property_tree::ptree Save() const override;

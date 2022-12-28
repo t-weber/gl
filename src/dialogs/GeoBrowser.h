@@ -38,6 +38,7 @@ protected:
 	void ShowGeoTreeContextMenu(const QPoint& pt);
 	void RenameCurrentGeoTreeObject();
 	void DeleteCurrentGeoTreeObject();
+	void CloneCurrentGeoTreeObject();
 	void GeoTreeItemChanged(QTreeWidgetItem *item, int col);
 	void GeoTreeCurrentItemChanged(QTreeWidgetItem *item, QTreeWidgetItem *previtem);
 
@@ -62,6 +63,7 @@ private:
 
 signals:
 	void SignalDeleteObject(const std::string& id);
+	void SignalCloneObject(const std::string& id);
 	void SignalRenameObject(const std::string& oldId, const std::string& newId);
 
 	void SignalChangeObjectProperty(const std::string& id, const ObjectProperty& prop);

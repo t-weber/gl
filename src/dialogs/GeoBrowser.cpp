@@ -57,14 +57,20 @@ GeometriesBrowser::GeometriesBrowser(QWidget* parent, QSettings *sett)
 	QAction *actionDelObj = new QAction(
 		QIcon::fromTheme("edit-delete"),
 		"Delete Object");
+	QAction *actionCloneObj = new QAction(
+		QIcon::fromTheme("edit-copy"),
+		"Clone Object");
 
 	m_contextMenuGeoTree->addAction(actionRenObj);
 	m_contextMenuGeoTree->addAction(actionDelObj);
+	m_contextMenuGeoTree->addAction(actionCloneObj);
 
 	connect(actionRenObj, &QAction::triggered,
 		this, &GeometriesBrowser::RenameCurrentGeoTreeObject);
 	connect(actionDelObj, &QAction::triggered,
 		this, &GeometriesBrowser::DeleteCurrentGeoTreeObject);
+	connect(actionCloneObj, &QAction::triggered,
+		this, &GeometriesBrowser::CloneCurrentGeoTreeObject);
 
 
 	// geometry settings table
@@ -201,6 +207,19 @@ void GeometriesBrowser::DeleteCurrentGeoTreeObject()
 
 	std::string id = m_curContextItem->text(0).toStdString();
 	emit SignalDeleteObject(id);
+}
+
+
+/**
+ * clone an object from the instrument space
+ */
+void GeometriesBrowser::CloneCurrentGeoTreeObject()
+{
+	if(!m_curContextItem)
+		return;
+
+	std::string id = m_curContextItem->text(0).toStdString();
+	emit SignalCloneObject(id);
 }
 
 

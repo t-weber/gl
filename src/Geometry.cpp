@@ -173,6 +173,27 @@ Geometry::~Geometry()
 }
 
 
+Geometry& Geometry::operator=(const Geometry& geo)
+{
+	this->m_id = geo.m_id; // + " (clone)";
+	this->m_colour = geo.m_colour;
+	this->m_lighting = geo.m_lighting;
+	this->m_light_id = geo.m_light_id;
+	this->m_texture = geo.m_texture;
+	this->m_fixed = geo.m_fixed;
+	this->m_trafo = geo.m_trafo;
+	this->m_portal_id = geo.m_portal_id;
+	this->m_portal_trafo = geo.m_portal_trafo;
+
+#ifdef USE_BULLET
+	this->m_mass = geo.m_mass;
+#endif
+
+	//UpdateRigidBody();
+	return *this;
+}
+
+
 t_vec Geometry::GetPosition() const
 {
 	t_vec pos = tl2::col<t_mat, t_vec>(m_trafo, 3);
@@ -418,7 +439,6 @@ std::vector<ObjectProperty> Geometry::GetProperties() const
 	props.emplace_back(ObjectProperty{.key="lighting", .value=IsLightingEnabled()});
 	props.emplace_back(ObjectProperty{.key="light_id", .value=GetLightId()});
 	props.emplace_back(ObjectProperty{.key="texture", .value=GetTexture()});
-	//props.emplace_back(ObjectProperty{.key="portal", .value=IsPortal()});
 	props.emplace_back(ObjectProperty{.key="portal_id", .value=GetPortalId()});
 	props.emplace_back(ObjectProperty{.key="portal_trafo", .value=GetPortalTrafo()});
 
@@ -451,8 +471,6 @@ void Geometry::SetProperties(const std::vector<ObjectProperty>& props)
 			SetLightId(std::get<int>(prop.value));
 		else if(prop.key == "texture")
 			SetTexture(std::get<std::string>(prop.value));
-		//else if(prop.key == "portal")
-		//	SetPortal(std::get<bool>(prop.value));
 		else if(prop.key == "portal_id")
 			SetPortalId(std::get<int>(prop.value));
 		else if(prop.key == "portal_trafo")
@@ -500,8 +518,6 @@ bool Geometry::Load(const pt::ptree& prop)
 		SetTexture("");
 
 	// portal
-	//if(auto optPort = prop.get_optional<bool>("portal"); optPort)
-	//	SetPortal(*optPort);
 	if(auto optPort = prop.get_optional<int>("portal_id"); optPort)
 		SetPortalId(*optPort);
 	if(auto optPort = prop.get_optional<std::string>("portal_trafo"); optPort)
@@ -528,7 +544,6 @@ pt::ptree Geometry::Save() const
 	prop.put<std::string>("lighting", IsLightingEnabled() ? "1" : "0");
 	prop.put<std::string>("light_id", geo_val_to_str(GetLightId()));
 	prop.put<std::string>("texture", GetTexture());
-	//prop.put<std::string>("portal", IsPortal() ? "1" : "0");
 	prop.put<std::string>("portal_id", geo_val_to_str(GetPortalId()));
 	prop.put<std::string>("portal_trafo", geo_mat_to_str(GetPortalTrafo()));
 
@@ -556,6 +571,28 @@ PlaneGeometry::PlaneGeometry() : Geometry()
 
 PlaneGeometry::~PlaneGeometry()
 {
+}
+
+
+Geometry& PlaneGeometry::operator=(const Geometry& _geo)
+{
+	static_cast<Geometry*>(this)->operator=(_geo);
+	const PlaneGeometry& geo = dynamic_cast<const PlaneGeometry&>(_geo);
+
+	this->m_norm = geo.m_norm;
+	this->m_width = geo.m_width;
+	this->m_height = geo.m_height;
+
+	UpdateRigidBody();
+	return *this;
+}
+
+
+std::shared_ptr<Geometry> PlaneGeometry::clone() const
+{
+	auto geo = std::make_shared<PlaneGeometry>();
+	geo->operator=(*this);
+	return geo;
 }
 
 
@@ -731,6 +768,28 @@ BoxGeometry::BoxGeometry() : Geometry()
 
 BoxGeometry::~BoxGeometry()
 {
+}
+
+
+Geometry& BoxGeometry::operator=(const Geometry& _geo)
+{
+	static_cast<Geometry*>(this)->operator=(_geo);
+	const BoxGeometry& geo = dynamic_cast<const BoxGeometry&>(_geo);
+
+	this->m_length = geo.m_length;
+	this->m_depth = geo.m_depth;
+	this->m_height = geo.m_height;
+
+	UpdateRigidBody();
+	return *this;
+}
+
+
+std::shared_ptr<Geometry> BoxGeometry::clone() const
+{
+	auto geo = std::make_shared<BoxGeometry>();
+	geo->operator=(*this);
+	return geo;
 }
 
 
@@ -914,6 +973,27 @@ CylinderGeometry::~CylinderGeometry()
 }
 
 
+Geometry& CylinderGeometry::operator=(const Geometry& _geo)
+{
+	static_cast<Geometry*>(this)->operator=(_geo);
+	const CylinderGeometry& geo = dynamic_cast<const CylinderGeometry&>(_geo);
+
+	this->m_height = geo.m_height;
+	this->m_radius = geo.m_radius;
+
+	UpdateRigidBody();
+	return *this;
+}
+
+
+std::shared_ptr<Geometry> CylinderGeometry::clone() const
+{
+	auto geo = std::make_shared<CylinderGeometry>();
+	geo->operator=(*this);
+	return geo;
+}
+
+
 void CylinderGeometry::SetHeight(t_real h)
 {
 	m_height = h;
@@ -1078,6 +1158,26 @@ SphereGeometry::~SphereGeometry()
 }
 
 
+Geometry& SphereGeometry::operator=(const Geometry& _geo)
+{
+	static_cast<Geometry*>(this)->operator=(_geo);
+	const SphereGeometry& geo = dynamic_cast<const SphereGeometry&>(_geo);
+
+	this->m_radius = geo.m_radius;
+
+	UpdateRigidBody();
+	return *this;
+}
+
+
+std::shared_ptr<Geometry> SphereGeometry::clone() const
+{
+	auto geo = std::make_shared<SphereGeometry>();
+	geo->operator=(*this);
+	return geo;
+}
+
+
 void SphereGeometry::SetRadius(t_real rad)
 {
 	m_radius = rad;
@@ -1221,6 +1321,26 @@ TetrahedronGeometry::~TetrahedronGeometry()
 }
 
 
+Geometry& TetrahedronGeometry::operator=(const Geometry& _geo)
+{
+	static_cast<Geometry*>(this)->operator=(_geo);
+	const TetrahedronGeometry& geo = dynamic_cast<const TetrahedronGeometry&>(_geo);
+
+	this->m_radius = geo.m_radius;
+
+	UpdateRigidBody();
+	return *this;
+}
+
+
+std::shared_ptr<Geometry> TetrahedronGeometry::clone() const
+{
+	auto geo = std::make_shared<TetrahedronGeometry>();
+	geo->operator=(*this);
+	return geo;
+}
+
+
 bool TetrahedronGeometry::Load(const pt::ptree& prop)
 {
 	if(!Geometry::Load(prop))
@@ -1296,6 +1416,26 @@ OctahedronGeometry::OctahedronGeometry() : Geometry()
 
 OctahedronGeometry::~OctahedronGeometry()
 {
+}
+
+
+Geometry& OctahedronGeometry::operator=(const Geometry& _geo)
+{
+	static_cast<Geometry*>(this)->operator=(_geo);
+	const OctahedronGeometry& geo = dynamic_cast<const OctahedronGeometry&>(_geo);
+
+	this->m_radius = geo.m_radius;
+
+	UpdateRigidBody();
+	return *this;
+}
+
+
+std::shared_ptr<Geometry> OctahedronGeometry::clone() const
+{
+	auto geo = std::make_shared<OctahedronGeometry>();
+	geo->operator=(*this);
+	return geo;
 }
 
 
@@ -1377,6 +1517,26 @@ DodecahedronGeometry::~DodecahedronGeometry()
 }
 
 
+Geometry& DodecahedronGeometry::operator=(const Geometry& _geo)
+{
+	static_cast<Geometry*>(this)->operator=(_geo);
+	const DodecahedronGeometry& geo = dynamic_cast<const DodecahedronGeometry&>(_geo);
+
+	this->m_radius = geo.m_radius;
+
+	UpdateRigidBody();
+	return *this;
+}
+
+
+std::shared_ptr<Geometry> DodecahedronGeometry::clone() const
+{
+	auto geo = std::make_shared<DodecahedronGeometry>();
+	geo->operator=(*this);
+	return geo;
+}
+
+
 bool DodecahedronGeometry::Load(const pt::ptree& prop)
 {
 	if(!Geometry::Load(prop))
@@ -1452,6 +1612,26 @@ IcosahedronGeometry::IcosahedronGeometry() : Geometry()
 
 IcosahedronGeometry::~IcosahedronGeometry()
 {
+}
+
+
+Geometry& IcosahedronGeometry::operator=(const Geometry& _geo)
+{
+	static_cast<Geometry*>(this)->operator=(_geo);
+	const IcosahedronGeometry& geo = dynamic_cast<const IcosahedronGeometry&>(_geo);
+
+	this->m_radius = geo.m_radius;
+
+	UpdateRigidBody();
+	return *this;
+}
+
+
+std::shared_ptr<Geometry> IcosahedronGeometry::clone() const
+{
+	auto geo = std::make_shared<IcosahedronGeometry>();
+	geo->operator=(*this);
+	return geo;
 }
 
 

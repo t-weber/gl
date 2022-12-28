@@ -42,6 +42,7 @@ public:
 
 	void AddObject(const std::vector<std::shared_ptr<Geometry>>& obj, const std::string& id);
 	bool DeleteObject(const std::string& id);
+	std::shared_ptr<Geometry> CloneObject(const std::string& id);
 	bool RenameObject(const std::string& oldid, const std::string& newid);
 	std::tuple<bool, std::shared_ptr<Geometry>> RotateObject(
 		const std::string& id, t_real angle, char axis='x');

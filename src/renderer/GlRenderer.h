@@ -74,11 +74,12 @@ struct GlSceneTexture
 
 enum class PortalRenderPass
 {
-	CREATE_STENCIL,
-	RENDER_PORTALS,
-	CREATE_Z,
-	RENDER_NONPORTALS,
-	IGNORE,
+	CREATE_STENCIL,     // write portals to stencil buffer
+	RENDER_PORTALS,     // render scene through portals
+	CREATE_Z,           // write portal surface to z buffer
+	RENDER_NONPORTALS,  // render non-portal geometry
+
+	IGNORE,             // portals disabled
 };
 
 
