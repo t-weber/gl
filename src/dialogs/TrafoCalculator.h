@@ -10,8 +10,9 @@
 
 #include <QtCore/QSettings>
 #include <QtWidgets/QDialog>
-#include <QtWidgets/QComboBox>
 #include <QtWidgets/QTextEdit>
+#include <QtWidgets/QComboBox>
+#include <QtWidgets/QCheckBox>
 #include <QtWidgets/QDoubleSpinBox>
 
 #include <vector>
@@ -41,6 +42,7 @@ private:
 	QDoubleSpinBox *m_spinAngle{};
 
 	QComboBox *m_comboPortal1{}, *m_comboPortal2{};
+	QCheckBox *m_checkPortalTranslation{};
 	QTextEdit *m_textPortal{};
 
 

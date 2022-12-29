@@ -14,6 +14,7 @@
 #include <QtWidgets/QTabWidget>
 
 #include "src/settings_variables.h"
+#include "src/Geometry.h"
 #include "src/types.h"
 
 
@@ -46,7 +47,6 @@ TrafoCalculator::TrafoCalculator(QWidget* pParent, QSettings *sett)
 	m_spinAngle = new QDoubleSpinBox(rotationPanel);
 	labelAxis->setSizePolicy(QSizePolicy{QSizePolicy::Fixed, QSizePolicy::Fixed});
 	labelAngle->setSizePolicy(QSizePolicy{QSizePolicy::Fixed, QSizePolicy::Fixed});
-	QLabel *labelRotationResult = new QLabel("Transformation Matrix:");
 	m_textRotation = new QTextEdit(rotationPanel);
 	m_textRotation->setReadOnly(true);
 
@@ -60,8 +60,7 @@ TrafoCalculator::TrafoCalculator(QWidget* pParent, QSettings *sett)
 	grid_rotation->addWidget(m_spinAxis[2], 0, 3, 1, 1);
 	grid_rotation->addWidget(labelAngle, 1, 0, 1, 1);
 	grid_rotation->addWidget(m_spinAngle, 1, 1, 1, 1);
-	grid_rotation->addWidget(labelRotationResult, 2, 0, 1, 4);
-	grid_rotation->addWidget(m_textRotation, 3, 0, 1, 4);
+	grid_rotation->addWidget(m_textRotation, 2, 0, 1, 4);
 
 	// portal tab
 	QLabel *labelPortal1 = new QLabel("Start: ");
@@ -70,7 +69,7 @@ TrafoCalculator::TrafoCalculator(QWidget* pParent, QSettings *sett)
 	labelPortal2->setSizePolicy(QSizePolicy{QSizePolicy::Fixed, QSizePolicy::Fixed});
 	m_comboPortal1 = new QComboBox(portalPanel);
 	m_comboPortal2 = new QComboBox(portalPanel);
-	QLabel *labelPortalResult = new QLabel("Transformation Matrix:");
+	m_checkPortalTranslation = new QCheckBox("Only Translation", portalPanel);
 	m_textPortal = new QTextEdit(portalPanel);
 	m_textPortal->setReadOnly(true);
 
@@ -82,7 +81,7 @@ TrafoCalculator::TrafoCalculator(QWidget* pParent, QSettings *sett)
 	grid_portal->addWidget(m_comboPortal1, 0, 1, 1, 1);
 	grid_portal->addWidget(labelPortal2, 1, 0, 1, 1);
 	grid_portal->addWidget(m_comboPortal2, 1, 1, 1, 1);
-	grid_portal->addWidget(labelPortalResult, 2, 0, 1, 2);
+	grid_portal->addWidget(m_checkPortalTranslation, 2, 0, 1, 2);
 	grid_portal->addWidget(m_textPortal, 3, 0, 1, 2);
 
 	// main grid
@@ -119,6 +118,8 @@ TrafoCalculator::TrafoCalculator(QWidget* pParent, QSettings *sett)
 			static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
 			this, &TrafoCalculator::CalculatePortal);
 	}
+	connect(m_checkPortalTranslation, &QCheckBox::toggled,
+		this, &TrafoCalculator::CalculatePortal);
 
 	CalculateRotation();
 	CalculatePortal();
@@ -154,6 +155,60 @@ void TrafoCalculator::UpdateGeoTree(const Scene& scene)
 }
 
 
+void set_result(QTextEdit* edit, const t_mat& mat)
+{
+	std::ostringstream ostrResult;
+	ostrResult.precision(g_prec);
+
+	ostrResult << "<p>Transformation Matrix:\n";
+	ostrResult << "<table style=\"border:0px\">\n";
+	for(std::size_t i=0; i<mat.size1(); ++i)
+	{
+		ostrResult << "\t<tr>\n";
+		for(std::size_t j=0; j<mat.size2(); ++j)
+		{
+			ostrResult << "\t\t<td style=\"padding-right:8px\">";
+			ostrResult << mat(i, j);
+			ostrResult << "</td>\n";
+		}
+		ostrResult << "\t</tr>\n";
+	}
+
+	ostrResult << "</table>";
+	ostrResult << "</p>\n";
+
+	ostrResult << "<p>Single-Line String:<br>";
+	ostrResult << geo_mat_to_str(mat);
+	ostrResult << "</p>\n";
+
+	if(auto [matInv, okInv] = tl2::inv(mat); okInv)
+	{
+		ostrResult << "<br><p>Inverse Transformation Matrix:\n";
+		ostrResult << "<table style=\"border:0px\">\n";
+		for(std::size_t i=0; i<matInv.size1(); ++i)
+		{
+			ostrResult << "\t<tr>\n";
+			for(std::size_t j=0; j<matInv.size2(); ++j)
+			{
+				ostrResult << "\t\t<td style=\"padding-right:8px\">";
+				ostrResult << matInv(i, j);
+				ostrResult << "</td>\n";
+			}
+			ostrResult << "\t</tr>\n";
+		}
+
+		ostrResult << "</table>";
+		ostrResult << "</p>\n";
+
+		ostrResult << "<p>Single-Line String:<br>";
+		ostrResult << geo_mat_to_str(matInv);
+		ostrResult << "</p>\n";
+	}
+
+	edit->setHtml(ostrResult.str().c_str());
+}
+
+
 void TrafoCalculator::CalculateRotation()
 {
 	if(!m_spinAngle || !m_textRotation)
@@ -168,23 +223,7 @@ void TrafoCalculator::CalculateRotation()
 	m_textRotation->clear();
 
 	t_mat mat = tl2::rotation<t_mat, t_vec>(axis, angle, false);
-
-	std::ostringstream ostrResult;
-	ostrResult.precision(g_prec);
-	ostrResult << "<table style=\"border:0px\">\n";
-	for(std::size_t i=0; i<mat.size1(); ++i)
-	{
-		ostrResult << "\t<tr>\n";
-		for(std::size_t j=0; j<mat.size2(); ++j)
-		{
-			ostrResult << "\t\t<td style=\"padding-right:8px\">";
-			ostrResult << mat(i, j);
-			ostrResult << "</td>\n";
-		}
-		ostrResult << "\t</tr>\n";
-	}
-	ostrResult << "</table>\n";
-	m_textRotation->setHtml(ostrResult.str().c_str());
+	set_result(m_textRotation, mat);
 }
 
 
@@ -194,6 +233,8 @@ void TrafoCalculator::CalculatePortal()
 		return;
 
 	m_textPortal->clear();
+
+	bool only_trans = m_checkPortalTranslation->isChecked();
 
 	std::string start_name = m_comboPortal1->currentText().toStdString();
 	std::string target_name = m_comboPortal2->currentText().toStdString();
@@ -206,34 +247,31 @@ void TrafoCalculator::CalculatePortal()
 		return;
 	}
 
-	const auto& matStart = start->GetTrafo();
-	const auto& matTarget = target->GetTrafo();
-
-	auto [mat, mat_ok] = tl2::inv(matTarget);
-	if(!mat_ok)
+	if(only_trans)
 	{
-		m_textPortal->setText("Cannot invert target matrix.");
-		return;
+		t_mat matStart = tl2::unit<t_mat>(4);
+		t_mat matTarget = tl2::unit<t_mat>(4);
+		tl2::set_col<t_mat, t_vec>(matStart, start->GetPosition(), 3);
+		tl2::set_col<t_mat, t_vec>(matTarget, -target->GetPosition(), 3);
+
+		t_mat mat = matTarget * matStart;
+		set_result(m_textPortal, mat);
 	}
-
-	mat = mat * matStart;
-
-	std::ostringstream ostrResult;
-	ostrResult.precision(g_prec);
-	ostrResult << "<table style=\"border:0px\">\n";
-	for(std::size_t i=0; i<mat.size1(); ++i)
+	else
 	{
-		ostrResult << "\t<tr>\n";
-		for(std::size_t j=0; j<mat.size2(); ++j)
+		const auto& matStart = start->GetTrafo();
+		const auto& matTarget = target->GetTrafo();
+
+		auto [mat, mat_ok] = tl2::inv(matTarget);
+		if(!mat_ok)
 		{
-			ostrResult << "\t\t<td style=\"padding-right:8px\">";
-			ostrResult << mat(i, j);
-			ostrResult << "</td>\n";
+			m_textPortal->setText("Cannot invert target matrix.");
+			return;
 		}
-		ostrResult << "\t</tr>\n";
+
+		mat = mat * matStart;
+		set_result(m_textPortal, mat);
 	}
-	ostrResult << "</table>\n";
-	m_textPortal->setHtml(ostrResult.str().c_str());
 }
 
 
