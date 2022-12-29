@@ -251,7 +251,7 @@
 				<plane id="portal 1">
 					<position>0; 10; 1.5</position>
 					<rotation>1; 0; 0; 0| 0; -9.73365e-09; -1; 0| 0; 1; -9.73365e-09; 0| 0; 0; 0; 1</rotation>
-					<fixed>1</fixed>
+					<fixed>0</fixed>
 					<colour>1; 1; 0</colour>
 					<lighting>1</lighting>
 					<light_id>-1</light_id>
@@ -268,8 +268,8 @@
 		<object id="object 15">
 			<geometry>
 				<cylinder id="cylinder 1">
-					<position>20.0024; -6.00227; 2.01101</position>
-					<rotation>1; 0.000546995; 1.12306e-05; 0| -0.000546994; 1; -2.66034e-05; 0| -1.12452e-05; 2.65972e-05; 1; 0| 0; 0; 0; 1</rotation>
+					<position>20.0095; -6.00282; 2.01101</position>
+					<rotation>0.999999; 0.00154014; -7.48602e-06; 0| -0.00154014; 0.999999; -4.61201e-05; 0| 7.41498e-06; 4.61316e-05; 1; 0| 0; 0; 0; 1</rotation>
 					<fixed>0</fixed>
 					<colour>1; 1; 0</colour>
 					<lighting>1</lighting>
@@ -286,8 +286,8 @@
 		<object id="object 16">
 			<geometry>
 				<cylinder id="cylinder 2">
-					<position>29.9954; 3.99777; 2.01105</position>
-					<rotation>0.99994; -0.0109854; 0.000502158; 0| 0.0109852; 0.99994; 0.000265027; 0| -0.000505039; -0.000259495; 1; 0| 0; 0; 0; 1</rotation>
+					<position>29.9883; 3.99984; 2.011</position>
+					<rotation>0.999945; -0.0104566; -6.32057e-06; 0| 0.0104566; 0.999945; -2.85086e-05; 0| 6.61832e-06; 2.8441e-05; 1; 0| 0; 0; 0; 1</rotation>
 					<fixed>0</fixed>
 					<colour>1; 1; 0</colour>
 					<lighting>1</lighting>
@@ -304,8 +304,8 @@
 		<object id="object 17">
 			<geometry>
 				<cylinder id="cylinder 3">
-					<position>20.0002; 3.99678; 2.011</position>
-					<rotation>0.999953; -0.0096521; -4.92498e-05; 0| 0.0096521; 0.999953; 1.69313e-05; 0| 4.90841e-05; -1.74059e-05; 1; 0| 0; 0; 0; 1</rotation>
+					<position>20.004; 3.99805; 2.01101</position>
+					<rotation>0.999938; -0.0111663; -6.9361e-05; 0| 0.0111663; 0.999938; 4.87357e-05; 0| 6.88125e-05; -4.95072e-05; 1; 0| 0; 0; 0; 1</rotation>
 					<fixed>0</fixed>
 					<colour>1; 1; 0</colour>
 					<lighting>1</lighting>
@@ -322,8 +322,8 @@
 		<object id="object 18">
 			<geometry>
 				<cylinder id="cylinder 4">
-					<position>30.1214; -6.00188; 2.011</position>
-					<rotation>0.999999; -0.00131706; 9.43486e-06; 0| 0.00131706; 0.999999; 1.31939e-05; 0| -9.45223e-06; -1.31815e-05; 1; 0| 0; 0; 0; 1</rotation>
+					<position>30.1194; -5.99951; 2.01103</position>
+					<rotation>1; -0.000842511; 4.7324e-05; 0| 0.000842507; 1; 9.57021e-05; 0| -4.74046e-05; -9.56622e-05; 1; 0| 0; 0; 0; 1</rotation>
 					<fixed>0</fixed>
 					<colour>1; 1; 0</colour>
 					<lighting>1</lighting>
@@ -354,26 +354,45 @@
 				</sphere>
 			</geometry>
 		</object>
+		<object id="object 20">
+			<geometry>
+				<plane id="portal 2">
+					<position>25; -10; 1.5</position>
+					<rotation>1; 0; 0; 0| 0; 1.96159e-08; 1; 0| 0; -1; 1.96159e-08; 0| 0; 0; 0; 1</rotation>
+					<fixed>0</fixed>
+					<colour>1; 1; 0</colour>
+					<lighting>1</lighting>
+					<light_id>-1</light_id>
+					<texture/>
+					<portal_id>2</portal_id>
+					<portal_trafo>1; 0; 0; 25| 0; 1; 0; -20| 0; 0; 1; 0| 0; 0; 0; 1</portal_trafo>
+					<mass>1</mass>
+					<normal>0; 0; 1</normal>
+					<width>6</width>
+					<height>4</height>
+				</plane>
+			</geometry>
+		</object>
 	</objects>
 	<configuration>
 		<camera>
 			<x>0</x>
 			<y>-10</y>
 			<z>-1.5</z>
-			<phi>1.458</phi>
-			<theta>-60.206</theta>
+			<phi>20.756</phi>
+			<theta>-84.27</theta>
 			<viewing_angle>90</viewing_angle>
-			<zoom>0.369</zoom>
+			<zoom>3.666</zoom>
 			<perspective_proj>1</perspective_proj>
 		</camera>
 		<selection_plane>
 			<x>0</x>
 			<y>0</y>
 			<z>1</z>
-			<d>10</d>
+			<d>0</d>
 		</selection_plane>
 		<textures enabled="false"/>
 	</configuration>
 	<ident>glscene</ident>
-	<timestamp>1672081148.974705</timestamp>
+	<timestamp>1672294650.218129</timestamp>
 </glscene>

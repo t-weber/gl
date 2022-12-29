@@ -10,6 +10,9 @@
 
 #include <QtCore/QSettings>
 #include <QtWidgets/QDialog>
+#include <QtWidgets/QComboBox>
+#include <QtWidgets/QTextEdit>
+#include <QtWidgets/QDoubleSpinBox>
 
 #include <vector>
 #include <memory>
@@ -29,12 +32,23 @@ public:
 	void UpdateGeoTree(const Scene& scene);
 
 
-protected:
+private:
+	const Scene* m_scene{};
+	QSettings *m_sett{};
+
+	QTextEdit *m_textRotation{};
+	QDoubleSpinBox *m_spinAxis[3]{nullptr, nullptr, nullptr};
+	QDoubleSpinBox *m_spinAngle{};
+
+	QComboBox *m_comboPortal1{}, *m_comboPortal2{};
+	QTextEdit *m_textPortal{};
+
+
+protected slots:
 	virtual void accept() override;
 
-
-private:
-	QSettings *m_sett{nullptr};
+	void CalculateRotation();
+	void CalculatePortal();
 };
 
 
