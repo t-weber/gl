@@ -129,7 +129,7 @@ AboutDlg::AboutDlg(QWidget* parent, QSettings *sett)
 	QLabel *labDate1 = new QLabel("Date: ", this);
 	labDate1->setFont(fontLabel1);
 	grid->addWidget(labDate1, y,0,1,1);
-	QLabel *labDate2 = new QLabel("January 2022.", this);
+	QLabel *labDate2 = new QLabel("December 2022.", this);
 	grid->addWidget(labDate2, y++,1,1,1);
 
 	QLabel *labLic1 = new QLabel("License: ", this);

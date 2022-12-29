@@ -187,9 +187,8 @@ Geometry& Geometry::operator=(const Geometry& geo)
 
 #ifdef USE_BULLET
 	this->m_mass = geo.m_mass;
-#endif
-
 	//UpdateRigidBody();
+#endif
 	return *this;
 }
 
@@ -583,7 +582,9 @@ Geometry& PlaneGeometry::operator=(const Geometry& _geo)
 	this->m_width = geo.m_width;
 	this->m_height = geo.m_height;
 
+#ifdef USE_BULLET
 	UpdateRigidBody();
+#endif
 	return *this;
 }
 
@@ -780,7 +781,9 @@ Geometry& BoxGeometry::operator=(const Geometry& _geo)
 	this->m_depth = geo.m_depth;
 	this->m_height = geo.m_height;
 
+#ifdef USE_BULLET
 	UpdateRigidBody();
+#endif
 	return *this;
 }
 
@@ -981,7 +984,9 @@ Geometry& CylinderGeometry::operator=(const Geometry& _geo)
 	this->m_height = geo.m_height;
 	this->m_radius = geo.m_radius;
 
+#ifdef USE_BULLET
 	UpdateRigidBody();
+#endif
 	return *this;
 }
 
@@ -1165,7 +1170,9 @@ Geometry& SphereGeometry::operator=(const Geometry& _geo)
 
 	this->m_radius = geo.m_radius;
 
+#ifdef USE_BULLET
 	UpdateRigidBody();
+#endif
 	return *this;
 }
 
@@ -1328,7 +1335,9 @@ Geometry& TetrahedronGeometry::operator=(const Geometry& _geo)
 
 	this->m_radius = geo.m_radius;
 
+#ifdef USE_BULLET
 	UpdateRigidBody();
+#endif
 	return *this;
 }
 
@@ -1426,7 +1435,9 @@ Geometry& OctahedronGeometry::operator=(const Geometry& _geo)
 
 	this->m_radius = geo.m_radius;
 
+#ifdef USE_BULLET
 	UpdateRigidBody();
+#endif
 	return *this;
 }
 
@@ -1524,7 +1535,9 @@ Geometry& DodecahedronGeometry::operator=(const Geometry& _geo)
 
 	this->m_radius = geo.m_radius;
 
+#ifdef USE_BULLET
 	UpdateRigidBody();
+#endif
 	return *this;
 }
 
@@ -1622,7 +1635,9 @@ Geometry& IcosahedronGeometry::operator=(const Geometry& _geo)
 
 	this->m_radius = geo.m_radius;
 
+#ifdef USE_BULLET
 	UpdateRigidBody();
+#endif
 	return *this;
 }
 

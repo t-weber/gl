@@ -416,6 +416,19 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 	menuGeo->addAction(actionTextureBrowser);
 
 
+	// tools menu
+	QMenu *menuTools = new QMenu("Tools", m_menubar);
+
+
+	QAction *actionTrafoCalculator = new QAction(
+		QIcon::fromTheme("accessories-calculator"),
+		"Transformation Calculator...", menuTools);
+
+	connect(actionTrafoCalculator, &QAction::triggered, this, &MainWnd::ShowTrafoCalculator);
+
+	menuTools->addAction(actionTrafoCalculator);
+
+
 	// settings menu
 	QMenu *menuSettings = new QMenu("Settings", m_menubar);
 
@@ -528,6 +541,7 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 	// menu bar
 	m_menubar->addMenu(menuFile);
 	m_menubar->addMenu(menuGeo);
+	m_menubar->addMenu(menuTools);
 	m_menubar->addMenu(menuWindow);
 	m_menubar->addMenu(menuSettings);
 	m_menubar->addMenu(menuHelp);
@@ -720,6 +734,8 @@ void MainWnd::CollectGarbage()
 		m_dlgGeoBrowser.reset();
 	if(m_dlgTextureBrowser)
 		m_dlgTextureBrowser.reset();
+	if(m_dlgTrafoCalculator)
+		m_dlgTrafoCalculator.reset();
 	if(m_dlgAbout)
 		m_dlgAbout.reset();
 }
@@ -773,8 +789,8 @@ void MainWnd::NewFile()
 	SetCurrentFile("");
 	m_scene.Clear();
 
-	if(m_dlgGeoBrowser)
-		m_dlgGeoBrowser->UpdateGeoTree(m_scene);
+	UpdateGeoTrees();
+
 	if(m_dlgTextureBrowser)
 		m_dlgTextureBrowser->DeleteTextures();
 	if(m_renderer)
@@ -962,8 +978,8 @@ bool MainWnd::OpenFile(const QString& file)
 		SetCurrentFile(file);
 		m_recent.AddRecentFile(file);
 
-		if(m_dlgGeoBrowser)
-			m_dlgGeoBrowser->UpdateGeoTree(m_scene);
+		UpdateGeoTrees();
+
 		if(m_renderer)
 			m_renderer->LoadScene(m_scene);
 
@@ -1086,6 +1102,16 @@ bool MainWnd::SaveScreenshot(const QString &file)
 
 	QImage img = m_renderer->grabFramebuffer();
 	return img.save(file, nullptr, 90);
+}
+
+
+void MainWnd::UpdateGeoTrees()
+{
+	// update object browser tree
+	if(m_dlgGeoBrowser)
+		m_dlgGeoBrowser->UpdateGeoTree(m_scene);
+	if(m_dlgTrafoCalculator)
+		m_dlgTrafoCalculator->UpdateGeoTree(m_scene);
 }
 
 
@@ -1388,9 +1414,7 @@ void MainWnd::AddPlane()
 	// add plane to scene
 	m_scene.AddObject(std::vector<std::shared_ptr<Geometry>>{{plane}}, ostrId.str());
 
-	// update object browser tree
-	if(m_dlgGeoBrowser)
-		m_dlgGeoBrowser->UpdateGeoTree(m_scene);
+	UpdateGeoTrees();
 
 	// add a 3d representation of the plane
 	if(m_renderer)
@@ -1416,9 +1440,7 @@ void MainWnd::AddCuboid()
 	// add cuboid to scene
 	m_scene.AddObject(std::vector<std::shared_ptr<Geometry>>{{cuboid}}, ostrId.str());
 
-	// update object browser tree
-	if(m_dlgGeoBrowser)
-		m_dlgGeoBrowser->UpdateGeoTree(m_scene);
+	UpdateGeoTrees();
 
 	// add a 3d representation of the cuboid
 	if(m_renderer)
@@ -1442,9 +1464,7 @@ void MainWnd::AddSphere()
 	// add sphere to scene
 	m_scene.AddObject(std::vector<std::shared_ptr<Geometry>>{{sphere}}, ostrId.str());
 
-	// update object browser tree
-	if(m_dlgGeoBrowser)
-		m_dlgGeoBrowser->UpdateGeoTree(m_scene);
+	UpdateGeoTrees();
 
 	// add a 3d representation of the sphere
 	if(m_renderer)
@@ -1469,9 +1489,7 @@ void MainWnd::AddCylinder()
 	// add cylinder to scene
 	m_scene.AddObject(std::vector<std::shared_ptr<Geometry>>{{cyl}}, ostrId.str());
 
-	// update object browser tree
-	if(m_dlgGeoBrowser)
-		m_dlgGeoBrowser->UpdateGeoTree(m_scene);
+	UpdateGeoTrees();
 
 	// add a 3d representation of the cylinder
 	if(m_renderer)
@@ -1495,9 +1513,7 @@ void MainWnd::AddTetrahedron()
 	// add tetrahedron to scene
 	m_scene.AddObject(std::vector<std::shared_ptr<Geometry>>{{tetr}}, ostrId.str());
 
-	// update object browser tree
-	if(m_dlgGeoBrowser)
-		m_dlgGeoBrowser->UpdateGeoTree(m_scene);
+	UpdateGeoTrees();
 
 	// add a 3d representation of the tetrahedron
 	if(m_renderer)
@@ -1521,9 +1537,7 @@ void MainWnd::AddOctahedron()
 	// add octahedron to scene
 	m_scene.AddObject(std::vector<std::shared_ptr<Geometry>>{{octa}}, ostrId.str());
 
-	// update object browser tree
-	if(m_dlgGeoBrowser)
-		m_dlgGeoBrowser->UpdateGeoTree(m_scene);
+	UpdateGeoTrees();
 
 	// add a 3d representation of the octahedron
 	if(m_renderer)
@@ -1547,9 +1561,7 @@ void MainWnd::AddDodecahedron()
 	// add dodecahedron to scene
 	m_scene.AddObject(std::vector<std::shared_ptr<Geometry>>{{dode}}, ostrId.str());
 
-	// update object browser tree
-	if(m_dlgGeoBrowser)
-		m_dlgGeoBrowser->UpdateGeoTree(m_scene);
+	UpdateGeoTrees();
 
 	// add a 3d representation of the dodecahedron
 	if(m_renderer)
@@ -1573,9 +1585,7 @@ void MainWnd::AddIcosahedron()
 	// add icosahedron to scene
 	m_scene.AddObject(std::vector<std::shared_ptr<Geometry>>{{icosa}}, ostrId.str());
 
-	// update object browser tree
-	if(m_dlgGeoBrowser)
-		m_dlgGeoBrowser->UpdateGeoTree(m_scene);
+	UpdateGeoTrees();
 
 	// add a 3d representation of the icosahedron
 	if(m_renderer)
@@ -1613,9 +1623,7 @@ void MainWnd::DeleteObject(const std::string& obj)
 	// remove object from scene
 	if(m_scene.DeleteObject(obj))
 	{
-		// update object browser tree
-		if(m_dlgGeoBrowser)
-			m_dlgGeoBrowser->UpdateGeoTree(m_scene);
+		UpdateGeoTrees();
 
 		// remove 3d representation of object
 		if(m_renderer)
@@ -1640,9 +1648,7 @@ void MainWnd::CloneObject(const std::string& obj)
 	// remove object from scene
 	if(auto geo = m_scene.CloneObject(obj); geo)
 	{
-		// update object browser tree
-		if(m_dlgGeoBrowser)
-			m_dlgGeoBrowser->UpdateGeoTree(m_scene);
+		UpdateGeoTrees();
 
 		// add a 3d representation of the object
 		if(m_renderer)
@@ -1676,9 +1682,7 @@ void MainWnd::RotateObject(const std::string& objname, t_real angle, char axis)
 	// rotate the given object
 	if(auto [ok, objgeo] = m_scene.RotateObject(objname, angle, axis); ok)
 	{
-		// update object browser tree
-		if(m_dlgGeoBrowser)
-			m_dlgGeoBrowser->UpdateGeoTree(m_scene);
+		UpdateGeoTrees();
 
 		// remove old 3d representation of object and create a new one
 		if(m_renderer && objgeo)
@@ -1773,6 +1777,24 @@ void MainWnd::ShowTextureBrowser()
 
 
 /**
+ * open the transformation calculator dialog
+ */
+void MainWnd::ShowTrafoCalculator()
+{
+	if(!m_dlgTrafoCalculator)
+	{
+		m_dlgTrafoCalculator = std::make_shared<TrafoCalculator>(this, &m_sett);
+
+		this->m_dlgTrafoCalculator->UpdateGeoTree(this->m_scene);
+	}
+
+	m_dlgTrafoCalculator->show();
+	m_dlgTrafoCalculator->raise();
+	m_dlgTrafoCalculator->activateWindow();
+}
+
+
+/**
  * rename the given object in the scene
  */
 void MainWnd::RenameObject(const std::string& oldid, const std::string& newid)
@@ -1782,9 +1804,7 @@ void MainWnd::RenameObject(const std::string& oldid, const std::string& newid)
 
 	if(m_scene.RenameObject(oldid, newid))
 	{
-		// update object browser tree
-		if(m_dlgGeoBrowser)
-			m_dlgGeoBrowser->UpdateGeoTree(m_scene);
+		UpdateGeoTrees();
 
 		// rename 3d representation of object
 		if(m_renderer)
@@ -1804,9 +1824,7 @@ void MainWnd::ChangeObjectProperty(const std::string& objname, const ObjectPrope
 	// change object properties
 	if(auto [ok, objgeo] = m_scene.SetProperties(objname, { prop} ); ok)
 	{
-		// update object browser tree
-		if(m_dlgGeoBrowser)
-			m_dlgGeoBrowser->UpdateGeoTree(m_scene);
+		UpdateGeoTrees();
 
 		// remove old 3d representation of object and create a new one
 		if(m_renderer && objgeo)

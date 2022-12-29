@@ -1180,24 +1180,25 @@ void GlSceneRenderer::DoPaintGL(qgl_funcs *pGl)
 	pGl->glDisable(GL_DEPTH_TEST);
 	pGl->glDisable(GL_STENCIL_TEST);
 
+	pGl->glDepthMask(GL_TRUE);
+	pGl->glDepthFunc(GL_LESS);
+
 	if(m_portalRenderPass == PortalRenderPass::CREATE_STENCIL)
 	{
 		// don't write colours when creating portal stencil maps
-		pGl->glDepthMask(GL_TRUE);
 		pGl->glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 		pGl->glStencilMask(~0);
 
 		pGl->glClear(GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-		pGl->glEnable(GL_STENCIL_TEST);
 		pGl->glStencilOp(
 			GL_KEEP,     // stencil test failed
 			GL_KEEP,     // stencil test passed, depth test failed
 			GL_REPLACE); // both tests passed
+		pGl->glEnable(GL_STENCIL_TEST);
 	}
 	else if(m_portalRenderPass == PortalRenderPass::RENDER_PORTALS)
 	{
-		pGl->glDepthMask(GL_TRUE);
 		pGl->glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
 		// TODO: recover depth mask for multiple portals...
@@ -1212,17 +1213,18 @@ void GlSceneRenderer::DoPaintGL(qgl_funcs *pGl)
 	else if(m_portalRenderPass == PortalRenderPass::CREATE_Z)
 	{
 		// don't write colours when creating portal z maps
-		pGl->glDepthMask(GL_TRUE);
 		pGl->glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+		// prevent rendering scene in portals in front of portals
+		// TODO: z-buffer for overlapping portals
+		pGl->glDepthFunc(GL_ALWAYS);
 	}
 	else if(m_portalRenderPass == PortalRenderPass::RENDER_NONPORTALS)
 	{
-		pGl->glDepthMask(GL_TRUE);
 		pGl->glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	}
 	else if(m_portalRenderPass == PortalRenderPass::IGNORE)
 	{
-		pGl->glDepthMask(GL_TRUE);
 		pGl->glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
 		pGl->glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -1299,7 +1301,7 @@ void GlSceneRenderer::DoPaintGL(qgl_funcs *pGl)
 			m_portalRenderPass != PortalRenderPass::IGNORE);
 		t_mat_gl matObj = obj.m_mat;
 
-		// pass 0: draw portal masks into stencil buffer
+		// draw portal surfaces into stencil buffer
 		if(m_portalRenderPass == PortalRenderPass::CREATE_STENCIL)
 		{
 			if(m_active_portal && obj_is_portal && obj.m_portal_id == m_active_portal->id)
@@ -1402,8 +1404,7 @@ void GlSceneRenderer::DoPaintGL(qgl_funcs *pGl)
 		else
 			pGl->glDisable(GL_CULL_FACE);
 
-		// pass 1: draw scene that is only visible through portals
-		// set object matrix
+		// draw scene that is only visible through portals
 		if(m_portalRenderPass == PortalRenderPass::RENDER_PORTALS && m_active_portal)
 		{
 			pGl->glStencilFunc(GL_EQUAL, 1, ~0);

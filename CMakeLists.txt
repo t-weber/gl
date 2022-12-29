@@ -214,6 +214,7 @@ add_executable(glscene
 	src/dialogs/About.cpp src/dialogs/About.h
 	src/dialogs/GeoBrowser.cpp src/dialogs/GeoBrowser.h
 	src/dialogs/TextureBrowser.cpp src/dialogs/TextureBrowser.h
+	src/dialogs/TrafoCalculator.cpp src/dialogs/TrafoCalculator.h
 	src/dialogs/Settings.h
 
 	src/Geometry.cpp src/Geometry.h

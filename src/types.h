@@ -19,7 +19,7 @@
 #define APPL_TITLE "Gl Scene"
 
 // version number of this software
-#define APPL_VERSION "0.1"
+#define APPL_VERSION "0.2"
 
 #define FILE_BASENAME "glscene."
 

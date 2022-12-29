@@ -37,6 +37,7 @@
 
 #include "dialogs/GeoBrowser.h"
 #include "dialogs/TextureBrowser.h"
+#include "dialogs/TrafoCalculator.h"
 #include "dialogs/About.h"
 #include "dialogs/Settings.h"
 
@@ -95,6 +96,7 @@ private:
 	std::shared_ptr<QDialog> m_dlgSettings{};
 	std::shared_ptr<GeometriesBrowser> m_dlgGeoBrowser{};
 	std::shared_ptr<TextureBrowser> m_dlgTextureBrowser{};
+	std::shared_ptr<TrafoCalculator> m_dlgTrafoCalculator{};
 
 	// docks
 	std::shared_ptr<CamPropertiesDockWidget> m_camProperties{};
@@ -143,6 +145,8 @@ protected:
 
 	// remember current file and set window title
 	void SetCurrentFile(const QString &file);
+
+	void UpdateGeoTrees();
 
 
 protected slots:
@@ -200,6 +204,7 @@ protected slots:
 
 	void ShowGeometryBrowser();
 	void ShowTextureBrowser();
+	void ShowTrafoCalculator();
 
 	void CollectGarbage();
 
