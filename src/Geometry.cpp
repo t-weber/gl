@@ -181,9 +181,11 @@ Geometry& Geometry::operator=(const Geometry& geo)
 	this->m_light_id = geo.m_light_id;
 	this->m_texture = geo.m_texture;
 	this->m_fixed = geo.m_fixed;
-	this->m_trafo = geo.m_trafo;
+	//this->m_trafo = geo.m_trafo;
 	this->m_portal_id = geo.m_portal_id;
 	this->m_portal_trafo = geo.m_portal_trafo;
+	this->SetRotation(geo.GetRotation());
+	this->SetPosition(geo.GetPosition());
 
 #ifdef USE_BULLET
 	this->m_mass = geo.m_mass;
@@ -575,7 +577,7 @@ PlaneGeometry::~PlaneGeometry()
 
 Geometry& PlaneGeometry::operator=(const Geometry& _geo)
 {
-	static_cast<Geometry*>(this)->operator=(_geo);
+	Geometry::operator=(_geo);
 	const PlaneGeometry& geo = dynamic_cast<const PlaneGeometry&>(_geo);
 
 	this->m_norm = geo.m_norm;
@@ -592,7 +594,7 @@ Geometry& PlaneGeometry::operator=(const Geometry& _geo)
 std::shared_ptr<Geometry> PlaneGeometry::clone() const
 {
 	auto geo = std::make_shared<PlaneGeometry>();
-	geo->operator=(*this);
+	geo->operator=(dynamic_cast<const Geometry&>(*this));
 	return geo;
 }
 
@@ -774,7 +776,7 @@ BoxGeometry::~BoxGeometry()
 
 Geometry& BoxGeometry::operator=(const Geometry& _geo)
 {
-	static_cast<Geometry*>(this)->operator=(_geo);
+	Geometry::operator=(_geo);
 	const BoxGeometry& geo = dynamic_cast<const BoxGeometry&>(_geo);
 
 	this->m_length = geo.m_length;
@@ -791,7 +793,7 @@ Geometry& BoxGeometry::operator=(const Geometry& _geo)
 std::shared_ptr<Geometry> BoxGeometry::clone() const
 {
 	auto geo = std::make_shared<BoxGeometry>();
-	geo->operator=(*this);
+	geo->operator=(dynamic_cast<const Geometry&>(*this));
 	return geo;
 }
 
@@ -978,7 +980,7 @@ CylinderGeometry::~CylinderGeometry()
 
 Geometry& CylinderGeometry::operator=(const Geometry& _geo)
 {
-	static_cast<Geometry*>(this)->operator=(_geo);
+	Geometry::operator=(_geo);
 	const CylinderGeometry& geo = dynamic_cast<const CylinderGeometry&>(_geo);
 
 	this->m_height = geo.m_height;
@@ -994,7 +996,7 @@ Geometry& CylinderGeometry::operator=(const Geometry& _geo)
 std::shared_ptr<Geometry> CylinderGeometry::clone() const
 {
 	auto geo = std::make_shared<CylinderGeometry>();
-	geo->operator=(*this);
+	geo->operator=(dynamic_cast<const Geometry&>(*this));
 	return geo;
 }
 
@@ -1165,7 +1167,7 @@ SphereGeometry::~SphereGeometry()
 
 Geometry& SphereGeometry::operator=(const Geometry& _geo)
 {
-	static_cast<Geometry*>(this)->operator=(_geo);
+	Geometry::operator=(_geo);
 	const SphereGeometry& geo = dynamic_cast<const SphereGeometry&>(_geo);
 
 	this->m_radius = geo.m_radius;
@@ -1180,7 +1182,7 @@ Geometry& SphereGeometry::operator=(const Geometry& _geo)
 std::shared_ptr<Geometry> SphereGeometry::clone() const
 {
 	auto geo = std::make_shared<SphereGeometry>();
-	geo->operator=(*this);
+	geo->operator=(dynamic_cast<const Geometry&>(*this));
 	return geo;
 }
 
@@ -1330,7 +1332,7 @@ TetrahedronGeometry::~TetrahedronGeometry()
 
 Geometry& TetrahedronGeometry::operator=(const Geometry& _geo)
 {
-	static_cast<Geometry*>(this)->operator=(_geo);
+	Geometry::operator=(_geo);
 	const TetrahedronGeometry& geo = dynamic_cast<const TetrahedronGeometry&>(_geo);
 
 	this->m_radius = geo.m_radius;
@@ -1345,7 +1347,7 @@ Geometry& TetrahedronGeometry::operator=(const Geometry& _geo)
 std::shared_ptr<Geometry> TetrahedronGeometry::clone() const
 {
 	auto geo = std::make_shared<TetrahedronGeometry>();
-	geo->operator=(*this);
+	geo->operator=(dynamic_cast<const Geometry&>(*this));
 	return geo;
 }
 
@@ -1430,7 +1432,7 @@ OctahedronGeometry::~OctahedronGeometry()
 
 Geometry& OctahedronGeometry::operator=(const Geometry& _geo)
 {
-	static_cast<Geometry*>(this)->operator=(_geo);
+	Geometry::operator=(_geo);
 	const OctahedronGeometry& geo = dynamic_cast<const OctahedronGeometry&>(_geo);
 
 	this->m_radius = geo.m_radius;
@@ -1445,7 +1447,7 @@ Geometry& OctahedronGeometry::operator=(const Geometry& _geo)
 std::shared_ptr<Geometry> OctahedronGeometry::clone() const
 {
 	auto geo = std::make_shared<OctahedronGeometry>();
-	geo->operator=(*this);
+	geo->operator=(dynamic_cast<const Geometry&>(*this));
 	return geo;
 }
 
@@ -1530,7 +1532,7 @@ DodecahedronGeometry::~DodecahedronGeometry()
 
 Geometry& DodecahedronGeometry::operator=(const Geometry& _geo)
 {
-	static_cast<Geometry*>(this)->operator=(_geo);
+	Geometry::operator=(_geo);
 	const DodecahedronGeometry& geo = dynamic_cast<const DodecahedronGeometry&>(_geo);
 
 	this->m_radius = geo.m_radius;
@@ -1545,7 +1547,7 @@ Geometry& DodecahedronGeometry::operator=(const Geometry& _geo)
 std::shared_ptr<Geometry> DodecahedronGeometry::clone() const
 {
 	auto geo = std::make_shared<DodecahedronGeometry>();
-	geo->operator=(*this);
+	geo->operator=(dynamic_cast<const Geometry&>(*this));
 	return geo;
 }
 
@@ -1630,7 +1632,7 @@ IcosahedronGeometry::~IcosahedronGeometry()
 
 Geometry& IcosahedronGeometry::operator=(const Geometry& _geo)
 {
-	static_cast<Geometry*>(this)->operator=(_geo);
+	Geometry::operator=(_geo);
 	const IcosahedronGeometry& geo = dynamic_cast<const IcosahedronGeometry&>(_geo);
 
 	this->m_radius = geo.m_radius;
@@ -1645,7 +1647,7 @@ Geometry& IcosahedronGeometry::operator=(const Geometry& _geo)
 std::shared_ptr<Geometry> IcosahedronGeometry::clone() const
 {
 	auto geo = std::make_shared<IcosahedronGeometry>();
-	geo->operator=(*this);
+	geo->operator=(dynamic_cast<const Geometry&>(*this));
 	return geo;
 }
 

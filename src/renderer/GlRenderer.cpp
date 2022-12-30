@@ -1202,6 +1202,8 @@ void GlSceneRenderer::DoPaintGL(qgl_funcs *pGl)
 		pGl->glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 
 		// TODO: recover depth mask for multiple portals...
+		// TODO: prevent (via z-buffer) the rendering of objects
+		//       through a portal that are in front of the portal
 		GLuint clear_bits = GL_DEPTH_BUFFER_BIT;
 		if(m_firstpass)
 			clear_bits |= GL_COLOR_BUFFER_BIT;

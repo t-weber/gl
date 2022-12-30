@@ -4,7 +4,7 @@
 		<object id="object 1">
 			<geometry>
 				<box id="wall 1">
-					<position>10; 0; 1.5</position>
+					<position>10; 0; 3</position>
 					<rotation>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</rotation>
 					<fixed>1</fixed>
 					<colour>1; 0; 0</colour>
@@ -16,14 +16,14 @@
 					<mass>1</mass>
 					<length>0.5</length>
 					<depth>20</depth>
-					<height>4</height>
+					<height>6</height>
 				</box>
 			</geometry>
 		</object>
 		<object id="object 2">
 			<geometry>
 				<box id="wall 2a">
-					<position>-6.5; 10; 1.5</position>
+					<position>-6.5; 10; 3</position>
 					<rotation>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</rotation>
 					<fixed>1</fixed>
 					<colour>1; 0; 0</colour>
@@ -35,14 +35,14 @@
 					<mass>1</mass>
 					<length>7</length>
 					<depth>0.5</depth>
-					<height>4</height>
+					<height>6</height>
 				</box>
 			</geometry>
 		</object>
 		<object id="object 3">
 			<geometry>
 				<box id="wall 2b">
-					<position>6.5; 10; 1.5</position>
+					<position>6.5; 10; 3</position>
 					<rotation>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</rotation>
 					<fixed>1</fixed>
 					<colour>1; 0; 0</colour>
@@ -54,14 +54,14 @@
 					<mass>1</mass>
 					<length>7</length>
 					<depth>0.5</depth>
-					<height>4</height>
+					<height>6</height>
 				</box>
 			</geometry>
 		</object>
 		<object id="object 4">
 			<geometry>
 				<box id="wall 3">
-					<position>-10; 0; 1.5</position>
+					<position>-10; 0; 3</position>
 					<rotation>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</rotation>
 					<fixed>1</fixed>
 					<colour>1; 0; 0</colour>
@@ -73,14 +73,14 @@
 					<mass>1</mass>
 					<length>0.5</length>
 					<depth>20</depth>
-					<height>4</height>
+					<height>6</height>
 				</box>
 			</geometry>
 		</object>
 		<object id="object 5">
 			<geometry>
 				<box id="wall 4">
-					<position>0; -10; 1.5</position>
+					<position>0; -10; 3</position>
 					<rotation>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</rotation>
 					<fixed>1</fixed>
 					<colour>1; 0; 0</colour>
@@ -92,14 +92,14 @@
 					<mass>1</mass>
 					<length>20</length>
 					<depth>0.5</depth>
-					<height>4</height>
+					<height>6</height>
 				</box>
 			</geometry>
 		</object>
 		<object id="object 6">
 			<geometry>
 				<plane id="floor">
-					<position>0; 0; 0</position>
+					<position>0; 4; 0</position>
 					<rotation>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</rotation>
 					<fixed>1</fixed>
 					<colour>0.5; 0.5; 0.5</colour>
@@ -111,7 +111,7 @@
 					<mass>1</mass>
 					<normal>0; 0; 1</normal>
 					<width>20</width>
-					<height>20</height>
+					<height>28</height>
 				</plane>
 			</geometry>
 		</object>
@@ -249,7 +249,7 @@
 		<object id="object 14">
 			<geometry>
 				<plane id="portal 1">
-					<position>0; 10; 1.5</position>
+					<position>0; 10; 3</position>
 					<rotation>1; 0; 0; 0| 0; -9.73365e-09; -1; 0| 0; 1; -9.73365e-09; 0| 0; 0; 0; 1</rotation>
 					<fixed>0</fixed>
 					<colour>1; 1; 0</colour>
@@ -261,15 +261,15 @@
 					<mass>1</mass>
 					<normal>0; 0; 1</normal>
 					<width>6</width>
-					<height>4</height>
+					<height>6</height>
 				</plane>
 			</geometry>
 		</object>
 		<object id="object 15">
 			<geometry>
 				<cylinder id="cylinder 1">
-					<position>20.0095; -6.00282; 2.01101</position>
-					<rotation>0.999999; 0.00154014; -7.48602e-06; 0| -0.00154014; 0.999999; -4.61201e-05; 0| 7.41498e-06; 4.61316e-05; 1; 0| 0; 0; 0; 1</rotation>
+					<position>20.0118; -6.00429; 2.011</position>
+					<rotation>0.999996; 0.00270787; -3.717e-06; 0| -0.00270787; 0.999996; -2.78438e-06; 0| 3.70944e-06; 2.79443e-06; 1; 0| 0; 0; 0; 1</rotation>
 					<fixed>0</fixed>
 					<colour>1; 1; 0</colour>
 					<lighting>1</lighting>
@@ -286,8 +286,8 @@
 		<object id="object 16">
 			<geometry>
 				<cylinder id="cylinder 2">
-					<position>29.9883; 3.99984; 2.011</position>
-					<rotation>0.999945; -0.0104566; -6.32057e-06; 0| 0.0104566; 0.999945; -2.85086e-05; 0| 6.61832e-06; 2.8441e-05; 1; 0| 0; 0; 0; 1</rotation>
+					<position>29.9876; 4.00003; 2.01101</position>
+					<rotation>0.999946; -0.0103763; -1.63649e-05; 0| 0.0103763; 0.999946; 3.29635e-05; 0| 1.6022e-05; -3.31315e-05; 1; 0| 0; 0; 0; 1</rotation>
 					<fixed>0</fixed>
 					<colour>1; 1; 0</colour>
 					<lighting>1</lighting>
@@ -304,8 +304,8 @@
 		<object id="object 17">
 			<geometry>
 				<cylinder id="cylinder 3">
-					<position>20.004; 3.99805; 2.01101</position>
-					<rotation>0.999938; -0.0111663; -6.9361e-05; 0| 0.0111663; 0.999938; 4.87357e-05; 0| 6.88125e-05; -4.95072e-05; 1; 0| 0; 0; 0; 1</rotation>
+					<position>20.005; 3.9969; 2.011</position>
+					<rotation>0.999959; -0.00910522; 1.3553e-05; 0| 0.00910522; 0.999959; -2.27093e-05; 0| -1.33457e-05; 2.28318e-05; 1; 0| 0; 0; 0; 1</rotation>
 					<fixed>0</fixed>
 					<colour>1; 1; 0</colour>
 					<lighting>1</lighting>
@@ -322,8 +322,8 @@
 		<object id="object 18">
 			<geometry>
 				<cylinder id="cylinder 4">
-					<position>30.1194; -5.99951; 2.01103</position>
-					<rotation>1; -0.000842511; 4.7324e-05; 0| 0.000842507; 1; 9.57021e-05; 0| -4.74046e-05; -9.56622e-05; 1; 0| 0; 0; 0; 1</rotation>
+					<position>30.1202; -5.99699; 2.01101</position>
+					<rotation>1; 0.00024068; 2.9804e-05; 0| -0.00024068; 1; 2.05344e-05; 0| -2.97991e-05; -2.05416e-05; 1; 0| 0; 0; 0; 1</rotation>
 					<fixed>0</fixed>
 					<colour>1; 1; 0</colour>
 					<lighting>1</lighting>
@@ -373,26 +373,101 @@
 				</plane>
 			</geometry>
 		</object>
+		<object id="object 21">
+			<geometry>
+				<box id="wall 1b">
+					<position>10; 14; 3</position>
+					<rotation>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</rotation>
+					<fixed>1</fixed>
+					<colour>1; 0; 0</colour>
+					<lighting>1</lighting>
+					<light_id>-1</light_id>
+					<texture/>
+					<portal_id>-1</portal_id>
+					<portal_trafo>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</portal_trafo>
+					<mass>1</mass>
+					<length>0.5</length>
+					<depth>8</depth>
+					<height>6</height>
+				</box>
+			</geometry>
+		</object>
+		<object id="object 22">
+			<geometry>
+				<box id="wall 3b">
+					<position>-10; 14; 3</position>
+					<rotation>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</rotation>
+					<fixed>1</fixed>
+					<colour>1; 0; 0</colour>
+					<lighting>1</lighting>
+					<light_id>-1</light_id>
+					<texture/>
+					<portal_id>-1</portal_id>
+					<portal_trafo>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</portal_trafo>
+					<mass>1</mass>
+					<length>0.5</length>
+					<depth>8</depth>
+					<height>6</height>
+				</box>
+			</geometry>
+		</object>
+		<object id="object 23">
+			<geometry>
+				<box id="wall 5">
+					<position>0; 18; 3</position>
+					<rotation>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</rotation>
+					<fixed>1</fixed>
+					<colour>1; 0; 0</colour>
+					<lighting>1</lighting>
+					<light_id>-1</light_id>
+					<texture/>
+					<portal_id>-1</portal_id>
+					<portal_trafo>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</portal_trafo>
+					<mass>1</mass>
+					<length>20</length>
+					<depth>0.5</depth>
+					<height>6</height>
+				</box>
+			</geometry>
+		</object>
+		<object id="object 24">
+			<geometry>
+				<cylinder id="cylinder 5">
+					<position>25.0173; -0.000676231; 2.01101</position>
+					<rotation>0.999326; -0.0367032; 4.43138e-05; 0| 0.0367032; 0.999326; 2.05369e-05; 0| -4.50377e-05; -1.88966e-05; 1; 0| 0; 0; 0; 1</rotation>
+					<fixed>0</fixed>
+					<colour>1; 1; 0</colour>
+					<lighting>1</lighting>
+					<light_id>-1</light_id>
+					<texture/>
+					<portal_id>-1</portal_id>
+					<portal_trafo>1; 0; 0; 0| 0; 1; 0; 0| 0; 0; 1; 0| 0; 0; 0; 1</portal_trafo>
+					<mass>1</mass>
+					<height>4</height>
+					<radius>0.75</radius>
+				</cylinder>
+			</geometry>
+		</object>
 	</objects>
 	<configuration>
 		<camera>
 			<x>0</x>
 			<y>-10</y>
 			<z>-1.5</z>
-			<phi>20.756</phi>
-			<theta>-84.27</theta>
+			<phi>319.059</phi>
+			<theta>-75.103</theta>
 			<viewing_angle>90</viewing_angle>
-			<zoom>3.666</zoom>
+			<zoom>2.578</zoom>
 			<perspective_proj>1</perspective_proj>
 		</camera>
 		<selection_plane>
 			<x>0</x>
 			<y>0</y>
 			<z>1</z>
-			<d>0</d>
+			<d>0.409</d>
 		</selection_plane>
 		<textures enabled="false"/>
 	</configuration>
 	<ident>glscene</ident>
-	<timestamp>1672294650.218129</timestamp>
+	<timestamp>1672360521.396261</timestamp>
 </glscene>
