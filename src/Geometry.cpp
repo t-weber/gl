@@ -182,8 +182,10 @@ Geometry& Geometry::operator=(const Geometry& geo)
 	this->m_texture = geo.m_texture;
 	this->m_fixed = geo.m_fixed;
 	//this->m_trafo = geo.m_trafo;
+	//this->m_det = geo.m_det;
 	this->m_portal_id = geo.m_portal_id;
 	this->m_portal_trafo = geo.m_portal_trafo;
+	this->m_portal_det = geo.m_portal_det;
 	this->SetRotation(geo.GetRotation());
 	this->SetPosition(geo.GetPosition());
 
@@ -225,9 +227,22 @@ void Geometry::SetRotation(const t_mat& rot)
 {
 	tl2::set_submat<t_mat>(m_trafo, rot, 0, 0, 3, 3);
 
+	// ignore translation part for determinant
+	m_det = tl2::det<t_mat>(rot);
+
 #ifdef USE_BULLET
 	SetStateFromMatrix();
 #endif
+}
+
+
+void Geometry::SetPortalTrafo(const t_mat& trafo)
+{
+	m_portal_trafo = trafo;
+
+	// ignore translation part for determinant
+	t_mat rot = tl2::submat<t_mat>(m_portal_trafo, 0, 0, 3, 3);
+	m_portal_det = tl2::det<t_mat>(rot);
 }
 
 

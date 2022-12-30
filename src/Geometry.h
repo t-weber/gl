@@ -86,6 +86,7 @@ public:
 
 	virtual t_mat GetRotation() const;
 	virtual void SetRotation(const t_mat& rot);
+	virtual t_real GetDeterminant() const { return m_det; }
 
 	virtual std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 		GetTriangles() const = 0;
@@ -100,7 +101,8 @@ public:
 	virtual void SetPortalId(int id) { m_portal_id = id; }
 
 	virtual const t_mat& GetPortalTrafo() const { return m_portal_trafo; }
-	virtual void SetPortalTrafo(const t_mat& trafo) { m_portal_trafo = trafo; }
+	virtual void SetPortalTrafo(const t_mat& trafo);
+	virtual t_real GetPortalDeterminant() const { return m_portal_det; }
 
 	virtual bool IsLightingEnabled() const { return m_lighting; }
 	virtual void SetLighting(bool b) { m_lighting = b; }
@@ -144,9 +146,11 @@ protected:
 
 	bool m_fixed = false;
 	t_mat m_trafo = tl2::unit<t_mat>(4);
+	t_real m_det = 1.;
 
 	int m_portal_id = -1;  // <0 -> deactivated
 	t_mat m_portal_trafo = tl2::unit<t_mat>(4);
+	t_real m_portal_det = 1.;
 
 #ifdef USE_BULLET
 	std::shared_ptr<btConvexInternalShape> m_shape{};

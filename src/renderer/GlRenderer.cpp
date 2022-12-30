@@ -265,6 +265,7 @@ void GlSceneRenderer::AddObject(const Geometry& obj)
 	obj_iter->second.m_lighting = obj.IsLightingEnabled();
 	obj_iter->second.m_portal_id = obj.GetPortalId();
 	obj_iter->second.m_portal_mat = obj.GetPortalTrafo();
+	obj_iter->second.m_portal_mirror = (obj.GetPortalDeterminant() < 0.);
 
 	if(obj.GetLightId() >= 0)
 	{
@@ -1016,12 +1017,16 @@ void GlSceneRenderer::CreateActivePortals()
 		if(bool obj_is_portal = (obj.m_portal_id >= 0); obj_is_portal)
 		{
 			// remember current portal for subsequent rendering passes
-			ActivePortal active_portal{
+			ActivePortal active_portal
+			{
 				.id = obj.m_portal_id,
-				.mat = obj.m_portal_mat };
+				.mat = obj.m_portal_mat,
+				.mirror = obj.m_portal_mirror
+			};
 
 			//std::cout << "portal " << active_portal.id << ":\n";
 			//tl2::niceprint(std::cout, active_portal.mat);
+			//std::cout << "mirroring: " << active_portal.mirror << std::endl;
 
 			m_active_portals.emplace_back(std::move(active_portal));
 		}
@@ -1336,7 +1341,13 @@ void GlSceneRenderer::DoPaintGL(qgl_funcs *pGl)
 				return;
 
 			if(m_active_portal)
+			{
 				matObj = m_active_portal->mat * matObj;
+				if(m_active_portal->mirror)
+					pGl->glFrontFace(GL_CW);
+				else
+					pGl->glFrontFace(GL_CCW);
+			}
 		}
 
 		// check if object is in camera frustum

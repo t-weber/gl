@@ -46,6 +46,7 @@ struct GlSceneObj : public tl2::GlRenderObj
 {
 	t_mat_gl m_mat = tl2::unit<t_mat_gl>();
 	t_mat_gl m_portal_mat = tl2::unit<t_mat_gl>();
+	bool m_portal_mirror = false;
 
 	GLint m_portal_id = -1;
 
@@ -90,6 +91,7 @@ struct ActivePortal
 {
 	GLint id = -1;
 	t_mat_gl mat = tl2::unit<t_mat_gl>();
+	bool mirror = false;
 };
 
 
