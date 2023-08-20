@@ -44,6 +44,8 @@
 # Libraries
 tlibs2
 tlibs2/**
+mathlibs
+mathlibs/**
 
 # Temporary files
 build/**

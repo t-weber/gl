@@ -371,7 +371,7 @@ std::pair<bool, std::string> Scene::load(
 
 	std::ostringstream timestamp;
 	if(auto optTime = prop.get_optional<t_real>(FILE_BASENAME "timestamp"); optTime)
-		timestamp << tl2::epoch_to_str(*optTime);;
+		timestamp << tl2::epoch_to_str(*optTime);
 
 	return std::make_pair(true, timestamp.str());
 }

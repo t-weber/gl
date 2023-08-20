@@ -10,7 +10,7 @@
  */
 
 #include "Geometry.h"
-#include "settings_variables.h" 
+#include "settings_variables.h"
 #include "tlibs2/libs/expr.h"
 #include "tlibs2/libs/str.h"
 
@@ -590,7 +590,7 @@ PlaneGeometry::~PlaneGeometry()
 }
 
 
-Geometry& PlaneGeometry::operator=(const Geometry& _geo)
+PlaneGeometry& PlaneGeometry::operator=(const Geometry& _geo)
 {
 	Geometry::operator=(_geo);
 	const PlaneGeometry& geo = dynamic_cast<const PlaneGeometry&>(_geo);
@@ -789,7 +789,7 @@ BoxGeometry::~BoxGeometry()
 }
 
 
-Geometry& BoxGeometry::operator=(const Geometry& _geo)
+BoxGeometry& BoxGeometry::operator=(const Geometry& _geo)
 {
 	Geometry::operator=(_geo);
 	const BoxGeometry& geo = dynamic_cast<const BoxGeometry&>(_geo);
@@ -993,7 +993,7 @@ CylinderGeometry::~CylinderGeometry()
 }
 
 
-Geometry& CylinderGeometry::operator=(const Geometry& _geo)
+CylinderGeometry& CylinderGeometry::operator=(const Geometry& _geo)
 {
 	Geometry::operator=(_geo);
 	const CylinderGeometry& geo = dynamic_cast<const CylinderGeometry&>(_geo);
@@ -1180,7 +1180,7 @@ SphereGeometry::~SphereGeometry()
 }
 
 
-Geometry& SphereGeometry::operator=(const Geometry& _geo)
+SphereGeometry& SphereGeometry::operator=(const Geometry& _geo)
 {
 	Geometry::operator=(_geo);
 	const SphereGeometry& geo = dynamic_cast<const SphereGeometry&>(_geo);
@@ -1345,7 +1345,7 @@ TetrahedronGeometry::~TetrahedronGeometry()
 }
 
 
-Geometry& TetrahedronGeometry::operator=(const Geometry& _geo)
+TetrahedronGeometry& TetrahedronGeometry::operator=(const Geometry& _geo)
 {
 	Geometry::operator=(_geo);
 	const TetrahedronGeometry& geo = dynamic_cast<const TetrahedronGeometry&>(_geo);
@@ -1445,7 +1445,7 @@ OctahedronGeometry::~OctahedronGeometry()
 }
 
 
-Geometry& OctahedronGeometry::operator=(const Geometry& _geo)
+OctahedronGeometry& OctahedronGeometry::operator=(const Geometry& _geo)
 {
 	Geometry::operator=(_geo);
 	const OctahedronGeometry& geo = dynamic_cast<const OctahedronGeometry&>(_geo);
@@ -1545,7 +1545,7 @@ DodecahedronGeometry::~DodecahedronGeometry()
 }
 
 
-Geometry& DodecahedronGeometry::operator=(const Geometry& _geo)
+DodecahedronGeometry& DodecahedronGeometry::operator=(const Geometry& _geo)
 {
 	Geometry::operator=(_geo);
 	const DodecahedronGeometry& geo = dynamic_cast<const DodecahedronGeometry&>(_geo);
@@ -1645,7 +1645,7 @@ IcosahedronGeometry::~IcosahedronGeometry()
 }
 
 
-Geometry& IcosahedronGeometry::operator=(const Geometry& _geo)
+IcosahedronGeometry& IcosahedronGeometry::operator=(const Geometry& _geo)
 {
 	Geometry::operator=(_geo);
 	const IcosahedronGeometry& geo = dynamic_cast<const IcosahedronGeometry&>(_geo);

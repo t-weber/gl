@@ -173,7 +173,7 @@ public:
 	PlaneGeometry();
 	virtual ~PlaneGeometry();
 
-	virtual Geometry& operator=(const Geometry& geo) override;
+	virtual PlaneGeometry& operator=(const Geometry& geo) override;
 	virtual std::shared_ptr<Geometry> clone() const override;
 
 	virtual bool Load(const boost::property_tree::ptree& prop) override;
@@ -215,7 +215,7 @@ public:
 	BoxGeometry();
 	virtual ~BoxGeometry();
 
-	virtual Geometry& operator=(const Geometry& geo) override;
+	virtual BoxGeometry& operator=(const Geometry& geo) override;
 	virtual std::shared_ptr<Geometry> clone() const override;
 
 	virtual bool Load(const boost::property_tree::ptree& prop) override;
@@ -257,7 +257,7 @@ public:
 	CylinderGeometry();
 	virtual ~CylinderGeometry();
 
-	virtual Geometry& operator=(const Geometry& geo) override;
+	virtual CylinderGeometry& operator=(const Geometry& geo) override;
 	virtual std::shared_ptr<Geometry> clone() const override;
 
 	virtual bool Load(const boost::property_tree::ptree& prop) override;
@@ -297,7 +297,7 @@ public:
 	SphereGeometry();
 	virtual ~SphereGeometry();
 
-	virtual Geometry& operator=(const Geometry& geo) override;
+	virtual SphereGeometry& operator=(const Geometry& geo) override;
 	virtual std::shared_ptr<Geometry> clone() const override;
 
 	virtual bool Load(const boost::property_tree::ptree& prop) override;
@@ -334,7 +334,7 @@ public:
 	TetrahedronGeometry();
 	virtual ~TetrahedronGeometry();
 
-	virtual Geometry& operator=(const Geometry& geo) override;
+	virtual TetrahedronGeometry& operator=(const Geometry& geo) override;
 	virtual std::shared_ptr<Geometry> clone() const override;
 
 	virtual bool Load(const boost::property_tree::ptree& prop) override;
@@ -366,7 +366,7 @@ public:
 	OctahedronGeometry();
 	virtual ~OctahedronGeometry();
 
-	virtual Geometry& operator=(const Geometry& geo) override;
+	virtual OctahedronGeometry& operator=(const Geometry& geo) override;
 	virtual std::shared_ptr<Geometry> clone() const override;
 
 	virtual bool Load(const boost::property_tree::ptree& prop) override;
@@ -398,7 +398,7 @@ public:
 	DodecahedronGeometry();
 	virtual ~DodecahedronGeometry();
 
-	virtual Geometry& operator=(const Geometry& geo) override;
+	virtual DodecahedronGeometry& operator=(const Geometry& geo) override;
 	virtual std::shared_ptr<Geometry> clone() const override;
 
 	virtual bool Load(const boost::property_tree::ptree& prop) override;
@@ -430,7 +430,7 @@ public:
 	IcosahedronGeometry();
 	virtual ~IcosahedronGeometry();
 
-	virtual Geometry& operator=(const Geometry& geo) override;
+	virtual IcosahedronGeometry& operator=(const Geometry& geo) override;
 	virtual std::shared_ptr<Geometry> clone() const override;
 
 	virtual bool Load(const boost::property_tree::ptree& prop) override;
