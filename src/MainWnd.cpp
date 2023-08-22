@@ -22,12 +22,6 @@
 #include <boost/property_tree/xml_parser.hpp>
 namespace pt = boost::property_tree;
 
-#include "tlibs2/libs/maths.h"
-#include "tlibs2/libs/str.h"
-#include "tlibs2/libs/file.h"
-#include "tlibs2/libs/algos.h"
-#include "tlibs2/libs/log.h"
-
 
 // instantiate the settings dialog class
 template class SettingsDlg<g_settingsvariables.size(), &g_settingsvariables>;
@@ -41,11 +35,14 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 {
 	setWindowTitle(APPL_TITLE);
 
-	// set the svg icon
-	if(std::string icon_file = g_res.FindFile("glscene.svg");
-		!icon_file.empty())
+	// set the program icon
+	auto icon_file = g_res.FindFile("glscene.svg");
+	if(!icon_file)
+		icon_file = g_res.FindFile("glscene.svg");
+
+	if(icon_file && !icon_file->empty())
 	{
-		QIcon icon{icon_file.c_str()};
+		QIcon icon{icon_file->c_str()};
 		setWindowIcon(icon);
 	}
 
@@ -263,12 +260,13 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 	QAction *actionQuit = new QAction(QIcon::fromTheme("application-exit"), "Quit", menuFile);
 
 	// recent files menu
-	m_menuOpenRecent = new QMenu("Open Recent", menuFile);
+	m_menuOpenRecent = std::make_shared<QMenu>("Open Recent", menuFile);
 	m_menuOpenRecent->setIcon(QIcon::fromTheme("document-open-recent"));
 
-	m_recent.SetRecentFilesMenu(m_menuOpenRecent);
-	m_recent.SetMaxRecentFiles(g_maxnum_recents);
-	m_recent.SetOpenFunc(&m_open_func);
+        // restore recent files menu
+	m_recent.SetRecentMenu(m_menuOpenRecent);
+        m_recent.CreateRecentFileMenu(m_open_func);
+
 #if BOOST_OS_MACOS
 	m_recent.AddForbiddenDir("/Applications");
 //#elif BOOST_OS_LINUX
@@ -312,7 +310,7 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 	menuFile->addAction(actionNew);
 	menuFile->addSeparator();
 	menuFile->addAction(actionOpen);
-	menuFile->addMenu(m_menuOpenRecent);
+	menuFile->addMenu(m_recent.GetRecentMenu().get());
 	menuFile->addSeparator();
 	menuFile->addAction(actionSave);
 	menuFile->addAction(actionSaveAs);
@@ -479,14 +477,10 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 	QMenu *menuHelp = new QMenu("Help", m_menubar);
 
 	QAction *actionBug = new QAction("Report Bug...", menuHelp);
-	QAction *actionAboutQt = new QAction(QIcon::fromTheme("help-about"), "About Qt Libraries...", menuHelp);
 	QAction *actionAboutGl = new QAction(QIcon::fromTheme("help-about"), "About Renderer...", menuHelp);
 	QAction *actionAbout = new QAction(QIcon::fromTheme("help-about"), "About " APPL_TITLE "...", menuHelp);
 
-	actionAboutQt->setMenuRole(QAction::AboutQtRole);
 	actionAbout->setMenuRole(QAction::AboutRole);
-
-	connect(actionAboutQt, &QAction::triggered, this, []() { qApp->aboutQt(); });
 
 	// show infos about renderer hardware
 	connect(actionAboutGl, &QAction::triggered, this, [this]()
@@ -505,7 +499,10 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 	connect(actionAbout, &QAction::triggered, this, [this]()
 	{
 		if(!this->m_dlgAbout)
-			this->m_dlgAbout = std::make_shared<AboutDlg>(this, &m_sett);
+		{
+			QIcon icon = windowIcon();
+			this->m_dlgAbout = std::make_shared<About>(this, &icon);
+		}
 
 		m_dlgAbout->show();
 		m_dlgAbout->raise();
@@ -515,15 +512,14 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 	// go to bug report url
 	connect(actionBug, &QAction::triggered, this, [this]()
 	{
-		QUrl url("https://code.ill.fr/tweber/gl/-/issues");
+		QUrl url("https://github.com/t-weber/gl/issues");
 		if(!QDesktopServices::openUrl(url))
 			QMessageBox::critical(this, "Error", "Could not open bug report website.");
 	});
 
-	menuHelp->addAction(actionAboutQt);
-	menuHelp->addAction(actionAboutGl);
-	menuHelp->addSeparator();
 	menuHelp->addAction(actionBug);
+	menuHelp->addSeparator();
+	menuHelp->addAction(actionAboutGl);
 	menuHelp->addAction(actionAbout);
 
 
@@ -635,6 +631,8 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 	// recent files
 	if(m_sett.contains("recent_files"))
 		m_recent.SetRecentFiles(m_sett.value("recent_files").toStringList());
+	if(m_sett.contains("recent_files_dir"))
+		m_recent.SetRecentDir(m_sett.value("recent_files_dir").toString());
 
 	//QFont font = this->font();
 	//font.setPointSizeF(14.);
@@ -714,9 +712,8 @@ void MainWnd::closeEvent(QCloseEvent *evt)
 	// save window size, position, and state
 	m_sett.setValue("geo", saveGeometry());
 	m_sett.setValue("state", saveState());
-
-	m_recent.TrimEntries();
 	m_sett.setValue("recent_files", m_recent.GetRecentFiles());
+	m_sett.setValue("recent_files_dir", m_recent.GetRecentDir());
 
 	QMainWindow::closeEvent(evt);
 }
@@ -834,10 +831,10 @@ void MainWnd::OpenFile()
  */
 void MainWnd::SaveFile()
 {
-	if(m_recent.GetCurFile() == "")
+	if(m_recent.GetOpenFile() == "")
 		SaveFileAs();
 	else
-		SaveFile(m_recent.GetCurFile());
+		SaveFile(m_recent.GetOpenFile());
 }
 
 
@@ -976,7 +973,7 @@ bool MainWnd::OpenFile(const QString& file)
 
 
 		SetCurrentFile(file);
-		m_recent.AddRecentFile(file);
+		m_recent.AddRecentFile(file, m_open_func);
 
 		UpdateGeoTrees();
 
@@ -1087,7 +1084,7 @@ bool MainWnd::SaveFile(const QString &file)
 		pt::xml_writer_make_settings('\t', 1, std::string{"utf-8"}));
 
 	SetCurrentFile(file);
-	m_recent.AddRecentFile(file);
+	m_recent.AddRecentFile(file, m_open_func);
 	return true;
 }
 
@@ -1121,14 +1118,20 @@ void MainWnd::UpdateGeoTrees()
 void MainWnd::SetCurrentFile(const QString &file)
 {
 	static const QString title(APPL_TITLE);
-	m_recent.SetCurFile(file);
 
-	this->setWindowFilePath(m_recent.GetCurFile());
+	if(file != "")
+	{
+		fs::path path{file.toStdString()};
+		m_recent.SetRecentDir(path.parent_path().string().c_str());
+	}
+	m_recent.SetOpenFile(file);
 
-	if(m_recent.GetCurFile() == "")
+	this->setWindowFilePath(m_recent.GetOpenFile());
+
+	if(m_recent.GetOpenFile() == "")
 		this->setWindowTitle(title);
 	else
-		this->setWindowTitle(title + " \u2014 " + m_recent.GetCurFile());
+		this->setWindowTitle(title + " \u2014 " + m_recent.GetOpenFile());
 }
 
 
@@ -1186,9 +1189,10 @@ bool MainWnd::LoadInitialSceneFile()
 {
 	bool ok = false;
 
-	if(std::string scenefile = g_res.FindFile(m_initialSceneFile); !scenefile.empty())
+	if(auto scenefile = g_res.FindFile(m_initialSceneFile);
+		scenefile && !scenefile->empty())
 	{
-		if(ok = OpenFile(scenefile.c_str()); ok)
+		if(ok = OpenFile(scenefile->c_str()); ok)
 		{
 			// don't consider the initial scene configuration as current file
 			if(!m_initialSceneFileModified)

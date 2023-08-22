@@ -8,11 +8,23 @@
 #include <QtCore/QDir>
 #include <QtCore/QStandardPaths>
 #include <QtCore/QLoggingCategory>
+#include <QtCore/QLocale>
 #include <QtGui/QFileOpenEvent>
 #include <QtWidgets/QApplication>
 
 #include <optional>
+#include <locale>
+
 #include <boost/predef.h>
+#include <boost/algorithm/string.hpp>
+
+#if __has_include(<filesystem>)
+	#include <filesystem>
+	namespace fs = std::filesystem;
+#else
+	#include <boost/filesystem.hpp>
+	namespace fs = boost::filesystem;
+#endif
 
 #if BOOST_OS_MACOS
 	#include <unistd.h>
@@ -21,9 +33,19 @@
 
 #include "MainWnd.h"
 #include "settings_variables.h"
-#include "tlibs2/libs/file.h"
-#include "tlibs2/libs/str.h"
-#include "tlibs2/libs/qt/helper.h"
+
+
+/**
+ * set locales in all involved libraries
+ */
+static inline void set_locales()
+{
+	std::ios_base::sync_with_stdio(false);
+
+	::setlocale(LC_ALL, "C");
+	std::locale::global(std::locale("C"));
+	QLocale::setDefault(QLocale::C);
+}
 
 
 /**
@@ -37,8 +59,8 @@ static std::optional<std::string> get_appdir_path(const std::string& _binpath)
 	std::string dir = binpath.filename().string();
 	std::string parentdir = binpath.parent_path().filename().string();
 
-	if(tl2::str_is_equal<std::string>(dir, "macos", false) &&
-		tl2::str_is_equal<std::string>(parentdir, "contents", false))
+	if(boost::iequals(dir, "macos") &&
+		boost::iequals(parentdir, "contents"))
 	{
 		return binpath.parent_path().parent_path().string();
 	}
@@ -228,7 +250,7 @@ int main(int argc, char** argv)
 
 		// default gl surface format
 		tl2::set_gl_format(true, _GL_MAJ_VER, _GL_MIN_VER, 8);
-		tl2::set_locales();
+		set_locales();
 
 		// create application
 		auto app = std::make_unique<GlSceneApp>(argc, argv);

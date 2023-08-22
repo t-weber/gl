@@ -27,11 +27,10 @@
 #include <QtGui/QGuiApplication>
 
 #include <iostream>
+
+#include <boost/iostreams/device/mapped_file.hpp>
 #include <boost/range/combine.hpp>
 #include <boost/scope_exit.hpp>
-
-#include "tlibs2/libs/str.h"
-#include "tlibs2/libs/file.h"
 
 
 #define MAX_LIGHTS 4  // max. number allowed in shader
@@ -806,17 +805,26 @@ void GlSceneRenderer::initializeGL()
 	// --------------------------------------------------------------------
 	// shaders
 	// --------------------------------------------------------------------
-	std::string fragfile = g_res.FindFile("frag.shader");
-	std::string vertexfile = g_res.FindFile("vertex.shader");
+	auto fragfile = g_res.FindFile("frag.shader");
+	auto vertexfile = g_res.FindFile("vertex.shader");
 
-	auto [frag_ok, strFragShader] = tl2::load_file<std::string>(fragfile);
-	auto [vertex_ok, strVertexShader] = tl2::load_file<std::string>(vertexfile);
+	if(!fragfile || !vertexfile)
+	{
+		std::cerr << "Fragment or vertex shader could not be found." << std::endl;
+		return;
+	}
 
-	if(!frag_ok || !vertex_ok)
+	boost::iostreams::mapped_file_source frag_shader(*fragfile);
+	boost::iostreams::mapped_file_source vertex_shader(*vertexfile);
+
+	if(!frag_shader.is_open() || !vertex_shader.is_open())
 	{
 		std::cerr << "Fragment or vertex shader could not be loaded." << std::endl;
 		return;
 	}
+
+	std::string strFragShader = frag_shader.data();
+	std::string strVertexShader = vertex_shader.data();
 	// --------------------------------------------------------------------
 
 

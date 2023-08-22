@@ -1,39 +1,37 @@
 /**
- * resource file handling
- * @author Tobias Weber <tweber@ill.fr>
- * @date apr-2021
- * @note Forked on 5-November-2021 from my privately developed "qm" project (https://github.com/t-weber/qm).
- * @license GPLv3, see 'LICENSE' file
+ * resource files
+ * @author Tobias Weber (orcid: 0000-0002-7230-1932)
+ * @date Nov-2021
+ * @license see 'LICENSE' file
  */
 
 #include "Resources.h"
-#include "tlibs2/libs/file.h"
+
+namespace fs = filesystem;
 
 
 /**
  * add a resource search path entry
  */
-void Resources::AddPath(const std::string& pathname)
+void Resources::AddPath(const fs::path& path)
 {
-	m_paths.push_back(pathname);
+	m_paths.push_back(path);
 }
 
 
 /**
  * find a resource file
  */
-std::string Resources::FindFile(const std::string& filename) const
+std::optional<fs::path>
+Resources::FindFile(const fs::path& file) const
 {
-	fs::path file{filename};
-
-	for(const std::string& pathname : m_paths)
+	for(const fs::path& path : m_paths)
 	{
-		fs::path path{pathname};
 		fs::path respath = path / file;
 
 		if(fs::exists(respath))
-			return respath.string();
+			return respath;
 	}
 
-	return "";
+	return std::nullopt;
 }

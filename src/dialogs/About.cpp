@@ -1,222 +1,247 @@
 /**
  * about dialog
- * @author Tobias Weber <tweber@ill.fr>
- * @date mar-2021
- * @license GPLv3, see 'LICENSE' file
+ * @author Tobias Weber (orcid: 0000-0002-7230-1932)
+ * @date Nov-2021
+ * @license see 'LICENSE' file
  */
 
 #include "About.h"
 #include "src/types.h"
-#include "src/settings_variables.h"
 
-#include <QtGui/QIcon>
-#include <QtWidgets/QGridLayout>
-#include <QtWidgets/QLabel>
-#include <QtWidgets/QSpacerItem>
+#include <QtCore/QSettings>
+#include <QtWidgets/QApplication>
 #include <QtWidgets/QDialogButtonBox>
+#include <QtWidgets/QLabel>
+#include <QtWidgets/QPushButton>
+#include <QtWidgets/QSpacerItem>
 
 #include <boost/config.hpp>
 #include <boost/version.hpp>
+#include <boost/algorithm/string.hpp>
+
+#include <string>
 
 
 /**
- * constructor
+ * identify the compiler and return its website url
  */
-AboutDlg::AboutDlg(QWidget* parent, QSettings *sett)
-	: QDialog{parent}, m_sett{sett}
+static std::string get_compiler_url(
+	[[maybe_unused]] const std::string& name)
 {
+	//namespace alg = boost::algorithm;
+
+#if defined(BOOST_CLANG)
+	//if(alg::contains(name, "clang", alg::is_iequal{}))
+		return "https://clang.llvm.org";
+#elif defined(BOOST_GCC)
+	//else if(alg::contains(name, "gcc", alg::is_iequal{}) ||
+	//	alg::contains(name, "gnu", alg::is_iequal{}))
+		return "https://gcc.gnu.org";
+#endif
+
+	// unknown compiler
+	return "";
+}
+
+
+About::About(QWidget *parent, const QIcon* progIcon)
+	: QDialog(parent)
+{
+	namespace alg = boost::algorithm;
+
 	setWindowTitle("About " APPL_TITLE);
 	setSizeGripEnabled(true);
 
-	// restore dialog geometry
-	if(m_sett && m_sett->contains("about/geo"))
-		restoreGeometry(m_sett->value("about/geo").toByteArray());
 
-	auto grid = new QGridLayout(this);
-	grid->setSpacing(4);
-	grid->setContentsMargins(12, 12, 12, 12);
+	// grid layout
+	m_grid = std::make_shared<QGridLayout>(this);
+	m_grid->setSpacing(4);
+	m_grid->setContentsMargins(8, 8, 8, 8);
 
-	int y = 0;
 
-	// icon and title
-	QLabel *labTitle = new QLabel(APPL_TITLE, this);
-	QFont fontTitle = labTitle->font();
-	fontTitle.setPointSize(fontTitle.pointSize()*1.5);
-	fontTitle.setWeight(QFont::Bold);
-	labTitle->setFont(fontTitle);
+	// add description items
+	//AddTitle(QApplication::applicationDisplayName().toStdString().c_str());
+	AddTitle("Gl Scene Editor", progIcon);
 
-	QWidget *titleWidget = new QWidget(this);
-	QGridLayout *titleGrid = new QGridLayout(titleWidget);
-	titleGrid->setSpacing(4);
-	titleGrid->setContentsMargins(0, 0, 0, 0);
-	titleWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+	AddSpacer(15);
 
-	QLabel *labelIcon = new QLabel(titleWidget);
-	std::string icon_file = g_res.FindFile("glscene.png");
-	if(icon_file == "")
-		icon_file = g_res.FindFile("glscene.svg");
-	QIcon icon{icon_file.c_str()};
-	QPixmap pixmap = icon.pixmap(48, 48);
-	labelIcon->setPixmap(pixmap);
-	labelIcon->setFrameShape(QFrame::StyledPanel);
-	labelIcon->setFrameShadow(QFrame::Raised);
-	labelIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+	AddItem("Author", "Tobias Weber");
+	AddItem("Version", QApplication::applicationVersion(),
+		"https://doi.org/10.5281/zenodo.5841951");
+	AddItem("Repository", "https://github.com/t-weber/gl",
+		"https://github.com/t-weber/gl");
 
-	QSpacerItem *spacerIconTitle = new QSpacerItem(16, 1, QSizePolicy::Fixed, QSizePolicy::Fixed);
-	titleGrid->addWidget(labelIcon, 0, 0, 1, 1, Qt::AlignVCenter);
-	titleGrid->addItem(spacerIconTitle, 0, 1, 1, 1);
-	titleGrid->addWidget(labTitle, 0, 2, 1, 1, Qt::AlignVCenter);
+	AddSpacer(10);
 
-	grid->addWidget(titleWidget, y++, 0, 1, 2);
+	AddItem("Compiled with", BOOST_COMPILER,
+		get_compiler_url(BOOST_COMPILER).c_str());
+	AddItem("Standard library", BOOST_STDLIB);
+	AddItem("Boost version",
+		alg::replace_all_copy<std::string>(BOOST_LIB_VERSION, "_", ".").c_str(),
+		"https://www.boost.org");
+	AddItem("Qt version", QT_VERSION_STR, "https://www.qt.io");
 
-	QSpacerItem *spacerTitleSubtitle = new QSpacerItem(1, 4, QSizePolicy::Minimum, QSizePolicy::Fixed);
-	grid->addItem(spacerTitleSubtitle, y++,0,1,2);
+	AddSpacer(10);
 
-	// subtitle
-	QLabel *labSubtitle = new QLabel("Gl Scene Editor.", this);
-	QFont fontSubtitle = labSubtitle->font();
-	fontSubtitle.setWeight(QFont::Bold);
-	labSubtitle->setFont(fontSubtitle);
-	grid->addWidget(labSubtitle, y++,0,1,2);
+	AddItem("Build date", QString("%1, %2").arg(__DATE__).arg(__TIME__));
 
-	QSpacerItem *spacerBelowSubtitle = new QSpacerItem(1, 10, QSizePolicy::Minimum, QSizePolicy::Fixed);
-	grid->addItem(spacerBelowSubtitle, y++,0,1,2);
+	AddSpacer();
 
-	QSpacerItem *spacerBelowSubtitle2 = new QSpacerItem(1, 1, QSizePolicy::Minimum, QSizePolicy::Expanding);
-	grid->addItem(spacerBelowSubtitle2, y++,0,1,2);
 
-	// TODO
-	/*QLabel *labDOI1 = new QLabel("DOI: ", this);
-	QFont fontLabel1 = labDOI1->font();
-	fontLabel1.setWeight(QFont::Bold);
-	labDOI1->setFont(fontLabel1);
-	grid->addWidget(labDOI1, y,0,1,1);
-	QLabel *labDOI2 = new QLabel(
-		"<a href=\"https://doi.org/10.5281/zenodo.4625649\">"
-		"10.5281/zenodo.4625649</a>.",
-		this);
-	labDOI2->setOpenExternalLinks(1);
-	grid->addWidget(labDOI2, y++,1,1,1);*/
+	// buttons
+	QDialogButtonBox *buttonbox = new QDialogButtonBox(this);
+	buttonbox->setStandardButtons(QDialogButtonBox::Ok);
 
-	QLabel *labUrl1 = new QLabel("Repository: ", this);
-	QFont fontLabel1 = labUrl1->font();
-	fontLabel1.setWeight(QFont::Bold);
-	labUrl1->setFont(fontLabel1);
-	grid->addWidget(labUrl1, y,0,1,1);
-	QLabel *labUrl2 = new QLabel(
-		"<a href=\"https://code.ill.fr/tweber/gl/\">https://code.ill.fr/tweber/gl/</a>",
-		this);
-	labUrl2->setOpenExternalLinks(1);
-	grid->addWidget(labUrl2, y++,1,1,1);
+	QPushButton *aboutQt = new QPushButton("About Qt...", this);
+	buttonbox->addButton(aboutQt, QDialogButtonBox::ActionRole);
 
-	QLabel *labVersion1 = new QLabel("Version: ", this);
-	fontLabel1.setWeight(QFont::Bold);
-	labVersion1->setFont(fontLabel1);
-	grid->addWidget(labVersion1, y,0,1,1);
-	QLabel *labVersion2 = new QLabel(APPL_VERSION ".", this);
-	grid->addWidget(labVersion2, y++,1,1,1);
+	connect(buttonbox, &QDialogButtonBox::clicked,
+		[this, buttonbox, aboutQt](QAbstractButton *btn) -> void
+	{
+		// get button role
+		QDialogButtonBox::ButtonRole role = buttonbox->buttonRole(btn);
 
-	QSpacerItem *spacerAfterVersion = new QSpacerItem(1, 8, QSizePolicy::Minimum, QSizePolicy::Fixed);
-	grid->addItem(spacerAfterVersion, y++,0,1,2);
+		if(role == QDialogButtonBox::AcceptRole)
+			this->accept();
+		else if(role == QDialogButtonBox::RejectRole)
+			this->reject();
+		else if(btn == static_cast<QAbstractButton*>(aboutQt))
+			QApplication::aboutQt();
+	});
 
-	QLabel *labAuthor1 = new QLabel("Author: ", this);
-	fontLabel1.setWeight(QFont::Bold);
-	labAuthor1->setFont(fontLabel1);
-	grid->addWidget(labAuthor1, y,0,1,1);
-	QLabel *labAuthor2 = new QLabel("Tobias Weber <tweber@ill.fr>.", this);
-	grid->addWidget(labAuthor2, y++,1,1,1);
+	aboutQt->setAutoDefault(false);
+	aboutQt->setDefault(false);
+	buttonbox->button(QDialogButtonBox::Ok)->setAutoDefault(true);
+	buttonbox->button(QDialogButtonBox::Ok)->setDefault(true);
+	buttonbox->button(QDialogButtonBox::Ok)->setFocus();
+	m_grid->addWidget(buttonbox, m_grid->rowCount(), 0, 1, 2);
 
-	QLabel *labDate1 = new QLabel("Date: ", this);
-	labDate1->setFont(fontLabel1);
-	grid->addWidget(labDate1, y,0,1,1);
-	QLabel *labDate2 = new QLabel("December 2022.", this);
-	grid->addWidget(labDate2, y++,1,1,1);
 
-	QLabel *labLic1 = new QLabel("License: ", this);
-	fontLabel1.setWeight(QFont::Bold);
-	labLic1->setFont(fontLabel1);
-	grid->addWidget(labLic1, y,0,1,1);
-	QLabel *labLic2 = new QLabel("GNU GPL Version 3.", this);
-	grid->addWidget(labLic2, y++,1,1,1);
-
-	QSpacerItem *spacerBeforeTimestamp = new QSpacerItem(1, 8, QSizePolicy::Minimum, QSizePolicy::Fixed);
-	grid->addItem(spacerBeforeTimestamp, y++,0,1,2);
-
-	QLabel *labBuildDate1 = new QLabel("Build Timestamp: ", this);
-	labBuildDate1->setFont(fontLabel1);
-	grid->addWidget(labBuildDate1, y,0,1,1);
-	QString buildDate = QString{__DATE__} + QString{", "} + QString{__TIME__} + QString{"."};
-	QLabel *labBuildDate2 = new QLabel(buildDate, this);
-	grid->addWidget(labBuildDate2, y++,1,1,1);
-
-	QLabel *labCompiler1 = new QLabel("Compiler: ", this);
-	labCompiler1->setFont(fontLabel1);
-	grid->addWidget(labCompiler1, y,0,1,1);
-	QString compiler = QString{BOOST_COMPILER} + QString{"."};
-	QLabel *labCompiler2 = new QLabel(compiler, this);
-	grid->addWidget(labCompiler2, y++,1,1,1);
-
-	QLabel *labCPPLib1 = new QLabel("C++ Library: ", this);
-	labCPPLib1->setFont(fontLabel1);
-	grid->addWidget(labCPPLib1, y,0,1,1);
-	QString cpplib2 = QString{BOOST_STDLIB} + QString{"."};
-	QLabel *labCPPLib = new QLabel(cpplib2, this);
-	grid->addWidget(labCPPLib, y++,1,1,1);
-
-	QLabel *labBoostLib1 = new QLabel("Boost Library: ", this);
-	labBoostLib1->setFont(fontLabel1);
-	grid->addWidget(labBoostLib1, y,0,1,1);
-	QString boostlib2 = QString{"Version %1.%2.%3."}
-		.arg(BOOST_VERSION / 100000)
-		.arg((BOOST_VERSION % 100000) / 100)
-		.arg(BOOST_VERSION % 100);
-	QLabel *labBoostLib = new QLabel(boostlib2, this);
-	grid->addWidget(labBoostLib, y++,1,1,1);
-
-	QSpacerItem *spacerBeforeButtons = new QSpacerItem(1, 1, QSizePolicy::Minimum, QSizePolicy::Expanding);
-	grid->addItem(spacerBeforeButtons, y++,0,1,2);
-
-	QDialogButtonBox *buttons = new QDialogButtonBox(this);
-	buttons->setStandardButtons(QDialogButtonBox::Ok);
-	grid->addWidget(buttons, y++,0,1,2);
-
-	connect(buttons, &QDialogButtonBox::accepted, this, &AboutDlg::accept);
+	// restore settings
+	QSettings settings{this};
+	if(settings.contains("about/geo"))
+	{
+		QByteArray arr{settings.value("about/geo").toByteArray()};
+		this->restoreGeometry(arr);
+	}
 }
 
 
 /**
- * copy constructor
+ * adds the program title to the end of the grid layout
  */
-AboutDlg::AboutDlg(const AboutDlg& other) : QDialog(other.parentWidget())
+void About::AddTitle(const char *title, const QIcon* icon)
 {
-	operator=(other);
+	QLabel *label = new QLabel(title, this);
+	label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+	QFont font = QApplication::font();
+	font.setWeight(QFont::Bold);
+
+	int fontscale = 2;
+	if(int fontsize = font.pointSize() * fontscale; fontsize)
+		font.setPointSize(fontsize);
+	else
+		font.setPixelSize(font.pixelSize() * fontscale);
+
+	label->setFont(font);
+
+	// add an icon and a title
+	if(icon)
+	{
+		QWidget *titleWidget = new QWidget(this);
+
+		// title widget grid layout
+		QGridLayout *titleGrid = new QGridLayout(titleWidget);
+		titleGrid->setSpacing(4);
+		titleGrid->setContentsMargins(0, 0, 0, 0);
+
+		titleWidget->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+		QLabel *labelIcon = new QLabel(titleWidget);
+		QPixmap pixmap = icon->pixmap(48, 48);
+		labelIcon->setPixmap(pixmap);
+		labelIcon->setFrameShape(QFrame::StyledPanel);
+		labelIcon->setFrameShadow(QFrame::Raised);
+		labelIcon->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+
+		QSpacerItem *spacer = new QSpacerItem(16, 1, QSizePolicy::Fixed, QSizePolicy::Fixed);
+		titleGrid->addWidget(labelIcon, 0, 0, 1, 1, Qt::AlignVCenter);
+		titleGrid->addItem(spacer, 0, 1, 1, 1);
+		titleGrid->addWidget(label, 0, 2, 1, 1, Qt::AlignHCenter | Qt::AlignVCenter);
+
+		m_grid->addWidget(titleWidget, m_grid->rowCount(), 0, 1, 2);
+	}
+
+	// only add a title
+	else
+	{
+		m_grid->addWidget(label, m_grid->rowCount(), 0,
+			1, 2, Qt::AlignHCenter);
+	}
 }
 
 
 /**
- * assignment operator
+ * adds a description item to the end of the grid layout
  */
-const AboutDlg& AboutDlg::operator=(const AboutDlg&)
+void About::AddItem(const QString& key, const QString& val, const QString& url)
 {
-	m_sett = nullptr;
-	return *this;
+	QLabel *labelKey = new QLabel(key + ":", this);
+	QLabel *labelVal = new QLabel(this);
+
+	if(url == "")
+	{
+		labelVal->setText(val + ".");
+		labelVal->setOpenExternalLinks(false);
+	}
+	else
+	{
+		labelVal->setText("<a href=\"" + url + "\">" + val + "</a>.");
+		labelVal->setOpenExternalLinks(true);
+	}
+
+	labelKey->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+	labelVal->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+
+	int row = m_grid->rowCount();
+	m_grid->addWidget(labelKey, row, 0, 1, 1);
+	m_grid->addWidget(labelVal, row, 1, 1, 1);
 }
 
 
 /**
- * destructor
+ * adds a spacer to the end of the grid layout
  */
-AboutDlg::~AboutDlg()
+void About::AddSpacer(int size_v)
 {
+	QSizePolicy::Policy policy_h = QSizePolicy::Fixed;
+	QSizePolicy::Policy policy_v = QSizePolicy::Fixed;
+
+	// expanding spacer?
+	if(size_v < 0)
+	{
+		policy_v = QSizePolicy::Expanding;
+		size_v = 1;
+	}
+
+	QSpacerItem *spacer_end = new QSpacerItem(1, size_v, policy_h, policy_v);
+	m_grid->addItem(spacer_end, m_grid->rowCount(), 0, 1, 2);
 }
 
 
-/**
- * 'OK' or 'Apply' button has been pressed
- */
-void AboutDlg::accept()
+void About::accept()
 {
-	if(m_sett)
-		m_sett->setValue("about/geo", saveGeometry());
+	// save settings
+	QSettings settings{this};
+	QByteArray geo{this->saveGeometry()};
+	settings.setValue("about/geo", geo);
+
 	QDialog::accept();
+}
+
+
+void About::reject()
+{
+	QDialog::reject();
 }

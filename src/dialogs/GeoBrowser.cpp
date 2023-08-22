@@ -18,7 +18,6 @@
 
 #include "src/settings_variables.h"
 #include "tlibs2/libs/expr.h"
-#include "tlibs2/libs/str.h"
 
 
 // columns in the settings table

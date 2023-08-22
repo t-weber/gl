@@ -25,13 +25,13 @@
 #include <functional>
 
 #include "tlibs2/libs/maths.h"
-#include "tlibs2/libs/qt/recent.h"
 
 #include "types.h"
 #include "Scene.h"
 
 #include "settings_variables.h"
 #include "common/Resources.h"
+#include "common/Recent.h"
 
 #include "renderer/GlRenderer.h"
 
@@ -82,7 +82,7 @@ private:
 	QStatusBar *m_statusbar{ nullptr };
 	QLabel *m_labelStatus{ nullptr };
 
-	QMenu *m_menuOpenRecent{ nullptr };
+	std::shared_ptr<QMenu> m_menuOpenRecent{};
 	QMenuBar *m_menubar{ nullptr };
 
 	// context menu for 3d objects
@@ -92,7 +92,7 @@ private:
 	// dialogs
 	// cannot directly use the type here because this causes a -Wsubobject-linkage warning
 	//using t_SettingsDlg = SettingsDlg<g_settingsvariables.size(), &g_settingsvariables>;
-	std::shared_ptr<AboutDlg> m_dlgAbout{};
+	std::shared_ptr<About> m_dlgAbout{};
 	std::shared_ptr<QDialog> m_dlgSettings{};
 	std::shared_ptr<GeometriesBrowser> m_dlgGeoBrowser{};
 	std::shared_ptr<TextureBrowser> m_dlgTextureBrowser{};
@@ -106,7 +106,7 @@ private:
 	bool m_initialSceneFileModified = false;
 
 	// recently opened files
-	tl2::RecentFiles m_recent{};
+	RecentFiles m_recent{this, g_maxnum_recents};
 
 	// function to call for the recent file menu items
 	std::function<bool(const QString& filename)> m_open_func

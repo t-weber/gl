@@ -12,8 +12,15 @@
 #include <unordered_map>
 #include <optional>
 
+#if __has_include(<filesystem>)
+	#include <filesystem>
+	namespace fs = std::filesystem;
+#else
+	#include <boost/filesystem.hpp>
+	namespace fs = boost::filesystem;
+#endif
+
 #include "Scene.h"
-#include "tlibs2/libs/file.h"
 #include "tlibs2/libs/str.h"
 
 namespace pt = boost::property_tree;

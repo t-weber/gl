@@ -23,7 +23,7 @@
 # -----------------------------------------------------------------------------
 #
 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.5)
 
 project(glscene)
 enable_language(CXX)
@@ -128,7 +128,7 @@ set(Boost_NO_BOOST_CMAKE FALSE)
 set(Boost_USE_MULTITHREADED TRUE)
 set(Boost_FIND_QUIETLY FALSE)
 
-find_package(Boost REQUIRED COMPONENTS filesystem${BOOST_SUFFIX})
+find_package(Boost REQUIRED COMPONENTS filesystem${BOOST_SUFFIX} iostreams${BOOST_SUFFIX})
 message("Using Boost version ${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boost_SUBMINOR_VERSION}.")
 include_directories(SYSTEM "${Boost_INCLUDE_DIRS}/..")
 
@@ -203,6 +203,7 @@ add_executable(glscene
 	src/settings_variables.cpp src/settings_variables.h
 
 	src/common/Resources.cpp src/common/Resources.h
+	src/common/Recent.h
 
 	src/renderer/GlRenderer.cpp src/renderer/GlRenderer.h
 	src/renderer/GlRenderer_input.cpp
@@ -222,7 +223,6 @@ add_executable(glscene
 	src/types.h
 
 	tlibs2/libs/qt/gl.cpp tlibs2/libs/qt/gl.h
-	tlibs2/libs/qt/recent.cpp tlibs2/libs/qt/recent.h
 	tlibs2/libs/maths.h tlibs2/libs/cam.h
 )
 
