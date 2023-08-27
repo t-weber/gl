@@ -25,23 +25,19 @@
 #include <QtWidgets/QStyleFactory>
 #include <QtWidgets/QFontDialog>
 
-#include "tlibs2/libs/maths.h"
-#include "tlibs2/libs/str.h"
-#include "tlibs2/libs/qt/gl.h"
-#include "tlibs2/libs/qt/numerictablewidgetitem.h"
-
 #include <type_traits>
 #include <string>
 #include <variant>
 #include <unordered_map>
 
-#ifndef TASPATHS_SETTINGS_USE_QT_SIGNALS
+#ifndef _USE_QT_SIGNALS
 	// qt signals can't be emitted from a template class
 	// TODO: remove this as soon as this is supported
 	#include <boost/signals2/signal.hpp>
 #endif
 
 #include "src/types.h"
+#include "src/common/NumericTableWidgetItem.h"
 
 
 
@@ -83,7 +79,7 @@ template<std::size_t num_settingsvariables,
 		num_settingsvariables> *settingsvariables>
 class SettingsDlg : public QDialog
 {
-#ifdef TASPATHS_SETTINGS_USE_QT_SIGNALS
+#ifdef _USE_QT_SIGNALS
 	Q_OBJECT
 #endif
 
@@ -624,7 +620,7 @@ protected:
 
 		ApplyGuiSettings();
 
-#ifdef TASPATHS_SETTINGS_USE_QT_SIGNALS
+#ifdef _USE_QT_SIGNALS
 		emit SettingsHaveChanged();
 #else
 		m_sigSettingsHaveChanged();
@@ -691,9 +687,9 @@ protected:
 
 		t_value finalval = *value;
 		if(var.is_angle)
-			finalval = finalval / tl2::pi<t_real>*180;
+			finalval = finalval / m::pi<t_real>*180;
 
-		QTableWidgetItem *item = new tl2::NumericTableWidgetItem<t_value>(finalval, 10);
+		QTableWidgetItem *item = new NumericTableWidgetItem<t_value>(finalval);
 		table->setItem((int)idx, 0, new QTableWidgetItem{var.description});
 		table->setItem((int)idx, 1, new QTableWidgetItem{get_type_str<t_value>()});
 		table->setItem((int)idx, 2, item);
@@ -710,8 +706,9 @@ protected:
 		if(var.editor == SettingsVariableEditor::COMBOBOX)
 		{
 			std::vector<std::string> config_tokens;
-			tl2::get_tokens_seq<std::string, std::string>(
-				var.editor_config, ";;", config_tokens, true);
+			// TODO
+			//tl2::get_tokens_seq<std::string, std::string>(
+			//	var.editor_config, ";;", config_tokens, true);
 
 			QComboBox *combo = new QComboBox(table);
 			for(const std::string& config_token : config_tokens)
@@ -849,10 +846,10 @@ protected:
 		constexpr auto* value = std::get<var.value.index()>(var.value);
 		using t_value = std::decay_t<decltype(*value)>;
 
-		t_value finalval = dynamic_cast<tl2::NumericTableWidgetItem<t_value>*>(
+		t_value finalval = dynamic_cast<NumericTableWidgetItem<t_value>*>(
 			table->item((int)idx, 2))->GetValue();
 		if(var.is_angle)
-			finalval = finalval / 180.*tl2::pi<t_real>;
+			finalval = finalval / 180.*m::pi<t_real>;
 
 		// alternatively use the value from the editor widget if available
 		if(var.editor == SettingsVariableEditor::YESNO ||
@@ -911,7 +908,7 @@ private:
 	static std::unordered_map<std::string, SettingsVariable::t_variant> s_defaults;
 
 
-#ifdef TASPATHS_SETTINGS_USE_QT_SIGNALS
+#ifdef _USE_QT_SIGNALS
 signals:
 	// signal emitted when settings are applied
 	void SettingsHaveChanged();

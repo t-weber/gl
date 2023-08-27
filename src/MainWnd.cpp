@@ -22,6 +22,8 @@
 #include <boost/property_tree/xml_parser.hpp>
 namespace pt = boost::property_tree;
 
+#include <chrono>
+
 
 // instantiate the settings dialog class
 template class SettingsDlg<g_settingsvariables.size(), &g_settingsvariables>;
@@ -63,7 +65,7 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 	// rendering widget
 	// --------------------------------------------------------------------
 	// set gl surface format
-	m_renderer->setFormat(tl2::gl_format(true, _GL_MAJ_VER, _GL_MIN_VER,
+	m_renderer->setFormat(gl_format(true, _GL_MAJ_VER, _GL_MIN_VER,
 		m_multisamples, m_renderer->format()));
 
 	auto plotpanel = new QWidget(this);
@@ -96,8 +98,8 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 			if(m_camProperties)
 			{
 				m_camProperties->GetWidget()->SetRotation(
-					phi*t_real{180}/tl2::pi<t_real>,
-					theta*t_real{180}/tl2::pi<t_real>);
+					phi*t_real{180}/m::pi<t_real>,
+					theta*t_real{180}/m::pi<t_real>);
 			}
 		});
 
@@ -151,7 +153,7 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 			if(m_renderer)
 			{
 				m_renderer->GetCamera().SetFOV(
-					angle/t_real{180}*tl2::pi<t_real>);
+					angle/t_real{180}*m::pi<t_real>);
 				m_renderer->UpdateCam();
 			}
 		});
@@ -189,7 +191,7 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 			if(m_renderer)
 			{
 				m_renderer->GetCamera().SetPosition(
-					tl2::create<t_vec3_gl>({x, y, z}));
+					m::create<t_vec3_gl>({x, y, z}));
 				m_renderer->UpdateCam();
 			}
 		});
@@ -204,8 +206,8 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 			if(m_renderer)
 			{
 				m_renderer->GetCamera().SetRotation(
-					phi/t_real_gl{180}*tl2::pi<t_real_gl>,
-					theta/t_real_gl{180}*tl2::pi<t_real_gl>);
+					phi/t_real_gl{180}*m::pi<t_real_gl>,
+					theta/t_real_gl{180}*m::pi<t_real_gl>);
 				m_renderer->UpdateCam();
 			}
 		});
@@ -221,7 +223,7 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 			if(m_renderer)
 			{
 				m_renderer->SetSelectionPlaneNorm(
-					tl2::create<t_vec3_gl>({x, y, z}));
+					m::create<t_vec3_gl>({x, y, z}));
 			}
 		});
 
@@ -407,7 +409,7 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 	menuGeo->addAction(actionAddCylinder);
 	menuGeo->addAction(actionAddTetrahedron);
 	menuGeo->addAction(actionAddOctahedron);
-	menuGeo->addAction(actionAddDodecahedron);
+	//menuGeo->addAction(actionAddDodecahedron);  // TODO
 	menuGeo->addAction(actionAddIcosahedron);
 	menuGeo->addSeparator();
 	menuGeo->addAction(actionGeoBrowser);
@@ -486,12 +488,17 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 	connect(actionAboutGl, &QAction::triggered, this, [this]()
 	{
 		std::ostringstream ostrInfo;
-		ostrInfo << "Rendering using the following device:\n\n";
-		ostrInfo << "GL Vendor: " << m_gl_vendor << "\n";
-		ostrInfo << "GL Renderer: " << m_gl_renderer << "\n";
-		ostrInfo << "GL Version: " << m_gl_ver << "\n";
-		ostrInfo << "GL Shader Version: " << m_gl_shader_ver << "\n";
-		ostrInfo << "Device pixel ratio: " << devicePixelRatio() << "\n";
+		ostrInfo << "Requested rendering APIs:\n";
+		ostrInfo << "    GL Version: " << m_gl_api_ver << "\n";
+		ostrInfo << "    GLSL Version: " << m_glsl_api_ver << "\n";
+
+		ostrInfo << "\nRendering using the following device:\n";
+		ostrInfo << "    GL Vendor: " << m_gl_vendor << "\n";
+		ostrInfo << "    GL Renderer: " << m_gl_renderer << "\n";
+		ostrInfo << "    GL Version: " << m_gl_ver << "\n";
+		ostrInfo << "    GL Shader Version: " << m_gl_shader_ver << "\n";
+		ostrInfo << "    Device Pixel Ratio: " << devicePixelRatio() << "\n";
+
 		QMessageBox::information(this, "About Renderer", ostrInfo.str().c_str());
 	});
 
@@ -576,17 +583,17 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 	m_contextMenuObj->addAction(actionObjProp);
 
 	connect(actionObjRotXP10, &QAction::triggered,
-		[this]() { RotateCurrentObject(10./180.*tl2::pi<t_real>, 'x'); });
+		[this]() { RotateCurrentObject(10./180.*m::pi<t_real>, 'x'); });
 	connect(actionObjRotXM10, &QAction::triggered,
-		[this]() { RotateCurrentObject(-10./180.*tl2::pi<t_real>, 'x'); });
+		[this]() { RotateCurrentObject(-10./180.*m::pi<t_real>, 'x'); });
 	connect(actionObjRotYP10, &QAction::triggered,
-		[this]() { RotateCurrentObject(10./180.*tl2::pi<t_real>, 'y'); });
+		[this]() { RotateCurrentObject(10./180.*m::pi<t_real>, 'y'); });
 	connect(actionObjRotYM10, &QAction::triggered,
-		[this]() { RotateCurrentObject(-10./180.*tl2::pi<t_real>, 'y'); });
+		[this]() { RotateCurrentObject(-10./180.*m::pi<t_real>, 'y'); });
 	connect(actionObjRotZP10, &QAction::triggered,
-		[this]() { RotateCurrentObject(10./180.*tl2::pi<t_real>, 'z'); });
+		[this]() { RotateCurrentObject(10./180.*m::pi<t_real>, 'z'); });
 	connect(actionObjRotZM10, &QAction::triggered,
-		[this]() { RotateCurrentObject(-10./180.*tl2::pi<t_real>, 'z'); });
+		[this]() { RotateCurrentObject(-10./180.*m::pi<t_real>, 'z'); });
 	connect(actionObjDel, &QAction::triggered, this,
 		&MainWnd::DeleteCurrentObject);
 	connect(actionObjClone, &QAction::triggered, this,
@@ -947,7 +954,6 @@ bool MainWnd::OpenFile(const QString& file)
 			return false;
 		}
 
-
 		// load scene definition file
 		if(auto [sceneok, msg] =
 			Scene::load(prop, m_scene, &filename); !sceneok)
@@ -1046,8 +1052,9 @@ bool MainWnd::SaveFile(const QString &file)
 
 	// set format and version
 	prop.put(FILE_BASENAME "ident", APPL_IDENT);
-	//prop.put(FILE_BASENAME "doi", "https://doi.org/10.5281/zenodo.4625649");
-	prop.put(FILE_BASENAME "timestamp", tl2::var_to_str(tl2::epoch<t_real>()));
+	prop.put(FILE_BASENAME "doi", "https://doi.org/10.5281/zenodo.5841951");
+	prop.put(FILE_BASENAME "timestamp", std::to_string(
+		std::chrono::system_clock::now().time_since_epoch().count()));
 
 	// save texture list
 	if(m_renderer)
@@ -1144,13 +1151,15 @@ void MainWnd::AfterGLInitialisation()
 		return;
 
 	// GL device info
-	std::tie(m_gl_ver, m_gl_shader_ver, m_gl_vendor, m_gl_renderer)
-		= m_renderer->GetGlDescr();
+	std::tie(m_gl_api_ver, m_glsl_api_ver,
+		m_gl_ver, m_gl_shader_ver,
+		m_gl_vendor, m_gl_renderer)
+			= m_renderer->GetGlDescription();
 
 	// get camera fov
 	t_real viewingAngle = m_renderer->GetCamera().GetFOV();
 	m_camProperties->GetWidget()->SetViewingAngle(
-		viewingAngle*t_real{180}/tl2::pi<t_real>);
+		viewingAngle*t_real{180}/m::pi<t_real>);
 
 	// get camera zoom
 	t_real zoom = m_renderer->GetCamera().GetZoom();
@@ -1166,10 +1175,10 @@ void MainWnd::AfterGLInitialisation()
 
 	// get camera rotation
 	auto [phi, theta] = m_renderer->GetCamera().GetRotation();
-	t_vec2_gl camrot = tl2::create<t_vec2_gl>({phi, theta});
+	t_vec2_gl camrot = m::create<t_vec2_gl>({phi, theta});
 	m_camProperties->GetWidget()->SetRotation(
-		t_real(camrot[0])*t_real{180}/tl2::pi<t_real>,
-		t_real(camrot[1])*t_real{180}/tl2::pi<t_real>);
+		t_real(camrot[0])*t_real{180}/m::pi<t_real>,
+		t_real(camrot[1])*t_real{180}/m::pi<t_real>);
 
 	// get initial selection plane values from the renderer
 	const auto& plane_norm = m_renderer->GetSelectionPlaneNorm();
@@ -1275,11 +1284,11 @@ void MainWnd::ObjectDragged(bool drag_start, const std::string& objid)
 	{
 		// set the selection plane distance to the dragged object's position
 		const t_vec3_gl& plane_norm = m_renderer->GetSelectionPlaneNorm();
-		t_vec3_gl proj = tl2::ortho_project<t_vec3_gl>(
+		t_vec3_gl proj = m::ortho_project<t_vec3_gl>(
 			m_curInters, plane_norm, true);
 		t_vec3_gl diff = m_curInters - proj;
-		t_real_gl dist = tl2::norm<t_vec3_gl>(diff);
-		if(tl2::inner<t_vec3_gl>(diff, plane_norm) < 0.)
+		t_real_gl dist = m::norm<t_vec3_gl>(diff);
+		if(m::inner<t_vec3_gl>(diff, plane_norm) < 0.)
 			dist = -dist;
 
 		//std::cout << "pos : " << m_curInters[0] << " " << m_curInters[1] << " " << m_curInters[2] << std::endl;
@@ -1295,7 +1304,7 @@ void MainWnd::ObjectDragged(bool drag_start, const std::string& objid)
 		if(auto[inters_cursor, inters_type] = m_renderer->GetSelectionPlaneCursor(); inters_type)
 		{
 			cursor = inters_cursor;
-			m_drag_start = tl2::convert<t_vec>(cursor);
+			m_drag_start = m::convert<t_vec>(cursor);
 		}
 	}
 	else
@@ -1305,14 +1314,14 @@ void MainWnd::ObjectDragged(bool drag_start, const std::string& objid)
 	}
 
 	m_scene.DragObject(drag_start, objid,
-		m_drag_start, tl2::convert<t_vec>(cursor));
+		m_drag_start, m::convert<t_vec>(cursor));
 
 
 	// if the object is a light, set its new position
 	if(obj->GetLightId() >= 0)
 	{
 		const t_vec& pos = obj->GetPosition();
-		m_renderer->SetLight(obj->GetLightId(), tl2::convert<t_vec3_gl>(pos));
+		m_renderer->SetLight(obj->GetLightId(), m::convert<t_vec3_gl>(pos));
 	}
 }
 
@@ -1409,7 +1418,7 @@ void MainWnd::AddPlane()
 	auto plane = std::make_shared<PlaneGeometry>();
 	plane->SetWidth(2.);
 	plane->SetHeight(2.);
-	plane->SetPosition(tl2::create<t_vec>({0, 0, 0}));
+	plane->SetPosition(m::create<t_vec>({0, 0, 0}));
 
 	static std::size_t cnt = 1;
 	std::ostringstream ostrId;
@@ -1435,7 +1444,7 @@ void MainWnd::AddCuboid()
 	cuboid->SetHeight(2.);
 	cuboid->SetDepth(2.);
 	cuboid->SetLength(2.);
-	cuboid->SetPosition(tl2::create<t_vec>({0, 0, cuboid->GetHeight()*0.5}));
+	cuboid->SetPosition(m::create<t_vec>({0, 0, cuboid->GetHeight()*0.5}));
 
 	static std::size_t cuboidcnt = 1;
 	std::ostringstream ostrId;
@@ -1459,7 +1468,7 @@ void MainWnd::AddSphere()
 {
 	auto sphere = std::make_shared<SphereGeometry>();
 	sphere->SetRadius(1.);
-	sphere->SetPosition(tl2::create<t_vec>({0, 0, sphere->GetRadius()}));
+	sphere->SetPosition(m::create<t_vec>({0, 0, sphere->GetRadius()}));
 
 	static std::size_t sphcnt = 1;
 	std::ostringstream ostrId;
@@ -1483,7 +1492,7 @@ void MainWnd::AddCylinder()
 {
 	auto cyl = std::make_shared<CylinderGeometry>();
 	cyl->SetHeight(4.);
-	cyl->SetPosition(tl2::create<t_vec>({0, 0, cyl->GetHeight()*0.5}));
+	cyl->SetPosition(m::create<t_vec>({0, 0, cyl->GetHeight()*0.5}));
 	cyl->SetRadius(0.5);
 
 	static std::size_t cylcnt = 1;
@@ -1508,7 +1517,7 @@ void MainWnd::AddTetrahedron()
 {
 	auto tetr = std::make_shared<TetrahedronGeometry>();
 	tetr->SetRadius(1.);
-	tetr->SetPosition(tl2::create<t_vec>({0, 0, tetr->GetRadius()}));
+	tetr->SetPosition(m::create<t_vec>({0, 0, tetr->GetRadius()}));
 
 	static std::size_t tetrcnt = 1;
 	std::ostringstream ostrId;
@@ -1532,7 +1541,7 @@ void MainWnd::AddOctahedron()
 {
 	auto octa = std::make_shared<OctahedronGeometry>();
 	octa->SetRadius(1.);
-	octa->SetPosition(tl2::create<t_vec>({0, 0, octa->GetRadius()}));
+	octa->SetPosition(m::create<t_vec>({0, 0, octa->GetRadius()}));
 
 	static std::size_t tetrcnt = 1;
 	std::ostringstream ostrId;
@@ -1556,7 +1565,7 @@ void MainWnd::AddDodecahedron()
 {
 	auto dode = std::make_shared<DodecahedronGeometry>();
 	dode->SetRadius(1.);
-	dode->SetPosition(tl2::create<t_vec>({0, 0, dode->GetRadius()}));
+	dode->SetPosition(m::create<t_vec>({0, 0, dode->GetRadius()}));
 
 	static std::size_t tetrcnt = 1;
 	std::ostringstream ostrId;
@@ -1580,7 +1589,7 @@ void MainWnd::AddIcosahedron()
 {
 	auto icosa = std::make_shared<IcosahedronGeometry>();
 	icosa->SetRadius(1.);
-	icosa->SetPosition(tl2::create<t_vec>({0, 0, icosa->GetRadius()}));
+	icosa->SetPosition(m::create<t_vec>({0, 0, icosa->GetRadius()}));
 
 	static std::size_t tetrcnt = 1;
 	std::ostringstream ostrId;

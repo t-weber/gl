@@ -45,6 +45,8 @@ TrafoCalculator::TrafoCalculator(QWidget* pParent, QSettings *sett)
 	m_spinAxis[2] = new QDoubleSpinBox(rotationPanel);
 	m_spinAxis[2]->setValue(1);
 	m_spinAngle = new QDoubleSpinBox(rotationPanel);
+	m_spinAngle->setMinimum(-180);
+	m_spinAngle->setMaximum(180);
 	labelAxis->setSizePolicy(QSizePolicy{QSizePolicy::Fixed, QSizePolicy::Fixed});
 	labelAngle->setSizePolicy(QSizePolicy{QSizePolicy::Fixed, QSizePolicy::Fixed});
 	m_textRotation = new QTextEdit(rotationPanel);
@@ -168,7 +170,14 @@ void set_result(QTextEdit* edit, const t_mat& mat)
 		for(std::size_t j=0; j<mat.size2(); ++j)
 		{
 			ostrResult << "\t\t<td style=\"padding-right:8px\">";
-			ostrResult << mat(i, j);
+
+			const t_real val = mat(i, j);
+			const t_real rounded = std::round(val); 
+			if(std::abs(rounded - val) <= g_eps)
+				ostrResult << rounded;
+			else
+				ostrResult << val;
+
 			ostrResult << "</td>\n";
 		}
 		ostrResult << "\t</tr>\n";
@@ -181,7 +190,7 @@ void set_result(QTextEdit* edit, const t_mat& mat)
 	ostrResult << geo_mat_to_str(mat);
 	ostrResult << "</p>\n";
 
-	if(auto [matInv, okInv] = tl2::inv(mat); okInv)
+	if(auto [matInv, okInv] = m::inv<t_mat, t_vec>(mat); okInv)
 	{
 		ostrResult << "<br><p>Inverse Transformation Matrix:\n";
 		ostrResult << "<table style=\"border:0px\">\n";
@@ -191,7 +200,14 @@ void set_result(QTextEdit* edit, const t_mat& mat)
 			for(std::size_t j=0; j<matInv.size2(); ++j)
 			{
 				ostrResult << "\t\t<td style=\"padding-right:8px\">";
-				ostrResult << matInv(i, j);
+
+				const t_real val = matInv(i, j);
+				const t_real rounded = std::round(val); 
+				if(std::abs(rounded - val) <= g_eps)
+					ostrResult << rounded;
+				else
+					ostrResult << val;
+
 				ostrResult << "</td>\n";
 			}
 			ostrResult << "\t</tr>\n";
@@ -214,15 +230,15 @@ void TrafoCalculator::CalculateRotation()
 	if(!m_spinAngle || !m_textRotation)
 		return;
 
-	t_vec axis = tl2::create<t_vec>({
+	t_vec axis = m::create<t_vec>({
 		m_spinAxis[0]->value(),
 		m_spinAxis[1]->value(),
 		m_spinAxis[2]->value() });
-	t_real angle = m_spinAngle->value() / 180. * tl2::pi<t_real>;
+	t_real angle = m_spinAngle->value() / 180. * m::pi<t_real>;
 
 	m_textRotation->clear();
 
-	t_mat mat = tl2::rotation<t_mat, t_vec>(axis, angle, false);
+	t_mat mat = m::rotation<t_mat, t_vec>(axis, angle, false);
 	set_result(m_textRotation, mat);
 }
 
@@ -249,10 +265,10 @@ void TrafoCalculator::CalculatePortal()
 
 	if(only_trans)
 	{
-		t_mat matStart = tl2::unit<t_mat>(4);
-		t_mat matTarget = tl2::unit<t_mat>(4);
-		tl2::set_col<t_mat, t_vec>(matStart, start->GetPosition(), 3);
-		tl2::set_col<t_mat, t_vec>(matTarget, -target->GetPosition(), 3);
+		t_mat matStart = m::unit<t_mat>(4);
+		t_mat matTarget = m::unit<t_mat>(4);
+		m::set_col<t_mat, t_vec>(matStart, start->GetPosition(), 3);
+		m::set_col<t_mat, t_vec>(matTarget, -target->GetPosition(), 3);
 
 		t_mat mat = matTarget * matStart;
 		set_result(m_textPortal, mat);
@@ -262,7 +278,7 @@ void TrafoCalculator::CalculatePortal()
 		const auto& matStart = start->GetTrafo();
 		const auto& matTarget = target->GetTrafo();
 
-		auto [mat, mat_ok] = tl2::inv(matTarget);
+		auto [mat, mat_ok] = m::inv<t_mat, t_vec>(matTarget);
 		if(!mat_ok)
 		{
 			m_textPortal->setText("Cannot invert target matrix.");

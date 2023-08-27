@@ -9,9 +9,8 @@
 #define __GLSCENE_TYPES_H__
 
 
-#include "tlibs2/libs/maths.h"
-//#include "mathlibs/libs/math_algos.h"
-//#include "mathlibs/libs/math_conts.h"
+#include "mathlibs/libs/math_algos.h"
+#include "mathlibs/libs/math_conts.h"
 
 
 // program identifier
@@ -21,7 +20,7 @@
 #define APPL_TITLE "Gl Scene"
 
 // version number of this software
-#define APPL_VERSION "0.3"
+#define APPL_VERSION "0.4"
 
 #define FILE_BASENAME "glscene."
 
@@ -44,7 +43,7 @@ public:
 	}
 
 
-	/*constexpr*/ ~t_arr() noexcept = default;
+	~t_arr() noexcept = default;
 
 
 	/**
@@ -77,7 +76,6 @@ public:
 	 */
 	constexpr t_arr& operator=(const t_arr& other) noexcept
 	{
-		//static_cast<std::array<T, N>*>(this)->operator=(other);
 		std::array<T, N>::operator=(other);
 		return *this;
 	}
@@ -95,21 +93,24 @@ public:
 
 
 template<class T> using t_arr2 = t_arr<T, 2>;
-template<class T> using t_arr4 = t_arr<T, 4>;
-
+template<class T> using t_arr3 = t_arr<T, 3>;
+template<class T> using t_arr4 = t_arr<T, 2*2>;
+template<class T> using t_arr9 = t_arr<T, 3*3>;
 
 using t_real = double;
 using t_int = int;
 
 // dynamic container types
-using t_vec = tl2::vec<t_real, std::vector>;
-using t_vec_int = tl2::vec<t_int, std::vector>;
-using t_mat = tl2::mat<t_real, std::vector>;
+using t_vec = m::vec<t_real, std::vector>;
+using t_vec_int = m::vec<t_int, std::vector>;
+using t_mat = m::mat<t_real, std::vector>;
 
 // static container types
-using t_vec2 = tl2::vec<t_real, t_arr2>;
-using t_vec2_int = tl2::vec<t_int, t_arr2>;
-using t_mat22 = tl2::mat<t_real, t_arr4>;
+using t_vec2_int = m::vec<t_int, t_arr2, 2>;
+using t_vec2 = m::vec<t_real, t_arr2, 2>;
+using t_vec3 = m::vec<t_real, t_arr3, 3>;
+using t_mat22 = m::mat<t_real, t_arr4, 2, 2>;
+using t_mat33 = m::mat<t_real, t_arr9, 3, 3>;
 
 
 #endif

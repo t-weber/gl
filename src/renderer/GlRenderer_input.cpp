@@ -255,7 +255,7 @@ void GlSceneRenderer::mouseReleaseEvent(QMouseEvent *pEvt)
 void GlSceneRenderer::wheelEvent(QWheelEvent *pEvt)
 {
 	const t_real_gl degrees = pEvt->angleDelta().y() / 8.;
-	if(tl2::equals_0<t_real_gl>(degrees, t_real_gl(g_eps)))
+	if(m::equals_0<t_real_gl>(degrees, t_real_gl(g_eps)))
 	{
 		pEvt->ignore();
 		return;

@@ -21,7 +21,6 @@
 #endif
 
 #include "Scene.h"
-#include "tlibs2/libs/str.h"
 
 namespace pt = boost::property_tree;
 
@@ -378,7 +377,7 @@ std::pair<bool, std::string> Scene::load(
 
 	std::ostringstream timestamp;
 	if(auto optTime = prop.get_optional<t_real>(FILE_BASENAME "timestamp"); optTime)
-		timestamp << tl2::epoch_to_str(*optTime);
+		timestamp << *optTime;
 
 	return std::make_pair(true, timestamp.str());
 }

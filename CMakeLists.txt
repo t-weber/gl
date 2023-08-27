@@ -25,18 +25,16 @@
 
 cmake_minimum_required(VERSION 3.5)
 
-project(glscene)
+project(gl)
 enable_language(CXX)
 
 
 list(APPEND CMAKE_MODULE_PATH
 	"${PROJECT_SOURCE_DIR}"
 	"${PROJECT_SOURCE_DIR}/cmake"
-	"${PROJECT_SOURCE_DIR}/tlibs2/cmake"
 )
 
 option(USE_QT6 "use qt 6" FALSE)
-option(USE_LAPACK "use lapack" FALSE)
 option(USE_BULLET "use bullet physics" TRUE)
 
 
@@ -133,18 +131,6 @@ message("Using Boost version ${Boost_MAJOR_VERSION}.${Boost_MINOR_VERSION}.${Boo
 include_directories(SYSTEM "${Boost_INCLUDE_DIRS}/..")
 
 
-if(USE_LAPACK)
-	find_package(Lapacke)
-	if(Lapacke_FOUND)
-		message("Lapacke enabled.")
-		add_definitions(-DUSE_LAPACK)
-		include_directories(SYSTEM "${Lapacke_INCLUDE_DIRS}")
-	else()
-		message("Lapacke disabled.")
-	endif()
-endif()
-
-
 if(USE_BULLET)
 	find_package(Bullet)
 	if(Bullet_FOUND)
@@ -197,17 +183,14 @@ endif()
 # -----------------------------------------------------------------------------
 # target executable settings
 # -----------------------------------------------------------------------------
-add_executable(glscene
+add_executable(gl
 	src/main.cpp
 	src/MainWnd.cpp src/MainWnd.h
 	src/settings_variables.cpp src/settings_variables.h
 
-	src/common/Resources.cpp src/common/Resources.h
-	src/common/Recent.h
-
 	src/renderer/GlRenderer.cpp src/renderer/GlRenderer.h
 	src/renderer/GlRenderer_input.cpp
-	#src/renderer/Camera.h
+	src/renderer/Camera.h
 
 	src/dock/CamProperties.cpp src/dock/CamProperties.h
 	src/dock/SelectionProperties.cpp src/dock/SelectionProperties.h
@@ -220,16 +203,15 @@ add_executable(glscene
 
 	src/Geometry.cpp src/Geometry.h
 	src/Scene.cpp src/Scene.h
-	src/types.h
 
-	tlibs2/libs/qt/gl.cpp tlibs2/libs/qt/gl.h
-	tlibs2/libs/maths.h tlibs2/libs/cam.h
+	src/common/Resources.cpp src/common/Resources.h
+	src/common/Recent.h
+	src/common/ExprParser.cpp src/common/ExprParser.h
 )
 
 
-target_link_libraries(glscene
+target_link_libraries(gl
 	"${Boost_LIBRARIES}"
-	"${Lapacke_LIBRARIES}"
 	"${MINGW_WINSOCK}"
 	Threads::Threads
 	"${QtAllLibraries}"

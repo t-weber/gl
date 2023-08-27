@@ -11,8 +11,7 @@
 
 #include "Geometry.h"
 #include "settings_variables.h"
-#include "tlibs2/libs/expr.h"
-#include "tlibs2/libs/str.h"
+#include "src/common/ExprParser.h"
 
 #include <iostream>
 
@@ -42,10 +41,8 @@ std::string geo_val_to_str(const t_val& val)
 template<class t_var = t_real>
 t_var geo_str_to_val(const std::string& str)
 {
-	tl2::ExprParser<t_var> parser;
-	if(!parser.parse(str))
-		throw std::logic_error("Could not parse expression.");
-	return parser.eval();
+	ExprParser<t_var> parser;
+	return parser.Parse(str);
 }
 
 
@@ -71,20 +68,22 @@ std::string geo_vec_to_str(const t_vec& vec, const char* sep)
 /**
  * convert a serialised string to a vector
  */
-t_vec geo_str_to_vec(const std::string& str, const char* seps)
+t_vec geo_str_to_vec(const std::string& str, const char* _seps)
 {
 	// get the components of the vector
+	std::string seps = _seps;
 	std::vector<std::string> tokens;
-	tl2::get_tokens<std::string, std::string>(str, seps, tokens);
+	boost::split(tokens, str,
+		[&seps](auto c) -> bool
+		{ return std::find(seps.begin(), seps.end(), c) != seps.end(); },
+		boost::token_compress_on);
 
-	t_vec vec = tl2::create<t_vec>(tokens.size());
+	t_vec vec = m::create<t_vec>(tokens.size());
 	for(std::size_t tokidx=0; tokidx<tokens.size(); ++tokidx)
 	{
 		// parse the vector component expression to yield a real value
-		tl2::ExprParser<t_real> parser;
-		if(!parser.parse(tokens[tokidx]))
-			throw std::logic_error("Could not parse vector expression.");
-		vec[tokidx] = parser.eval();
+		ExprParser<t_real> parser;
+		vec[tokidx] = parser.Parse(tokens[tokidx]);
 	}
 
 	return vec;
@@ -119,31 +118,38 @@ std::string geo_mat_to_str(const t_mat& mat, const char* seprow, const char* sep
 /**
  * convert a serialised string to a matrix
  */
-t_mat geo_str_to_mat(const std::string& str, const char* seprow, const char* sepcol)
+t_mat geo_str_to_mat(const std::string& str, const char* _seprow, const char* _sepcol)
 {
 	// get the rows of the matrix
+	std::string seprow = _seprow;
+	std::string sepcol = _sepcol;
 	std::vector<std::string> rowtokens;
-	tl2::get_tokens<std::string, std::string>(str, seprow, rowtokens);
+	boost::split(rowtokens, str,
+		[&seprow](auto c) -> bool
+		{ return std::find(seprow.begin(), seprow.end(), c) != seprow.end(); },
+		boost::token_compress_on);
 
 	std::size_t ROWS = rowtokens.size();
-	t_mat mat = tl2::zero<t_mat>(ROWS, ROWS);
+	t_mat mat = m::zero<t_mat>(ROWS, ROWS);
 	ROWS = std::min(ROWS, mat.size1());
 
 	for(std::size_t i=0; i<ROWS; ++i)
 	{
 		// get the columns of the matrix
 		std::vector<std::string> coltokens;
-		tl2::get_tokens<std::string, std::string>(rowtokens[i], sepcol, coltokens);
+		boost::split(coltokens, rowtokens[i],
+			[&sepcol](auto c) -> bool
+			{ return std::find(sepcol.begin(), sepcol.end(), c) != sepcol.end(); },
+			boost::token_compress_on);
+
 
 		for(std::size_t j=0; j<ROWS; ++j)
 		{
 			// parse the matrix component expression to yield a real value
 			if(j < coltokens.size())
 			{
-				tl2::ExprParser<t_real> parser;
-				if(!parser.parse(coltokens[j]))
-					throw std::logic_error("Could not parse vector expression.");
-				mat(i,j) = parser.eval();
+				ExprParser<t_real> parser;
+				mat(i,j) = parser.Parse(coltokens[j]);
 			}
 			else
 			{
@@ -199,7 +205,7 @@ Geometry& Geometry::operator=(const Geometry& geo)
 
 t_vec Geometry::GetPosition() const
 {
-	t_vec pos = tl2::col<t_mat, t_vec>(m_trafo, 3);
+	t_vec pos = m::col<t_mat, t_vec>(m_trafo, 3);
 	pos.resize(3);
 	return pos;
 }
@@ -207,7 +213,7 @@ t_vec Geometry::GetPosition() const
 
 void Geometry::SetPosition(const t_vec& vec)
 {
-	tl2::set_col<t_mat, t_vec>(m_trafo, vec, 3);
+	m::set_col<t_mat, t_vec>(m_trafo, vec, 3);
 
 #ifdef USE_BULLET
 	SetStateFromMatrix();
@@ -225,10 +231,13 @@ t_mat Geometry::GetRotation() const
 
 void Geometry::SetRotation(const t_mat& rot)
 {
-	tl2::set_submat<t_mat>(m_trafo, rot, 0, 0, 3, 3);
+	// set rotation part
+	for(std::size_t i=0; i<3; ++i)
+		for(std::size_t j=0; j<3; ++j)
+			m_trafo(i, j) = rot(i, j);
 
 	// ignore translation part for determinant
-	m_det = tl2::det<t_mat>(rot);
+	m_det = m::det<t_mat, t_vec>(rot);
 
 #ifdef USE_BULLET
 	SetStateFromMatrix();
@@ -239,10 +248,9 @@ void Geometry::SetRotation(const t_mat& rot)
 void Geometry::SetPortalTrafo(const t_mat& trafo)
 {
 	m_portal_trafo = trafo;
-
 	// ignore translation part for determinant
-	t_mat rot = tl2::submat<t_mat>(m_portal_trafo, 0, 0, 3, 3);
-	m_portal_det = tl2::det<t_mat>(rot);
+	t_mat33 rot = m::convert<t_mat33>(m_portal_trafo);
+	m_portal_det = m::det<t_mat33, t_vec3>(rot);
 }
 
 
@@ -266,6 +274,7 @@ Geometry::load(const pt::ptree& prop)
 
 			if(box->Load(geo.second))
 				geo_objs.emplace_back(std::move(box));
+
 		}
 		else if(geotype == "plane")
 		{
@@ -342,11 +351,11 @@ void Geometry::Rotate(t_real angle, char axis)
 	// create the rotation matrix
 	t_vec axis_vec;
 	if(axis == 'x')
-		axis_vec = tl2::create<t_vec>({1, 0, 0});
+		axis_vec = m::create<t_vec>({1, 0, 0});
 	else if(axis == 'y')
-		axis_vec = tl2::create<t_vec>({0, 1, 0});
+		axis_vec = m::create<t_vec>({0, 1, 0});
 	else /*if(axis == 'z')*/
-		axis_vec = tl2::create<t_vec>({0, 0, 1});
+		axis_vec = m::create<t_vec>({0, 0, 1});
 
 	Rotate(angle, axis_vec);
 }
@@ -357,7 +366,7 @@ void Geometry::Rotate(t_real angle, char axis)
  */
 void Geometry::Rotate(t_real angle, const t_vec& axis)
 {
-	t_mat R = tl2::hom_rotation<t_mat, t_vec>(axis, angle);
+	t_mat R = m::hom_rotation<t_mat, t_vec>(axis, angle);
 	SetRotation(R * GetRotation());
 }
 
@@ -722,11 +731,10 @@ pt::ptree PlaneGeometry::Save() const
 std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 PlaneGeometry::GetTriangles() const
 {
-	auto solid = tl2::create_plane<t_mat, t_vec>(
+	auto solid = m::create_plane<t_mat, t_vec>(
 		m_norm, m_width*0.5, m_height*0.5);
-	auto [verts, norms, uvs] = tl2::create_triangles<t_vec>(solid);
+	auto [verts, norms, uvs] = m::create_triangles<t_vec>(solid);
 
-	//tl2::transform_obj(verts, norms, mat, true);
 	return std::make_tuple(verts, norms, uvs);
 }
 
@@ -926,11 +934,10 @@ pt::ptree BoxGeometry::Save() const
 std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 BoxGeometry::GetTriangles() const
 {
-	auto solid = tl2::create_cuboid<t_vec>(
+	auto solid = m::create_cube<t_vec>(
 		m_length*0.5, m_depth*0.5, m_height*0.5);
-	auto [verts, norms, uvs] = tl2::create_triangles<t_vec>(solid);
+	auto [verts, norms, uvs] = m::create_triangles<t_vec>(solid);
 
-	//tl2::transform_obj(verts, norms, mat, true);
 	return std::make_tuple(verts, norms, uvs);
 }
 
@@ -1117,10 +1124,9 @@ pt::ptree CylinderGeometry::Save() const
 std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 CylinderGeometry::GetTriangles() const
 {
-	auto solid = tl2::create_cylinder<t_vec>(m_radius, m_height, 1, 32);
-	auto [verts, norms, uvs] = tl2::create_triangles<t_vec>(solid);
+	auto solid = m::create_cylinder<t_vec>(m_radius, m_height, 1, 32);
+	auto [verts, norms, uvs] = m::create_triangles<t_vec>(solid);
 
-	//tl2::transform_obj(verts, norms, mat, true);
 	return std::make_tuple(verts, norms, uvs);
 }
 
@@ -1284,14 +1290,13 @@ std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 SphereGeometry::GetTriangles() const
 {
 	const int numsubdivs = 2;
-	auto solid = tl2::create_icosahedron<t_vec>(1.);
-	auto [verts, norms, uvs] = tl2::spherify<t_vec>(
-		tl2::subdivide_triangles<t_vec>(
-			tl2::create_triangles<t_vec>(solid),
+	auto solid = m::create_icosahedron<t_vec>(1.);
+	auto [verts, norms, uvs] = m::spherify<t_vec>(
+		m::subdivide_triangles<t_vec>(
+			m::create_triangles<t_vec>(solid),
 			numsubdivs),
 		m_radius);
 
-	//tl2::transform_obj(verts, norms, mat, true);
 	return std::make_tuple(verts, norms, uvs);
 }
 
@@ -1393,10 +1398,9 @@ pt::ptree TetrahedronGeometry::Save() const
 std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 TetrahedronGeometry::GetTriangles() const
 {
-	auto solid = tl2::create_tetrahedron<t_vec>(m_radius);
-	auto [verts, norms, uvs] = tl2::create_triangles<t_vec>(solid);
+	auto solid = m::create_tetrahedron<t_vec>(m_radius);
+	auto [verts, norms, uvs] = m::create_triangles<t_vec>(solid);
 
-	//tl2::transform_obj(verts, norms, mat, true);
 	return std::make_tuple(verts, norms, uvs);
 }
 
@@ -1493,10 +1497,9 @@ pt::ptree OctahedronGeometry::Save() const
 std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 OctahedronGeometry::GetTriangles() const
 {
-	auto solid = tl2::create_octahedron<t_vec>(m_radius);
-	auto [verts, norms, uvs] = tl2::create_triangles<t_vec>(solid);
+	auto solid = m::create_octahedron<t_vec>(m_radius);
+	auto [verts, norms, uvs] = m::create_triangles<t_vec>(solid);
 
-	//tl2::transform_obj(verts, norms, mat, true);
 	return std::make_tuple(verts, norms, uvs);
 }
 
@@ -1593,11 +1596,13 @@ pt::ptree DodecahedronGeometry::Save() const
 std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 DodecahedronGeometry::GetTriangles() const
 {
-	auto solid = tl2::create_dodecahedron<t_vec>(m_radius);
-	auto [verts, norms, uvs] = tl2::create_triangles<t_vec>(solid);
+	return std::make_tuple(std::vector<t_vec>{}, std::vector<t_vec>{}, std::vector<t_vec>{});
 
-	//tl2::transform_obj(verts, norms, mat, true);
-	return std::make_tuple(verts, norms, uvs);
+	// TODO
+	//auto solid = tl2::create_dodecahedron<t_vec>(m_radius);
+	//auto [verts, norms, uvs] = m::create_triangles<t_vec>(solid);
+
+	//return std::make_tuple(verts, norms, uvs);
 }
 
 
@@ -1693,10 +1698,9 @@ pt::ptree IcosahedronGeometry::Save() const
 std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 IcosahedronGeometry::GetTriangles() const
 {
-	auto solid = tl2::create_icosahedron<t_vec>(m_radius);
-	auto [verts, norms, uvs] = tl2::create_triangles<t_vec>(solid);
+	auto solid = m::create_icosahedron<t_vec>(m_radius);
+	auto [verts, norms, uvs] = m::create_triangles<t_vec>(solid);
 
-	//tl2::transform_obj(verts, norms, mat, true);
 	return std::make_tuple(verts, norms, uvs);
 }
 

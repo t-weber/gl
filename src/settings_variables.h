@@ -18,7 +18,7 @@
 #include "common/Resources.h"
 #include "types.h"
 #include "dialogs/Settings.h"
-#include "tlibs2/libs/qt/gl.h"
+#include "renderer/GlRenderer.h"
 
 
 
@@ -65,14 +65,14 @@ extern int g_enable_portal_rendering;
 extern int g_draw_bounding_rectangles;
 
 // camera translation scaling factor
-extern tl2::t_real_gl g_move_scale;
+extern t_real_gl g_move_scale;
 
 // camera zoom scaling factors
-extern tl2::t_real_gl g_zoom_scale;
-extern tl2::t_real_gl g_wheel_zoom_scale;
+extern t_real_gl g_zoom_scale;
+extern t_real_gl g_wheel_zoom_scale;
 
 // camera rotation scaling factor
-extern tl2::t_real_gl g_rotation_scale;
+extern t_real_gl g_rotation_scale;
 
 
 // gui theme

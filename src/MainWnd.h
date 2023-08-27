@@ -24,8 +24,6 @@
 #include <future>
 #include <functional>
 
-#include "tlibs2/libs/maths.h"
-
 #include "types.h"
 #include "Scene.h"
 
@@ -76,7 +74,8 @@ private:
 	int m_multisamples{ 8 };
 
 	// gl info strings
-	std::string m_gl_ver{}, m_gl_shader_ver{},
+	std::string m_gl_api_ver{}, m_glsl_api_ver{},
+		m_gl_ver{}, m_gl_shader_ver{},
 		m_gl_vendor{}, m_gl_renderer{};
 
 	QStatusBar *m_statusbar{ nullptr };
@@ -122,9 +121,9 @@ private:
 	QTimer m_timer{};
 
 	// mouse picker
-	t_vec m_drag_start = tl2::create<t_vec>({0, 0, 0});
+	t_vec m_drag_start = m::create<t_vec>({0, 0, 0});
 	t_real m_mouseX{}, m_mouseY{}, m_mouseZ{};
-	t_vec3_gl m_curInters = tl2::create<t_vec3_gl>({0, 0, 0});
+	t_vec3_gl m_curInters = m::create<t_vec3_gl>({0, 0, 0});
 	std::string m_curObj{};
 
 

@@ -138,18 +138,18 @@ public:
 protected:
 	std::string m_id{};
 
-	t_vec m_colour = tl2::create<t_vec>({1, 0, 0});
+	t_vec m_colour = m::create<t_vec>({1, 0, 0});
 	bool m_lighting = true;
 	int m_light_id = -1;  // <0 -> not a light source
 
 	std::string m_texture{};
 
 	bool m_fixed = false;
-	t_mat m_trafo = tl2::unit<t_mat>(4);
+	t_mat m_trafo = m::unit<t_mat>(4);
 	t_real m_det = 1.;
 
 	int m_portal_id = -1;  // <0 -> deactivated
-	t_mat m_portal_trafo = tl2::unit<t_mat>(4);
+	t_mat m_portal_trafo = m::unit<t_mat>(4);
 	t_real m_portal_det = 1.;
 
 #ifdef USE_BULLET
@@ -199,7 +199,7 @@ public:
 #endif
 
 private:
-	t_vec m_norm = tl2::create<t_vec>({0, 0, 1});
+	t_vec m_norm = m::create<t_vec>({0, 0, 1});
 	t_real m_width = 1., m_height = 1.;
 };
 // ----------------------------------------------------------------------------

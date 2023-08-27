@@ -249,7 +249,7 @@ int main(int argc, char** argv)
 		});
 
 		// default gl surface format
-		tl2::set_gl_format(true, _GL_MAJ_VER, _GL_MIN_VER, 8);
+		set_gl_format(true, _GL_MAJ_VER, _GL_MIN_VER, 8);
 		set_locales();
 
 		// create application

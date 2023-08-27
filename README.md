@@ -1,5 +1,4 @@
-# glscene
-Gl scene rendering and plotting tests.
+# gl
+Gl rendering and plotting.
 
-This program is originally based on [TAS-Paths](https://doi.org/10.5281/zenodo.4625649)
-and uses [tlibs2](https://doi.org/10.5281/zenodo.5717779).
+This program was forked from [TAS-Paths](https://doi.org/10.5281/zenodo.4625649).

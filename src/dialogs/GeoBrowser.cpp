@@ -17,7 +17,7 @@
 #include <boost/scope_exit.hpp>
 
 #include "src/settings_variables.h"
-#include "tlibs2/libs/expr.h"
+#include "src/common/ExprParser.h"
 
 
 // columns in the settings table
@@ -424,20 +424,16 @@ void GeometriesBrowser::GeoSettingsItemChanged(QTableWidgetItem *item)
 		if(ty == "real")
 		{
 			// parse the expression to yield a real value
-			tl2::ExprParser<t_real> parser;
-			if(!parser.parse(val))
-				throw std::logic_error("Could not parse real expression.");
-			prop.value = parser.eval();
+			ExprParser<t_real> parser;
+			prop.value = parser.Parse(val);
 		}
 
 		// integer value
 		else if(ty == "integer")
 		{
 			// parse the expression to yield a real value
-			tl2::ExprParser<t_int> parser;
-			if(!parser.parse(val))
-				throw std::logic_error("Could not parse integer expression.");
-			prop.value = parser.eval();
+			ExprParser<t_int> parser;
+			prop.value = parser.Parse(val);
 		}
 
 		// boolean value

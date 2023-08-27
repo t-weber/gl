@@ -40,9 +40,6 @@ get_filename_from_url() {
 # -----------------------------------------------------------------------------
 # URLs for external libraries
 # -----------------------------------------------------------------------------
-#TLIBS2=https://code.ill.fr/scientific-software/takin/tlibs2/-/archive/master/tlibs2-master.zip
-TLIBS2=https://codeload.github.com/tweber-ill/ill_mirror-takin2-tlibs2/zip/refs/heads/master
-
 MATHLIBS=https://codeload.github.com/t-weber/mathlibs/zip/refs/heads/main
 # -----------------------------------------------------------------------------
 
@@ -57,17 +54,10 @@ function clean_dirs()
 	if [ ! -L mathlibs ]; then
 		rm -rfv mathlibs
 	fi
-
-	if [ ! -L tlibs2 ]; then
-		rm -rfv tlibs2
-	fi
 }
 
 function clean_files()
 {
-	local TLIBS2_LOCAL=$(get_filename_from_url ${TLIBS2})
-	rm -fv ${TLIBS2_LOCAL}
-
 	local MATHLIBS_LOCAL=$(get_filename_from_url ${MATHLIBS})
 	rm -fv ${MATHLIBS_LOCAL}
 }
@@ -101,31 +91,6 @@ function setup_mathlibs()
 	mv -v mathlibs-main mathlibs
 }
 
-
-function setup_tlibs2()
-{
-	local TLIBS2_LOCAL=$(get_filename_from_url ${TLIBS2})
-
-	if [ -L tlibs2 ]; then
-		echo -e "A link to tlibs2 already exists, skipping action."
-		return
-	fi
-
-	if ! ${WGET} ${TLIBS2}
-	then
-		echo -e "Error downloading tlibs2.";
-		exit -1;
-	fi
-
-	if ! ${UNZIP} ${TLIBS2_LOCAL}
-	then
-		echo -e "Error extracting tlibs2.";
-		exit -1;
-	fi
-
-	#mv -v tlibs2-master tlibs2
-	mv -v ill_mirror-takin2-tlibs2-master tlibs2
-}
 # -----------------------------------------------------------------------------
 
 
@@ -138,11 +103,6 @@ echo -e "-----------------------------------------------------------------------
 echo -e "--------------------------------------------------------------------------------"
 echo -e "Downloading and setting up mathlibs...\n"
 setup_mathlibs
-echo -e "--------------------------------------------------------------------------------\n"
-
-echo -e "--------------------------------------------------------------------------------"
-echo -e "Downloading and setting up tlibs2...\n"
-setup_tlibs2
 echo -e "--------------------------------------------------------------------------------\n"
 
 echo -e "--------------------------------------------------------------------------------"

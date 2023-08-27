@@ -6,7 +6,6 @@
  */
 
 #include "settings_variables.h"
-#include "tlibs2/libs/maths.h"
 
 #include <boost/predef.h>
 
@@ -35,7 +34,7 @@ unsigned int g_maxnum_recents = 16;
 int g_prec = 6;
 int g_prec_gui = 3;
 t_real g_eps = 1e-6;
-t_real g_eps_angular = 0.01 / 180. * tl2::pi<t_real>;
+t_real g_eps_angular = 0.01 / 180. * m::pi<t_real>;
 t_real g_eps_gui = 1e-4;
 
 
@@ -44,10 +43,10 @@ unsigned int g_timer_tps = 30;
 
 
 // renderer options
-tl2::t_real_gl g_move_scale = tl2::t_real_gl(1./75.);
-tl2::t_real_gl g_zoom_scale = 0.0025;
-tl2::t_real_gl g_wheel_zoom_scale = tl2::t_real_gl(1./64.);
-tl2::t_real_gl g_rotation_scale = tl2::t_real_gl(0.02);
+t_real_gl g_move_scale = t_real_gl(1./75.);
+t_real_gl g_zoom_scale = 0.0025;
+t_real_gl g_wheel_zoom_scale = t_real_gl(1./64.);
+t_real_gl g_rotation_scale = t_real_gl(0.02);
 
 int g_light_follows_cursor = 0;
 int g_enable_shadow_rendering = 1;

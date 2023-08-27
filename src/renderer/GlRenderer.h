@@ -1,7 +1,8 @@
 /**
- * gl scene renderer
+ * gl renderer
  * @author Tobias Weber <tweber@ill.fr>
  * @date feb-2021
+ * @note Forked on 26 August 2023 from TAS-Paths (https://github.com/ILLGrenoble/taspaths).
  * @note Initially forked from my tlibs2 library (https://code.ill.fr/scientific-software/takin/tlibs2/-/blob/master/libs/qt/glplot.h).
  * @note Further code forked from my privately developed "misc" project (https://github.com/t-weber/misc).
  * @license GPLv3, see 'LICENSE' file
@@ -17,35 +18,203 @@
 #ifndef __GLSCENE_RENDERER_H__
 #define __GLSCENE_RENDERER_H__
 
+
+#include <QtCore/QtGlobal>
+#include <QtWidgets/QDialog>
+#include <QtGui/QMouseEvent>
+#include <QtGui/QMatrix4x4>
+#include <QtGui/QVector4D>
+#include <QtGui/QVector3D>
+#include <QtGui/QVector2D>
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	#include <QtOpenGL/QOpenGLShaderProgram>
+	#include <QtOpenGL/QOpenGLVertexArrayObject>
+	#include <QtOpenGL/QOpenGLBuffer>
+	#include <QtOpenGL/QOpenGLTexture>
+	#include <QtOpenGL/QOpenGLFramebufferObject>
+	#include <QtOpenGL/QOpenGLFramebufferObjectFormat>
+	#include <QtOpenGL/QOpenGLPaintDevice>
+	#include <QtOpenGLWidgets/QOpenGLWidget>
+#else
+	#include <QtGui/QOpenGLShaderProgram>
+	#include <QtGui/QOpenGLVertexArrayObject>
+	#include <QtGui/QOpenGLBuffer>
+	#include <QtGui/QOpenGLTexture>
+	#include <QtGui/QOpenGLFramebufferObject>
+	#include <QtGui/QOpenGLFramebufferObjectFormat>
+	#include <QtGui/QOpenGLPaintDevice>
+	#include <QtWidgets/QOpenGLWidget>
+#endif
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
+	#include <QtCore/QRecursiveMutex>
+	using t_qt_mutex = QRecursiveMutex;
+#else
+	#include <QtCore/QMutex>
+	using t_qt_mutex = QMutex;
+#endif
+
+#include <memory>
 #include <unordered_map>
 #include <optional>
 
-#include <QtWidgets/QDialog>
-#include <QtGui/QMouseEvent>
+#include "mathlibs/libs/math_algos.h"
+#include "mathlibs/libs/math_conts.h"
 
-#include "tlibs2/libs/maths.h"
-#include "tlibs2/libs/qt/gl.h"
-#include "tlibs2/libs/cam.h"
-//#include "Camera.h"
-
+#include "src/types.h"
 #include "src/Scene.h"
+#include "src/renderer/Camera.h"
 
 
-using t_real_gl = tl2::t_real_gl;
-using t_vec2_gl = tl2::t_vec2_gl;
-using t_vec3_gl = tl2::t_vec3_gl;
-using t_vec_gl = tl2::t_vec_gl;
-using t_mat_gl = tl2::t_mat_gl;
+
+// ----------------------------------------------------------------------------
+// targeted GL api versions
+#if !defined(_GL_MAJ_VER) || !defined(_GL_MIN_VER)
+	#define _GL_MAJ_VER 3
+	#define _GL_MIN_VER 3
+#endif
+
+#if _GL_MAJ_VER <= 3 && _GL_MIN_VER < 2
+	#if !defined(_GL_SUFFIX)
+		#define _GL_SUFFIX
+	#endif
+
+	#if _GL_MAJ_VER == 3 && _GL_MIN_VER == 1
+		#define _GLSL_MAJ_VER 1
+		#define _GLSL_MIN_VER 4
+	#elif _GL_MAJ_VER == 3 && _GL_MIN_VER == 0
+		#define _GLSL_MAJ_VER 1
+		#define _GLSL_MIN_VER 3
+	#elif _GL_MAJ_VER == 2 && _GL_MIN_VER == 1
+		#define _GLSL_MAJ_VER 1
+		#define _GLSL_MIN_VER 2
+	#elif _GL_MAJ_VER == 2 && _GL_MIN_VER == 0
+		#define _GLSL_MAJ_VER 1
+		#define _GLSL_MIN_VER 1
+	#endif
+#else
+	#if !defined(_GL_SUFFIX)
+		#define _GL_SUFFIX _Core
+	#endif
+
+	#if _GL_MAJ_VER == 3 && _GL_MIN_VER == 2
+		#define _GLSL_MAJ_VER 1
+		#define _GLSL_MIN_VER 5
+	#else
+		#define _GLSL_MAJ_VER _GL_MAJ_VER
+		#define _GLSL_MIN_VER _GL_MIN_VER
+	#endif
+#endif
+
+// GL functions include
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	#define _GL_INC_IMPL(MAJ, MIN, SUFF) <QtOpenGL/QOpenGLFunctions_ ## MAJ ## _ ## MIN ## SUFF>
+#else
+	#define _GL_INC_IMPL(MAJ, MIN, SUFF) <QtGui/QOpenGLFunctions_ ## MAJ ## _ ## MIN ## SUFF>
+#endif
+#define _GL_INC(MAJ, MIN, SUFF) _GL_INC_IMPL(MAJ, MIN, SUFF)
+#include _GL_INC(_GL_MAJ_VER, _GL_MIN_VER, _GL_SUFFIX)
+
+// GL functions typedef
+#define _GL_FUNC_IMPL(MAJ, MIN, SUFF) QOpenGLFunctions_ ## MAJ ## _ ## MIN ## SUFF
+#define _GL_FUNC(MAJ, MIN, SUFF) _GL_FUNC_IMPL(MAJ, MIN, SUFF)
+using qgl_funcs = _GL_FUNC(_GL_MAJ_VER, _GL_MIN_VER, _GL_SUFFIX);
+
+// GL error codes: https://www.khronos.org/opengl/wiki/OpenGL_Error
+#define LOGGLERR(pGl) { while(true) {	\
+		auto err = pGl->glGetError();	\
+		if(err == GL_NO_ERROR) break;	\
+		std::cerr << "GL error in " << __func__ \
+			<< ", file: " << __FILE__ \
+			<< ", line " << std::dec <<  __LINE__  \
+			<< ": " << std::hex << "0x" << err \
+			<< "." << std::endl; \
+	}}
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
+// types
+using t_real_gl = GLfloat;
+using t_vec2_gl = m::qvecN_adapter<int, 2, t_real_gl, QVector2D>;
+using t_vec3_gl = m::qvecN_adapter<int, 3, t_real_gl, QVector3D>;
+using t_vec_gl = m::qvecN_adapter<int, 4, t_real_gl, QVector4D>;
+using t_mat_gl = m::qmatNN_adapter<int, 4, 4, t_real_gl, QMatrix4x4>;
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
+// plotter objects
+enum class GlRenderObjType
+{
+	TRIANGLES,
+	LINES
+};
+
+
+struct GlRenderObj
+{
+	GlRenderObjType m_type = GlRenderObjType::TRIANGLES;
+
+	std::shared_ptr<QOpenGLVertexArrayObject> m_vertex_array{};
+	std::shared_ptr<QOpenGLBuffer> m_vertex_buffer{};
+	std::shared_ptr<QOpenGLBuffer> m_normals_buffer{};
+	std::shared_ptr<QOpenGLBuffer> m_uv_buffer{};
+	std::shared_ptr<QOpenGLBuffer> m_colour_buffer{};
+
+	std::vector<t_vec3_gl> m_vertices{}, m_triangles{}, m_uvs{};
+
+	t_vec_gl m_colour = m::create<t_vec_gl>({ 0., 0., 1., 1. });	// rgba
+
+	// does not define a geometry itself, but just links to another object
+	std::optional<std::size_t> linkedObj{};
+
+	t_mat_gl m_mat = m::unit<t_mat_gl>();
+
+	bool m_invariant = false;	// invariant to A, B matrices
+	bool m_visible = true;		// object shown?
+	bool m_highlighted = false;	// object highlighted?
+	bool m_valid = true;		// object deleted?
+	int m_priority = 1;		// object rendering priority
+
+	t_vec3_gl m_labelPos = m::create<t_vec3_gl>({0., 0., 0.});
+	std::string m_label{};
+	std::string m_datastr{};
+
+	t_vec3_gl m_boundingSpherePos = m::create<t_vec3_gl>({ 0., 0., 0. });
+	t_real_gl m_boundingSphereRad = 0.;
+};
+
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
+// functions
+// GL surface format
+extern void set_gl_format(bool bCore = true,
+	int iMajorVer = _GL_MAJ_VER, int iMinorVer = _GL_MIN_VER,
+	int iSamples = 8);
+
+extern QSurfaceFormat gl_format(bool bCore = true,
+	int iMajorVer = _GL_MAJ_VER, int iMinorVer = _GL_MIN_VER,
+	int iSamples = 8,
+	QSurfaceFormat surf = QSurfaceFormat::defaultFormat());
+
+// ----------------------------------------------------------------------------
 
 
 
 /**
  * rendering object structure
  */
-struct GlSceneObj : public tl2::GlRenderObj
+struct GlSceneObj : public GlRenderObj
 {
-	t_mat_gl m_mat = tl2::unit<t_mat_gl>();
-	t_mat_gl m_portal_mat = tl2::unit<t_mat_gl>();
+	t_mat_gl m_mat = m::unit<t_mat_gl>();
+	t_mat_gl m_portal_mat = m::unit<t_mat_gl>();
 	bool m_portal_mirror = false;
 
 	GLint m_portal_id = -1;
@@ -54,7 +223,7 @@ struct GlSceneObj : public tl2::GlRenderObj
 	bool m_cull = true;         // object faces culled?
 	bool m_lighting = true;     // enable lighting (just draw colour if disabled)
 
-	t_vec3_gl m_boundingSpherePos = tl2::create<t_vec3_gl>({ 0., 0., 0. });
+	t_vec3_gl m_boundingSpherePos = m::create<t_vec3_gl>({ 0., 0., 0. });
 	t_real_gl m_boundingSphereRad = 0.;
 
 	std::vector<t_vec_gl> m_boundingBox = {};
@@ -90,7 +259,7 @@ enum class PortalRenderPass
 struct ActivePortal
 {
 	GLint id = -1;
-	t_mat_gl mat = tl2::unit<t_mat_gl>();
+	t_mat_gl mat = m::unit<t_mat_gl>();
 	bool mirror = false;
 };
 
@@ -102,7 +271,7 @@ class GlSceneRenderer : public QOpenGLWidget
 { Q_OBJECT
 public:
 	// camera type
-	using t_cam = tl2::Camera<t_mat_gl, t_vec_gl, t_vec3_gl, t_real_gl>;
+	using t_cam = Camera<t_mat_gl, t_vec_gl, t_vec3_gl, t_real_gl>;
 
 	// 3d object and texture types
 	using t_objs = std::unordered_map<std::string, GlSceneObj>;
@@ -123,7 +292,8 @@ public:
 	// receivers for scene update signals
 	void UpdateScene(const Scene& instr);
 
-	std::tuple<std::string, std::string, std::string, std::string> GetGlDescr() const;
+	std::tuple<std::string, std::string, std::string, std::string, std::string, std::string>
+		GetGlDescription() const;
 	bool IsInitialised() const { return m_initialised; }
 
 	void DeleteObject(const std::string& obj_name);
@@ -133,7 +303,7 @@ public:
 		const std::vector<t_vec3_gl>& triag_verts,
 		const std::vector<t_vec3_gl>& triag_norms,
 		const std::vector<t_vec3_gl>& triag_uvs,
-		t_real_gl r=0, t_real_gl g=0, t_real_gl b=0, t_real_gl a=1);
+		t_real_gl r = 0, t_real_gl g = 0, t_real_gl b = 0, t_real_gl a = 1);
 
 	void SetLight(std::size_t idx, const t_vec3_gl& pos);
 	void SetLightFollowsCursor(bool b);
@@ -166,6 +336,25 @@ public:
 
 
 protected:
+	// get gl functions
+	qgl_funcs* GetGlFunctions();
+
+	// create a triangle-based object
+	bool CreateTriangleObject(GlRenderObj& obj,
+		const std::vector<t_vec3_gl>& verts, const std::vector<t_vec3_gl>& triagverts,
+		const std::vector<t_vec3_gl>& norms, const std::vector<t_vec3_gl>& uvs,
+		const t_vec_gl& colour, bool bUseVertsAsNorm, GLint attrVertex,
+		GLint attrVertexNormal, GLint attrVertexcolour, GLint attrTextureCoords=-1);
+
+	// create a line-based object
+	bool CreateLineObject(GlRenderObj& obj,
+		const std::vector<t_vec3_gl>& verts, const t_vec_gl& colour,
+		GLint attrVertex, GLint attrVertexcolour);
+
+	void DeleteRenderObject(GlRenderObj& obj);
+
+
+protected:
 	virtual void paintEvent(QPaintEvent*) override;
 	virtual void initializeGL() override;
 	virtual void paintGL() override;
@@ -177,8 +366,6 @@ protected:
 	virtual void wheelEvent(QWheelEvent *pEvt) override;
 	virtual void keyPressEvent(QKeyEvent *pEvt) override;
 	virtual void keyReleaseEvent(QKeyEvent *pEvt) override;
-
-	qgl_funcs* GetGlFunctions();
 
 	void CreateSelectionPlane();
 	void CalcSelectionPlaneMatrix();
@@ -285,7 +472,7 @@ protected:
 	const ActivePortal* m_active_portal = nullptr;
 
 	// cursor
-	t_vec3_gl m_selectionPlaneNorm = tl2::create<t_vec3_gl>({0, 0, 1});
+	t_vec3_gl m_selectionPlaneNorm = m::create<t_vec3_gl>({0, 0, 1});
 	t_real_gl m_selectionPlaneDist = 0;
 
 	QPointF m_posMouse{};

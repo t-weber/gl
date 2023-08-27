@@ -1,7 +1,8 @@
 /**
- * gl scene renderer
+ * gl renderer
  * @author Tobias Weber <tweber@ill.fr>
  * @date feb-2021
+ * @note Forked on 26 August 2023 from TAS-Paths (https://github.com/ILLGrenoble/taspaths).
  * @note Initially forked from my tlibs2 library (https://code.ill.fr/scientific-software/takin/tlibs2/-/blob/master/libs/qt/glplot.cpp).
  * @note Further code forked from my privately developed "misc" project (https://github.com/t-weber/misc).
  * @license GPLv3, see 'LICENSE' file
@@ -15,25 +16,386 @@
  */
 
 #include "GlRenderer.h"
-#include "src/common/Resources.h"
-#include "src/settings_variables.h"
 
 #include <QtCore/QtGlobal>
 #include <QtCore/QThread>
+#include <QtGui/QPainter>
+#include <QtGui/QGuiApplication>
 #include <QtGui/QOpenGLContext>
 #include <QtGui/QOpenGLFunctions>
 #include <QtGui/QSurfaceFormat>
-#include <QtGui/QPainter>
-#include <QtGui/QGuiApplication>
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	#include <QtOpenGL/QOpenGLVersionFunctionsFactory>
+#endif
 
 #include <iostream>
 
+#include <boost/scope_exit.hpp>
+#include <boost/preprocessor/stringize.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
 #include <boost/range/combine.hpp>
-#include <boost/scope_exit.hpp>
+#include <boost/algorithm/string.hpp>
+
+namespace algo = boost::algorithm;
+
+#include "src/common/Resources.h"
+#include "src/settings_variables.h"
 
 
 #define MAX_LIGHTS 4  // max. number allowed in shader
+
+
+// ----------------------------------------------------------------------------
+// functions
+// ----------------------------------------------------------------------------
+
+/**
+ * create a gl surface format
+ */
+QSurfaceFormat gl_format(
+	bool bCore, int iMajorVer, int iMinorVer, int iSamples, QSurfaceFormat surf)
+{
+	surf.setRenderableType(QSurfaceFormat::OpenGL);
+	if(bCore)
+		surf.setProfile(QSurfaceFormat::CoreProfile);
+	else
+		surf.setProfile(QSurfaceFormat::CompatibilityProfile);
+
+	if(iMajorVer > 0 && iMinorVer > 0)
+		surf.setVersion(iMajorVer, iMinorVer);
+
+	surf.setSwapBehavior(QSurfaceFormat::DoubleBuffer);
+	if(iSamples > 0)
+		surf.setSamples(iSamples);	// multisampling
+
+	return surf;
+}
+
+
+/**
+ * set the default gl surface format
+ */
+void set_gl_format(bool bCore, int iMajorVer, int iMinorVer, int iSamples)
+{
+	QSurfaceFormat surf = gl_format(bCore,
+		iMajorVer, iMinorVer,
+		iSamples, QSurfaceFormat::defaultFormat());
+	QSurfaceFormat::setDefaultFormat(surf);
+}
+
+
+/**
+ * return gl functions for current version
+ */
+qgl_funcs* GlSceneRenderer::GetGlFunctions()
+{
+	qgl_funcs *pGl = nullptr;
+
+	if constexpr(std::is_same_v<qgl_funcs, QOpenGLFunctions>)
+	{
+		pGl = (qgl_funcs*)context()->functions();
+	}
+	else
+	{
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+		pGl = QOpenGLVersionFunctionsFactory::get<qgl_funcs>(context());
+#else
+		pGl = (qgl_funcs*)context()->versionFunctions<qgl_funcs>();
+#endif
+	}
+
+	if(!pGl)
+		std::cerr << "No suitable GL interface found." << std::endl;
+
+	return pGl;
+}
+
+
+/**
+ * creates a triangle-based 3d object
+ */
+bool GlSceneRenderer::CreateTriangleObject(GlRenderObj& obj,
+	const std::vector<t_vec3_gl>& verts, const std::vector<t_vec3_gl>& triagverts,
+	const std::vector<t_vec3_gl>& norms, const std::vector<t_vec3_gl>& uvs,
+	const t_vec_gl& colour, bool bUseVertsAsNorm,
+	GLint attrVertex, GLint attrVertexNormal,
+	GLint attrVertexcolour, GLint attrTextureCoords)
+{
+	// TODO: move context to calling thread
+	BOOST_SCOPE_EXIT(this_)
+	{
+		this_->doneCurrent();
+	} BOOST_SCOPE_EXIT_END
+	makeCurrent();
+
+	qgl_funcs* pGl = GetGlFunctions();
+	if(!pGl) return false;
+
+	obj.m_type = GlRenderObjType::TRIANGLES;
+	obj.m_colour = colour;
+
+	// flatten vertex array into raw float array
+	auto to_float_array = [](const std::vector<t_vec3_gl>& verts,
+		int iRepeat=1, int iElems=3, bool bNorm=false, t_real_gl lastElem=1.)
+		-> std::vector<t_real_gl>
+	{
+		std::vector<t_real_gl> vecRet;
+		vecRet.reserve(iRepeat*verts.size()*iElems);
+
+		for(const t_vec3_gl& vert : verts)
+		{
+			t_real_gl norm = bNorm ? m::norm<t_vec3_gl>(vert) : 1;
+
+			for(int i=0; i<iRepeat; ++i)
+			{
+				for(int iElem=0; iElem<iElems; ++iElem)
+				{
+					if(iElem < vert.size())
+						vecRet.push_back(vert[iElem] / norm);
+					else
+						vecRet.push_back(lastElem);
+				}
+			}
+		}
+
+		return vecRet;
+	};
+
+	// main vertex array object
+	obj.m_vertex_array = std::make_shared<QOpenGLVertexArrayObject>();
+	obj.m_vertex_array->create();
+	obj.m_vertex_array->bind();
+
+	// vertices
+	if(attrVertex >= 0)
+	{
+		obj.m_vertex_buffer = std::make_shared<QOpenGLBuffer>(
+			QOpenGLBuffer::VertexBuffer);
+
+		BOOST_SCOPE_EXIT(&obj)
+		{
+			obj.m_vertex_buffer->release();
+		} BOOST_SCOPE_EXIT_END
+
+		if(!obj.m_vertex_buffer->create())
+			std::cerr << "Cannot create vertex buffer." << std::endl;
+		if(!obj.m_vertex_buffer->bind())
+			std::cerr << "Cannot bind vertex buffer." << std::endl;
+
+		auto vecVerts = to_float_array(triagverts, 1, 4, false, 1.);
+		obj.m_vertex_buffer->allocate(
+			vecVerts.data(), 
+			vecVerts.size()*sizeof(typename decltype(vecVerts)::value_type));
+		pGl->glVertexAttribPointer(attrVertex, 4, GL_FLOAT, 0, 0, nullptr);
+	}
+
+	// normals
+	if(attrVertexNormal >= 0)
+	{
+		obj.m_normals_buffer = std::make_shared<QOpenGLBuffer>(
+			QOpenGLBuffer::VertexBuffer);
+
+		BOOST_SCOPE_EXIT(&obj)
+		{
+			obj.m_normals_buffer->release();
+		} BOOST_SCOPE_EXIT_END
+
+		obj.m_normals_buffer->create();
+		obj.m_normals_buffer->bind();
+
+		auto vecNorms = bUseVertsAsNorm
+			? to_float_array(triagverts, 1, 4, true, 0.)
+			: to_float_array(norms, 3, 4, false, 0.);
+		obj.m_normals_buffer->allocate(
+			vecNorms.data(),
+			vecNorms.size()*sizeof(typename decltype(vecNorms)::value_type));
+		pGl->glVertexAttribPointer(attrVertexNormal, 4, GL_FLOAT, 0, 0, nullptr);
+	}
+
+	// colours
+	if(attrVertexcolour >= 0)
+	{
+		obj.m_colour_buffer = std::make_shared<QOpenGLBuffer>(
+			QOpenGLBuffer::VertexBuffer);
+
+		BOOST_SCOPE_EXIT(&obj)
+		{
+			obj.m_colour_buffer->release();
+		} BOOST_SCOPE_EXIT_END
+
+		obj.m_colour_buffer->create();
+		obj.m_colour_buffer->bind();
+
+		std::vector<t_real_gl> vecCols;
+		vecCols.reserve(4*triagverts.size());
+		for(std::size_t iVert=0; iVert<triagverts.size(); ++iVert)
+		{
+			for(int icol=0; icol<obj.m_colour.size(); ++icol)
+				vecCols.push_back(obj.m_colour[icol]);
+		}
+
+		obj.m_colour_buffer->allocate(
+			vecCols.data(),
+			vecCols.size()*sizeof(typename decltype(vecCols)::value_type));
+		pGl->glVertexAttribPointer(attrVertexcolour, 4, GL_FLOAT, 0, 0, nullptr);
+	}
+
+	// texture uv coordinates
+	if(attrTextureCoords >= 0)
+	{
+		obj.m_uv_buffer = std::make_shared<QOpenGLBuffer>(
+			QOpenGLBuffer::VertexBuffer);
+
+		BOOST_SCOPE_EXIT(&obj)
+		{
+			obj.m_uv_buffer->release();
+		} BOOST_SCOPE_EXIT_END
+
+		obj.m_uv_buffer->create();
+		obj.m_uv_buffer->bind();
+
+		auto vecUVs = to_float_array(uvs, 1, 2);
+		obj.m_uv_buffer->allocate(
+			vecUVs.data(),
+			vecUVs.size()*sizeof(typename decltype(vecUVs)::value_type));
+		pGl->glVertexAttribPointer(attrTextureCoords, 2, GL_FLOAT, 0, 0, nullptr);
+	}
+
+
+	obj.m_vertices = std::move(verts);
+	obj.m_triangles = std::move(triagverts);
+	obj.m_uvs = std::move(uvs);
+	LOGGLERR(pGl)
+
+	return true;
+}
+
+
+/**
+ * creates a line-based 3d object
+ */
+bool GlSceneRenderer::CreateLineObject(GlRenderObj& obj,
+	const std::vector<t_vec3_gl>& verts, const t_vec_gl& colour,
+	GLint attrVertex, GLint attrVertexcolour)
+{
+	// TODO: move context to calling thread
+	BOOST_SCOPE_EXIT(this_)
+	{
+		this_->doneCurrent();
+	} BOOST_SCOPE_EXIT_END
+	makeCurrent();
+
+	qgl_funcs* pGl = GetGlFunctions();
+	if(!pGl) return false;
+
+	//GLint attrVertex = m_attrVertex;
+	//GLint attrVertexcolour = m_attrVertexCol;
+
+	obj.m_type = GlRenderObjType::LINES;
+	obj.m_colour = colour;
+
+	// flatten vertex array into raw float array
+	auto to_float_array = [](const std::vector<t_vec3_gl>& verts, int iElems=3)
+		-> std::vector<t_real_gl>
+		{
+			std::vector<t_real_gl> vecRet;
+			vecRet.reserve(verts.size()*iElems);
+
+			for(const t_vec3_gl& vert : verts)
+			{
+				for(int iElem=0; iElem<iElems; ++iElem)
+					vecRet.push_back(vert[iElem]);
+			}
+
+			return vecRet;
+		};
+
+	// main vertex array object
+	obj.m_vertex_array = std::make_shared<QOpenGLVertexArrayObject>();
+	obj.m_vertex_array->create();
+	obj.m_vertex_array->bind();
+
+	{	// vertices
+		obj.m_vertex_buffer = std::make_shared<QOpenGLBuffer>(
+				QOpenGLBuffer::VertexBuffer);
+
+		BOOST_SCOPE_EXIT(&obj)
+		{
+			obj.m_vertex_buffer->release();
+		} BOOST_SCOPE_EXIT_END
+
+		obj.m_vertex_buffer->create();
+		obj.m_vertex_buffer->bind();
+
+		auto vecVerts = to_float_array(verts, 3);
+		obj.m_vertex_buffer->allocate(
+			vecVerts.data(),
+			vecVerts.size()*sizeof(typename decltype(vecVerts)::value_type));
+		pGl->glVertexAttribPointer(attrVertex, 3, GL_FLOAT, 0, 0, nullptr);
+	}
+
+	{	// colours
+		obj.m_colour_buffer = std::make_shared<QOpenGLBuffer>(
+			QOpenGLBuffer::VertexBuffer);
+
+		BOOST_SCOPE_EXIT(&obj)
+		{
+			obj.m_colour_buffer->release();
+		} BOOST_SCOPE_EXIT_END
+
+		obj.m_colour_buffer->create();
+		obj.m_colour_buffer->bind();
+
+		std::vector<t_real_gl> vecCols;
+		vecCols.reserve(4*verts.size());
+		for(std::size_t iVert=0; iVert<verts.size(); ++iVert)
+		{
+			for(int icol=0; icol<obj.m_colour.size(); ++icol)
+				vecCols.push_back(obj.m_colour[icol]);
+		}
+
+		obj.m_colour_buffer->allocate(
+			vecCols.data(),
+			vecCols.size()*sizeof(typename decltype(vecCols)::value_type));
+		pGl->glVertexAttribPointer(attrVertexcolour, 4, GL_FLOAT, 0, 0, nullptr);
+	}
+
+
+	obj.m_vertices = std::move(verts);
+	LOGGLERR(pGl)
+
+		return true;
+}
+
+
+void GlSceneRenderer::DeleteRenderObject(GlRenderObj& obj)
+{
+	if(obj.m_vertex_buffer)
+	{
+		obj.m_vertex_buffer->destroy();
+		obj.m_vertex_buffer.reset();
+	}
+
+	if(obj.m_normals_buffer)
+		obj.m_normals_buffer.reset();
+
+	if(obj.m_colour_buffer)
+		obj.m_colour_buffer.reset();
+
+	if(obj.m_uv_buffer)
+		obj.m_uv_buffer.reset();
+
+	if(obj.m_vertex_array)
+	{
+		obj.m_vertex_array->destroy();
+		obj.m_vertex_array.reset();
+	}
+}
+// ----------------------------------------------------------------------------
+
+
+
 
 
 /**
@@ -57,7 +419,7 @@ GlSceneRenderer::~GlSceneRenderer()
 	Clear();
 
 	// remove selection plane
-	tl2::delete_render_object(m_selectionPlane);
+	DeleteRenderObject(m_selectionPlane);
 
 	// delete gl objects within current gl context
 	m_shaders.reset();
@@ -65,12 +427,14 @@ GlSceneRenderer::~GlSceneRenderer()
 
 
 /**
- * renderer versions and driver descriptions
+ * api & renderer versions and driver descriptions
  */
-std::tuple<std::string, std::string, std::string, std::string>
-GlSceneRenderer::GetGlDescr() const
+std::tuple<std::string, std::string, std::string, std::string, std::string, std::string>
+GlSceneRenderer::GetGlDescription() const
 {
 	return std::make_tuple(
+		BOOST_PP_STRINGIZE(_GL_MAJ_VER) "." BOOST_PP_STRINGIZE(_GL_MIN_VER),
+		BOOST_PP_STRINGIZE(_GLSL_MAJ_VER) BOOST_PP_STRINGIZE(_GLSL_MIN_VER) "0.",
 		m_strGlVer, m_strGlShaderVer,
 		m_strGlVendor, m_strGlRenderer);
 }
@@ -92,7 +456,7 @@ void GlSceneRenderer::Clear()
 	// clear objects
 	QMutexLocker _locker{&m_mutexObj};
 	for(auto &[obj_name, obj] : m_objs)
-		tl2::delete_render_object(obj);
+		DeleteRenderObject(obj);
 	m_objs.clear();
 
 	// clear textures
@@ -122,7 +486,7 @@ void GlSceneRenderer::EnableTextures(bool b)
  * add a texture image
  */
 bool GlSceneRenderer::ChangeTextureProperty(
-	const QString& ident, const QString& filename)
+		const QString& ident, const QString& filename)
 {
 	if(!m_initialised)
 		return false;
@@ -209,31 +573,29 @@ bool GlSceneRenderer::LoadScene(const Scene& scene)
  * calculate the bounding box and sphere
  */
 template<class t_vec, template<class...> class t_cont = std::vector>
-requires tl2::is_vec<t_vec>
+	requires m::is_vec<t_vec>
 static void create_bounding_objects(GlSceneObj& obj, const t_cont<t_vec>& triag_verts)
 {
 	// bounding sphere
-	auto [boundingSpherePos, boundingSphereRad] =
-		tl2::bounding_sphere<t_vec3_gl>(triag_verts);
+	obj.m_boundingSpherePos = m::avg<t_vec3_gl>(triag_verts);
+	std::tie(std::ignore, obj.m_boundingSphereRad) =
+		m::minmax_dist(triag_verts, obj.m_boundingSpherePos);
 
 	// bounding box
 	auto [bbMin, bbMax] =
-		tl2::bounding_box<t_vec3_gl>(triag_verts);
-
-	// object bounding sphere
-	obj.m_boundingSpherePos = std::move(boundingSpherePos);
-	obj.m_boundingSphereRad = boundingSphereRad;
+		m::minmax_comp<t_vec3_gl>(triag_verts);
 
 	// object bounding box
 	obj.m_boundingBox.reserve(8);
-	obj.m_boundingBox.push_back(tl2::create<t_vec_gl>({bbMin[0], bbMin[1], bbMin[2], 1.}));
-	obj.m_boundingBox.push_back(tl2::create<t_vec_gl>({bbMin[0], bbMin[1], bbMax[2], 1.}));
-	obj.m_boundingBox.push_back(tl2::create<t_vec_gl>({bbMin[0], bbMax[1], bbMin[2], 1.}));
-	obj.m_boundingBox.push_back(tl2::create<t_vec_gl>({bbMin[0], bbMax[1], bbMax[2], 1.}));
-	obj.m_boundingBox.push_back(tl2::create<t_vec_gl>({bbMax[0], bbMin[1], bbMin[2], 1.}));
-	obj.m_boundingBox.push_back(tl2::create<t_vec_gl>({bbMax[0], bbMin[1], bbMax[2], 1.}));
-	obj.m_boundingBox.push_back(tl2::create<t_vec_gl>({bbMax[0], bbMax[1], bbMin[2], 1.}));
-	obj.m_boundingBox.push_back(tl2::create<t_vec_gl>({bbMax[0], bbMax[1], bbMax[2], 1.}));
+	obj.m_boundingBox.push_back(m::create<t_vec_gl>({bbMin[0], bbMin[1], bbMin[2], 1.}));
+	obj.m_boundingBox.push_back(m::create<t_vec_gl>({bbMin[0], bbMin[1], bbMax[2], 1.}));
+	obj.m_boundingBox.push_back(m::create<t_vec_gl>({bbMin[0], bbMax[1], bbMin[2], 1.}));
+	obj.m_boundingBox.push_back(m::create<t_vec_gl>({bbMin[0], bbMax[1], bbMax[2], 1.}));
+
+	obj.m_boundingBox.push_back(m::create<t_vec_gl>({bbMax[0], bbMin[1], bbMin[2], 1.}));
+	obj.m_boundingBox.push_back(m::create<t_vec_gl>({bbMax[0], bbMin[1], bbMax[2], 1.}));
+	obj.m_boundingBox.push_back(m::create<t_vec_gl>({bbMax[0], bbMax[1], bbMin[2], 1.}));
+	obj.m_boundingBox.push_back(m::create<t_vec_gl>({bbMax[0], bbMax[1], bbMax[2], 1.}));
 }
 
 
@@ -248,28 +610,26 @@ void GlSceneRenderer::AddObject(const Geometry& obj)
 	QMutexLocker _locker{&m_mutexObj};
 	auto [_verts, _norms, _uvs] = obj.GetTriangles();
 
-	auto verts = tl2::convert<t_vec3_gl>(_verts);
-	auto norms = tl2::convert<t_vec3_gl>(_norms);
-	auto uvs = tl2::convert<t_vec3_gl>(_uvs);
-	auto cols = tl2::convert<t_vec3_gl>(obj.GetColour());
+	auto verts = m::convert<t_vec3_gl>(_verts);
+	auto norms = m::convert<t_vec3_gl>(_norms);
+	auto uvs = m::convert<t_vec3_gl>(_uvs);
+	auto cols = m::convert<t_vec3_gl>(obj.GetColour());
 
 	auto obj_iter = AddTriangleObject(
 		obj.GetId(), verts, norms, uvs,
 		cols[0], cols[1], cols[2], 1);
 
-	const t_mat& _mat = obj.GetTrafo();
-	t_mat_gl mat = tl2::convert<t_mat_gl>(_mat);
-	obj_iter->second.m_mat = mat;
+	obj_iter->second.m_mat = m::convert<t_mat_gl>(obj.GetTrafo());
 	obj_iter->second.m_texture = obj.GetTexture();
 	obj_iter->second.m_lighting = obj.IsLightingEnabled();
 	obj_iter->second.m_portal_id = obj.GetPortalId();
-	obj_iter->second.m_portal_mat = obj.GetPortalTrafo();
+	obj_iter->second.m_portal_mat = m::convert<t_mat_gl>(obj.GetPortalTrafo());
 	obj_iter->second.m_portal_mirror = (obj.GetPortalDeterminant() < 0.);
 
 	if(obj.GetLightId() >= 0)
 	{
 		const t_vec& pos = obj.GetPosition();
-		SetLight(obj.GetLightId(), tl2::convert<t_vec3_gl>(pos));
+		SetLight(obj.GetLightId(), m::convert<t_vec3_gl>(pos));
 	}
 
 	update();
@@ -289,7 +649,7 @@ void GlSceneRenderer::UpdateScene(const Scene& scene)
 	// update object matrices
 	for(const auto& obj : scene.GetObjects())
 	{
-		m_objs[obj->GetId()].m_mat = obj->GetTrafo();
+		m_objs[obj->GetId()].m_mat = m::convert<t_mat_gl>(obj->GetTrafo());
 	}
 
 	update();
@@ -306,7 +666,7 @@ void GlSceneRenderer::DeleteObject(const std::string& obj_name)
 
 	if(iter != m_objs.end())
 	{
-		tl2::delete_render_object(iter->second);
+		DeleteRenderObject(iter->second);
 		m_objs.erase(iter);
 
 		update();
@@ -337,7 +697,7 @@ void GlSceneRenderer::RenameObject(const std::string& oldname, const std::string
 /**
  * add a polygon-based object
  */
-GlSceneRenderer::t_objs::iterator
+	GlSceneRenderer::t_objs::iterator
 GlSceneRenderer::AddTriangleObject(
 	const std::string& obj_name,
 	const std::vector<t_vec3_gl>& triag_verts,
@@ -346,21 +706,21 @@ GlSceneRenderer::AddTriangleObject(
 	t_real_gl r, t_real_gl g, t_real_gl b, t_real_gl a)
 {
 	// colour
-	auto col = tl2::create<t_vec_gl>({ r, g, b, a });
+	auto col = m::create<t_vec_gl>({ r, g, b, a });
 
 	GlSceneObj obj;
 	create_bounding_objects<t_vec3_gl>(obj, triag_verts);
 
 	QMutexLocker _locker{&m_mutexObj};
 
-	create_triangle_object(this, obj,
+	CreateTriangleObject(obj,
 		triag_verts, triag_verts, triag_norms,
 		triag_uvs, col,
 		false, m_attrVertex, m_attrVertexNorm,
 		m_attrVertexCol, m_attrTexCoords);
 
 	// object transformation matrix
-	obj.m_mat = tl2::hom_translation<t_mat_gl, t_real_gl>(0., 0., 0.);
+	obj.m_mat = m::hom_translation<t_mat_gl, t_real_gl>(0., 0., 0.);
 
 	return m_objs.emplace(std::make_pair(obj_name, std::move(obj))).first;
 }
@@ -392,15 +752,15 @@ void GlSceneRenderer::CentreCam(const std::string& objid)
  */
 void GlSceneRenderer::CreateSelectionPlane()
 {
-	t_vec3_gl norm = tl2::create<t_vec3_gl>({ 0, 0, 1 });
+	t_vec3_gl norm = m::create<t_vec3_gl>({ 0, 0, 1 });
 	t_real_gl len = 20.;
-	auto solid = tl2::create_plane<t_mat_gl, t_vec3_gl>(norm, len, len);
-	auto [verts, norms, uvs] = tl2::create_triangles<t_vec3_gl>(solid);
-	auto col = tl2::create<t_vec_gl>({ 0.5, 0.5, 1., 0.1 });
+	auto solid = m::create_plane<t_mat_gl, t_vec3_gl>(norm, len);
+	auto [verts, norms, uvs] = m::create_triangles<t_vec3_gl>(solid);
+	auto col = m::create<t_vec_gl>({ 0.5, 0.5, 1., 0.1 });
 
 	create_bounding_objects<t_vec3_gl>(m_selectionPlane, verts);
 
-	create_triangle_object(this, m_selectionPlane,
+	CreateTriangleObject(m_selectionPlane,
 		verts, verts, norms, uvs, col,
 		false, m_attrVertex, m_attrVertexNorm,
 		m_attrVertexCol, m_attrTexCoords);
@@ -409,7 +769,7 @@ void GlSceneRenderer::CreateSelectionPlane()
 	m_selectionPlane.m_cull = false;
 	m_selectionPlane.m_lighting = false;
 
-	m_selectionPlane.m_mat = tl2::hom_translation<t_mat_gl, t_real_gl>(0., 0., 0.);
+	m_selectionPlane.m_mat = m::hom_translation<t_mat_gl, t_real_gl>(0., 0., 0.);
 }
 
 
@@ -419,11 +779,11 @@ void GlSceneRenderer::CreateSelectionPlane()
 void GlSceneRenderer::CalcSelectionPlaneMatrix()
 {
 	// rotate plane object's [001] normal into this vector
-	static const t_vec3_gl obj_norm = tl2::create<t_vec3_gl>({ 0, 0, 1 });
-	t_mat_gl rot = tl2::rotation<t_mat_gl, t_vec3_gl>(obj_norm, m_selectionPlaneNorm);
+	static const t_vec3_gl obj_norm = m::create<t_vec3_gl>({ 0, 0, 1 });
+	t_mat_gl rot = m::rotation<t_mat_gl, t_vec3_gl>(obj_norm, m_selectionPlaneNorm);
 
 	t_vec3_gl pos = m_selectionPlaneNorm * m_selectionPlaneDist;
-	t_mat_gl trans = tl2::hom_translation<t_mat_gl>(pos[0], pos[1], pos[2]);
+	t_mat_gl trans = m::hom_translation<t_mat_gl>(pos[0], pos[1], pos[2]);
 
 	m_selectionPlane.m_mat = trans * rot;
 }
@@ -434,9 +794,9 @@ void GlSceneRenderer::CalcSelectionPlaneMatrix()
  */
 void GlSceneRenderer::SetSelectionPlaneNorm(const t_vec3_gl& vec)
 {
-	const t_real_gl len = tl2::norm<t_vec3_gl>(vec);
+	const t_real_gl len = m::norm<t_vec3_gl>(vec);
 
-	if(!tl2::equals_0<t_real_gl>(len, t_real_gl(g_eps)))
+	if(!m::equals_0<t_real_gl>(len, t_real_gl(g_eps)))
 	{
 		m_selectionPlaneNorm = vec;
 		m_selectionPlaneNorm /= len;
@@ -472,12 +832,12 @@ void GlSceneRenderer::SetLight(std::size_t idx, const t_vec3_gl& pos)
 	m_lightsNeedUpdate = true;
 
 	// target vector
-	//t_vec3_gl target = tl2::create<t_vec3_gl>({ 0, 0, 0 });
+	//t_vec3_gl target = m::create<t_vec3_gl>({ 0, 0, 0 });
 	t_vec3_gl target = pos;
 	target[2] = 0;
 
 	// up vector
-	t_vec3_gl up = tl2::create<t_vec3_gl>({ 0, 1, 0 });
+	t_vec3_gl up = m::create<t_vec3_gl>({ 0, 1, 0 });
 
 	// light 0 is the principal light
 	if(idx == 0)
@@ -563,7 +923,7 @@ void GlSceneRenderer::UpdateLights()
 	{
 		// viewing angle has to be large enough so that the
 		// shadow map covers the entire scene
-		m_lightcam.SetFOV(tl2::pi<t_real_gl> * 0.75);
+		m_lightcam.SetFOV(m::pi<t_real_gl> * 0.75);
 		m_lightcam.SetPerspectiveProjection(true);
 		m_lightcam.SetAspectRatio(ratio);
 		m_lightcam.UpdatePerspective();
@@ -573,7 +933,7 @@ void GlSceneRenderer::UpdateLights()
 
 	// set matrices
 	m_shaders->setUniformValue(
-		m_uniMatrixLightProj, m_lightcam.GetPerspective());
+			m_uniMatrixLightProj, m_lightcam.GetPerspective());
 	LOGGLERR(pGl);
 
 	m_lightsNeedUpdate = false;
@@ -588,7 +948,7 @@ std::tuple<t_vec3_gl, int> GlSceneRenderer::GetSelectionPlaneCursor() const
 	auto [org3, dir3] = m_cam.GetPickerRay(m_posMouse.x(), m_posMouse.y());
 
 	auto[inters, inters_type, inters_lam] =
-		tl2::intersect_line_plane<t_vec3_gl>(
+		m::intersect_line_plane<t_vec3_gl>(
 			org3, dir3, m_selectionPlaneNorm, m_selectionPlaneDist);
 
 	return std::make_tuple(inters, inters_type);
@@ -614,30 +974,30 @@ void GlSceneRenderer::UpdatePicker()
 		emit CursorCoordsChanged(cursor_pos[0], cursor_pos[1], cursor_pos[2]);
 
 		if(m_light_follows_cursor)
-			SetLight(0, tl2::create<t_vec3_gl>({ cursor_pos[0], cursor_pos[1], 10 }));
+			SetLight(0, m::create<t_vec3_gl>({ cursor_pos[0], cursor_pos[1], 10 }));
 	}
 
 
 	// intersection with geometry
 	bool hasInters = false;
 	m_curObj = "";
-	t_vec_gl closest_inters = tl2::create<t_vec_gl>({ 0, 0, 0, 0 });
+	t_vec_gl closest_inters = m::create<t_vec_gl>({ 0, 0, 0, 0 });
 
 	QMutexLocker _locker{&m_mutexObj};
 
 	for(const auto& [obj_name, obj] : m_objs)
 	{
-		if(obj.m_type != tl2::GlRenderObjType::TRIANGLES || !obj.m_visible)
+		if(obj.m_type != GlRenderObjType::TRIANGLES || !obj.m_visible)
 			continue;
 
 		const t_mat_gl& matObj = obj.m_mat;
 
 		// scaling factor, TODO: maximum factor for non-uniform scaling
-		auto scale = std::cbrt(std::abs(tl2::det(matObj)));
+		auto scale = std::cbrt(std::abs(m::det<t_mat_gl, t_vec_gl>(matObj)));
 
 		// intersection with bounding sphere?
 		auto boundingInters =
-			tl2::intersect_line_sphere<t_vec3_gl, std::vector>(
+			m::intersect_line_sphere<t_vec3_gl, std::vector>(
 				org3, dir3,
 				matObj * obj.m_boundingSpherePos,
 				scale * obj.m_boundingSphereRad);
@@ -660,13 +1020,13 @@ void GlSceneRenderer::UpdatePicker()
 			} };
 
 			auto [inters, does_intersect, inters_lam] =
-				tl2::intersect_line_poly<t_vec3_gl, t_mat_gl>(
+				m::intersect_line_poly<t_vec3_gl, t_mat_gl>(
 					org3, dir3, poly, matObj);
 
 			if(!does_intersect)
 				continue;
 
-			t_vec_gl inters4 = tl2::create<t_vec_gl>({
+			t_vec_gl inters4 = m::create<t_vec_gl>({
 				inters[0], inters[1], inters[2], 1});
 
 			// intersection with other objects
@@ -684,7 +1044,7 @@ void GlSceneRenderer::UpdatePicker()
 				t_vec_gl oldPosTrafo = m_cam.GetTransformation() * closest_inters;
 				t_vec_gl newPosTrafo = m_cam.GetTransformation() * inters4;
 
-				if(tl2::norm(newPosTrafo) < tl2::norm(oldPosTrafo))
+				if(m::norm(newPosTrafo) < m::norm(oldPosTrafo))
 				{	// ...it is closer
 					closest_inters = inters4;
 					m_curObj = obj_name;
@@ -701,7 +1061,7 @@ void GlSceneRenderer::UpdatePicker()
 	}
 
 	m_pickerNeedsUpdate = false;
-	t_vec3_gl closest_inters3 = tl2::create<t_vec3_gl>({
+	t_vec3_gl closest_inters3 = m::create<t_vec3_gl>({
 		closest_inters[0], closest_inters[1], closest_inters[2]});
 
 	emit PickerIntersection(hasInters ? &closest_inters3 : nullptr, m_curObj);
@@ -829,20 +1189,20 @@ void GlSceneRenderer::initializeGL()
 
 
 	// set glsl version and constants
-	const std::string strGlsl = tl2::var_to_str<t_real_gl>(_GLSL_MAJ_VER*100 + _GLSL_MIN_VER*10);
-	std::string strPi = tl2::var_to_str<t_real_gl>(tl2::pi<t_real_gl>);
+	const std::string strGlsl = std::to_string(_GLSL_MAJ_VER*100 + _GLSL_MIN_VER*10);
+	std::string strPi = std::to_string(m::pi<t_real_gl>);
 	algo::replace_all(strPi, std::string(","), std::string("."));	// ensure decimal point
 
 	for(std::string* strSrc : { &strFragShader, &strVertexShader })
 	{
 		algo::replace_all(*strSrc, std::string("${GLSL_VERSION}"), strGlsl);
 		algo::replace_all(*strSrc, std::string("${PI}"), strPi);
-		algo::replace_all(*strSrc, std::string("${MAX_LIGHTS}"), tl2::var_to_str<unsigned int>(MAX_LIGHTS));
+		algo::replace_all(*strSrc, std::string("${MAX_LIGHTS}"), std::to_string(MAX_LIGHTS));
 	}
 
 
 	// get gl functions
-	auto *pGl = tl2::get_gl_functions(this);
+	auto *pGl = GetGlFunctions();
 	if(!pGl) return;
 
 	m_strGlVer = (char*)pGl->glGetString(GL_VERSION);
@@ -921,7 +1281,7 @@ void GlSceneRenderer::initializeGL()
 	LOGGLERR(pGl);
 
 	CreateSelectionPlane();
-	SetLight(0, tl2::create<t_vec3_gl>({ 0, 0, 10 }));
+	SetLight(0, m::create<t_vec3_gl>({ 0, 0, 10 }));
 
 	m_initialised = true;
 	emit AfterGLInitialisation();
@@ -940,19 +1300,6 @@ void GlSceneRenderer::resizeGL(int w, int h)
 	m_lightsNeedUpdate = true;
 
 	UpdateCam();
-}
-
-
-/**
- * get the gl functions corresponding to the selected version
- */
-qgl_funcs* GlSceneRenderer::GetGlFunctions()
-{
-	if(!m_initialised)
-		return nullptr;
-	if(auto *pContext = ((QOpenGLWidget*)this)->context(); !pContext)
-		return nullptr;
-	return tl2::get_gl_functions(this);
 }
 
 
@@ -1032,10 +1379,6 @@ void GlSceneRenderer::CreateActivePortals()
 				.mirror = obj.m_portal_mirror
 			};
 
-			//std::cout << "portal " << active_portal.id << ":\n";
-			//tl2::niceprint(std::cout, active_portal.mat);
-			//std::cout << "mirroring: " << active_portal.mirror << std::endl;
-
 			m_active_portals.emplace_back(std::move(active_portal));
 		}
 	}
@@ -1053,7 +1396,7 @@ void GlSceneRenderer::paintGL()
 	QMutexLocker _locker{&m_mutexObj};
 
 	if(auto *pContext = context(); !pContext) return;
-	auto *pGl = tl2::get_gl_functions(this);
+	auto *pGl = GetGlFunctions();
 
 	// shadow framebuffer render pass
 	if(m_shadowRenderingEnabled)
@@ -1302,7 +1645,7 @@ void GlSceneRenderer::DoPaintGL(qgl_funcs *pGl)
 	//m_shaders->setUniformValue(m_uniTextureActive, m_textures_active);
 	m_shaders->setUniformValue(m_uniTexture, 1);
 
-	auto colOverride = tl2::create<t_vec_gl>({ 1, 1, 1, 1 });
+	auto colOverride = m::create<t_vec_gl>({ 1, 1, 1, 1 });
 
 	// render object
 	auto render_triangle_geometry = 
@@ -1440,7 +1783,7 @@ void GlSceneRenderer::DoPaintGL(qgl_funcs *pGl)
 		BOOST_SCOPE_EXIT(pGl, &obj, &m_attrVertex, &m_attrVertexNorm, &m_attrVertexCol, &m_attrTexCoords)
 		{
 			pGl->glDisableVertexAttribArray(m_attrVertexCol);
-			if(obj.m_type == tl2::GlRenderObjType::TRIANGLES)
+			if(obj.m_type == GlRenderObjType::TRIANGLES)
 			{
 				pGl->glDisableVertexAttribArray(m_attrTexCoords);
 				pGl->glDisableVertexAttribArray(m_attrVertexNorm);
@@ -1450,7 +1793,7 @@ void GlSceneRenderer::DoPaintGL(qgl_funcs *pGl)
 		BOOST_SCOPE_EXIT_END
 
 		pGl->glEnableVertexAttribArray(m_attrVertex);
-		if(obj.m_type == tl2::GlRenderObjType::TRIANGLES)
+		if(obj.m_type == GlRenderObjType::TRIANGLES)
 		{
 			pGl->glEnableVertexAttribArray(m_attrVertexNorm);
 			pGl->glEnableVertexAttribArray(m_attrTexCoords);
@@ -1460,9 +1803,9 @@ void GlSceneRenderer::DoPaintGL(qgl_funcs *pGl)
 
 
 		// render the object
-		if(obj.m_type == tl2::GlRenderObjType::TRIANGLES)
+		if(obj.m_type == GlRenderObjType::TRIANGLES)
 			pGl->glDrawArrays(GL_TRIANGLES, 0, obj.m_triangles.size());
-		else if(obj.m_type == tl2::GlRenderObjType::LINES)
+		else if(obj.m_type == GlRenderObjType::LINES)
 			pGl->glDrawArrays(GL_LINES, 0, obj.m_vertices.size());
 		else
 			std::cerr << "Unknown plot object type." << std::endl;
@@ -1501,7 +1844,7 @@ void GlSceneRenderer::DoPaintQt(QPainter &painter)
 	{
 		const auto& obj = curObj->second;
 
-		if(obj.m_visible && obj.m_type == tl2::GlRenderObjType::TRIANGLES)
+		if(obj.m_visible && obj.m_type == GlRenderObjType::TRIANGLES)
 		{
 			// draw a bounding rectangle over the currently selected item
 			if(g_draw_bounding_rectangles)
