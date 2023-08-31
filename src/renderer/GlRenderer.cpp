@@ -42,6 +42,8 @@ namespace algo = boost::algorithm;
 #include "src/common/Resources.h"
 #include "src/settings_variables.h"
 
+#include "mathlibs/libs/poly_algos.h"
+
 
 #define MAX_LIGHTS 4  // max. number allowed in shader
 

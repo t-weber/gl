@@ -13,6 +13,8 @@
 #include "settings_variables.h"
 #include "src/common/ExprParser.h"
 
+#include "mathlibs/libs/poly_algos.h"
+
 #include <iostream>
 
 namespace pt = boost::property_tree;
