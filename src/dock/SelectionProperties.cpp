@@ -92,7 +92,7 @@ SelectionPropertiesWidget::SelectionPropertiesWidget(QWidget *parent)
 
 	int y = 0;
 	grid->addWidget(groupVecs, y++, 0, 1, 1);
-	grid->addItem(new QSpacerItem(1, 1, 
+	grid->addItem(new QSpacerItem(1, 1,
 		QSizePolicy::Minimum, QSizePolicy::Expanding), y++, 0, 1, 1);
 
 	// plane distance

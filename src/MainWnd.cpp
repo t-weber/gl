@@ -127,10 +127,11 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 	// dock widgets
 	// --------------------------------------------------------------------
 	m_camProperties = std::make_shared<CamPropertiesDockWidget>(this);
+	m_simProperties = std::make_shared<SimPropertiesDockWidget>(this);
 	m_selProperties = std::make_shared<SelectionPropertiesDockWidget>(this);
 
 	for(QDockWidget* dockwidget : std::initializer_list<QDockWidget*>
-		{ m_camProperties.get(), m_selProperties.get() })
+		{ m_camProperties.get(), m_simProperties.get(), m_selProperties.get() })
 	{
 		dockwidget->setFeatures(
 			QDockWidget::DockWidgetClosable |
@@ -141,9 +142,11 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 	}
 
 	addDockWidget(Qt::RightDockWidgetArea, m_camProperties.get());
+	addDockWidget(Qt::RightDockWidgetArea, m_simProperties.get());
 	addDockWidget(Qt::RightDockWidgetArea, m_selProperties.get());
 
 	auto* camwidget = m_camProperties->GetWidget().get();
+	auto* simwidget = m_simProperties->GetWidget().get();
 	auto* selwidget = m_selProperties->GetWidget().get();
 
 	// camera viewing angle
@@ -210,6 +213,20 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 					theta/t_real_gl{180}*m::pi<t_real_gl>);
 				m_renderer->UpdateCam();
 			}
+		});
+
+	// time scale
+	connect(simwidget, &SimPropertiesWidget::TimeScaleChanged,
+		[this](t_real t) -> void
+		{
+			this->m_timescale = t;
+		});
+
+	// max. time stepping
+	connect(simwidget, &SimPropertiesWidget::MaxTimeStepChanged,
+		[this](t_int dt) -> void
+		{
+			this->m_maxtimestep = dt;
 		});
 
 	// selection plane normal
@@ -330,6 +347,7 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 	QAction *acRestoreState = new QAction("Restore Layout", menuFile);
 
 	menuWindow->addAction(m_camProperties->toggleViewAction());
+	menuWindow->addAction(m_simProperties->toggleViewAction());
 	menuWindow->addAction(m_selProperties->toggleViewAction());
 	menuWindow->addSeparator();
 	menuWindow->addAction(acHideAllDocks);
@@ -343,7 +361,7 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 	{
 		for(QDockWidget* dock : std::initializer_list<QDockWidget*>
 		{
-			m_camProperties.get(), m_selProperties.get()
+			m_camProperties.get(), m_simProperties.get(), m_selProperties.get()
 		})
 		{
 			dock->hide();
@@ -354,7 +372,7 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 	{
 		for(QDockWidget* dock : std::initializer_list<QDockWidget*>
 		{
-			m_camProperties.get(), m_selProperties.get()
+			m_camProperties.get(), m_simProperties.get(), m_selProperties.get()
 		})
 		{
 			dock->show();
@@ -671,7 +689,32 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
  */
 void MainWnd::tick(const std::chrono::milliseconds& ms)
 {
-	m_scene.tick(ms);
+	// advance simulation
+	using t_val = decltype(ms.count());
+	t_val ms_total = t_val(t_real(ms.count()) * m_timescale);
+
+	t_val num_steps = ms_total / m_maxtimestep;
+	t_val ms_step = num_steps ? ms_total / num_steps : 0;
+
+	// steps
+	t_val ms_cur_val = 0;
+	for(t_int step = 0; step < num_steps; ++step)
+	{
+		std::chrono::milliseconds ms_sim(ms_step);
+		m_scene.tick(ms_sim);
+
+		ms_cur_val += ms_step;
+	}
+
+	// rest
+	if(ms_cur_val < ms_total)
+	{
+		std::chrono::milliseconds ms_sim(ms_total - ms_cur_val);
+		m_scene.tick(ms_sim);
+	}
+
+
+	// advance renderer
 	if(m_renderer)
 		m_renderer->tick(ms);
 }
@@ -974,6 +1017,8 @@ bool MainWnd::OpenFile(const QString& file)
 		// load dock window settings
 		if(auto prop_dock = prop.get_child_optional(FILE_BASENAME "configuration.camera"); prop_dock)
 			m_camProperties->GetWidget()->Load(*prop_dock);
+		if(auto prop_dock = prop.get_child_optional(FILE_BASENAME "configuration.simulation"); prop_dock)
+			m_simProperties->GetWidget()->Load(*prop_dock);
 		if(auto prop_dock = prop.get_child_optional(FILE_BASENAME "configuration.selection_plane"); prop_dock)
 			m_selProperties->GetWidget()->Load(*prop_dock);
 
@@ -1048,6 +1093,7 @@ bool MainWnd::SaveFile(const QString &file)
 
 	// save dock window settings
 	prop.put_child(FILE_BASENAME "configuration.camera", m_camProperties->GetWidget()->Save());
+	prop.put_child(FILE_BASENAME "configuration.simulation", m_simProperties->GetWidget()->Save());
 	prop.put_child(FILE_BASENAME "configuration.selection_plane", m_selProperties->GetWidget()->Save());
 
 	// set format and version

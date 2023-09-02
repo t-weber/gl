@@ -754,9 +754,9 @@ void GlSceneRenderer::CentreCam(const std::string& objid)
  */
 void GlSceneRenderer::CreateSelectionPlane()
 {
-	t_vec3_gl norm = m::create<t_vec3_gl>({ 0, 0, 1 });
+	t_vec3_gl norm = m::create<t_vec3_gl>({ 0, 0, -1 });
 	t_real_gl len = 20.;
-	auto solid = m::create_plane<t_mat_gl, t_vec3_gl>(norm, len);
+	auto solid = m::create_plane</*t_mat33_gl*/ t_mat_gl, t_vec3_gl>(norm, len);
 	auto [verts, norms, uvs] = m::create_triangles<t_vec3_gl>(solid);
 	auto col = m::create<t_vec_gl>({ 0.5, 0.5, 1., 0.1 });
 
@@ -772,6 +772,7 @@ void GlSceneRenderer::CreateSelectionPlane()
 	m_selectionPlane.m_lighting = false;
 
 	m_selectionPlane.m_mat = m::hom_translation<t_mat_gl, t_real_gl>(0., 0., 0.);
+	//m_ops::niceprint(std::cout, m_selectionPlane.m_mat);
 }
 
 
@@ -788,6 +789,7 @@ void GlSceneRenderer::CalcSelectionPlaneMatrix()
 	t_mat_gl trans = m::hom_translation<t_mat_gl>(pos[0], pos[1], pos[2]);
 
 	m_selectionPlane.m_mat = trans * rot;
+	//m_ops::niceprint(std::cout, m_selectionPlane.m_mat);
 }
 
 

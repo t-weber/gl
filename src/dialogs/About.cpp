@@ -61,7 +61,7 @@ About::About(QWidget *parent, const QIcon* progIcon)
 
 	// add description items
 	//AddTitle(QApplication::applicationDisplayName().toStdString().c_str());
-	AddTitle("Gl Scene Editor", progIcon);
+	AddTitle("Gl Scene", progIcon);
 
 	AddSpacer(15);
 

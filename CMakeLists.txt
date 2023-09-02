@@ -193,6 +193,7 @@ add_executable(gl
 	src/renderer/Camera.h
 
 	src/dock/CamProperties.cpp src/dock/CamProperties.h
+	src/dock/SimProperties.cpp src/dock/SimProperties.h
 	src/dock/SelectionProperties.cpp src/dock/SelectionProperties.h
 
 	src/dialogs/About.cpp src/dialogs/About.h

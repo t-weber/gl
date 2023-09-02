@@ -98,10 +98,6 @@ CamPropertiesWidget::CamPropertiesWidget(QWidget *parent)
 		layoutVecs->addWidget(m_spinPos[1], y, 2, 1, 2);
 		layoutVecs->addWidget(m_spinPos[2], y++, 4, 1, 2);
 
-		//QFrame *separator = new QFrame(this);
-		//separator->setFrameStyle(QFrame::HLine);
-		//layoutVecs->addWidget(separator, y++, 0, 1, 6);
-
 		layoutVecs->addWidget(new QLabel("Rotation (φ, θ):", this),
 			y++, 0, 1, 6);
 		layoutVecs->addWidget(m_spinRot[0], y, 0, 1, 3);

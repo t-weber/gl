@@ -141,6 +141,7 @@ using t_real_gl = GLfloat;
 using t_vec2_gl = m::qvecN_adapter<int, 2, t_real_gl, QVector2D>;
 using t_vec3_gl = m::qvecN_adapter<int, 3, t_real_gl, QVector3D>;
 using t_vec_gl = m::qvecN_adapter<int, 4, t_real_gl, QVector4D>;
+using t_mat33_gl = m::qmatNN_adapter<int, 3, 3, t_real_gl, QMatrix3x3>;
 using t_mat_gl = m::qmatNN_adapter<int, 4, 4, t_real_gl, QMatrix4x4>;
 // ----------------------------------------------------------------------------
 
@@ -316,7 +317,11 @@ public:
 
 	void SetSelectionPlaneNorm(const t_vec3_gl& vec);
 	void SetSelectionPlaneDist(t_real_gl d);
-	void SetSelectionPlaneVisible(bool b) { m_selectionPlane.m_visible = b; update(); }
+	void SetSelectionPlaneVisible(bool b)
+	{
+		m_selectionPlane.m_visible = b;
+		update();
+	}
 
 	const t_vec3_gl& GetSelectionPlaneNorm() const { return m_selectionPlaneNorm; }
 	t_real_gl GetSelectionPlaneDist() const { return m_selectionPlaneDist; }

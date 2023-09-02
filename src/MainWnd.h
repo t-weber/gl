@@ -40,6 +40,7 @@
 #include "dialogs/Settings.h"
 
 #include "dock/CamProperties.h"
+#include "dock/SimProperties.h"
 #include "dock/SelectionProperties.h"
 
 
@@ -99,6 +100,7 @@ private:
 
 	// docks
 	std::shared_ptr<CamPropertiesDockWidget> m_camProperties{};
+	std::shared_ptr<SimPropertiesDockWidget> m_simProperties{};
 	std::shared_ptr<SelectionPropertiesDockWidget> m_selProperties{};
 
 	std::string m_initialSceneFile = "startup.glscene";
@@ -119,6 +121,8 @@ private:
 
 	// timer
 	QTimer m_timer{};
+	t_real m_timescale{1};
+	t_int m_maxtimestep{100};
 
 	// mouse picker
 	t_vec m_drag_start = m::create<t_vec>({0, 0, 0});
