@@ -22,7 +22,9 @@
 CamPropertiesWidget::CamPropertiesWidget(QWidget *parent)
 	: QWidget{parent}
 {
-	m_spinViewingAngle = new QDoubleSpinBox(this);
+	// projection group
+	auto *groupProj = new QGroupBox("Projection", this);
+	m_spinViewingAngle = new QDoubleSpinBox(groupProj);
 	m_spinViewingAngle->setMinimum(1);
 	m_spinViewingAngle->setMaximum(179);
 	m_spinViewingAngle->setDecimals(g_prec_gui);
@@ -30,90 +32,30 @@ CamPropertiesWidget::CamPropertiesWidget(QWidget *parent)
 	m_spinViewingAngle->setSuffix("°");
 	m_spinViewingAngle->setToolTip("Camera field of view [deg].");
 
-	m_spinZoom = new QDoubleSpinBox(this);
+	m_spinZoom = new QDoubleSpinBox(groupProj);
 	m_spinZoom->setMinimum(0.001);
 	m_spinZoom->setMaximum(999);
 	m_spinZoom->setDecimals(g_prec_gui);
 	m_spinZoom->setSingleStep(0.1);
 	m_spinZoom->setToolTip("Camera zoom.");
 
-	m_checkPerspectiveProj = new QCheckBox(this);
+	m_checkPerspectiveProj = new QCheckBox(groupProj);
 	m_checkPerspectiveProj->setText("Perspective Projection");
 	m_checkPerspectiveProj->setToolTip("Choose perspective or parallel projection.");
 	m_checkPerspectiveProj->setChecked(true);
 
-	const char* pos_comp[] = {"x", "y", "z"};
-	for(int pos=0; pos<3; ++pos)
-	{
-		m_spinPos[pos] = new QDoubleSpinBox(this);
-		m_spinPos[pos]->setMinimum(-100);
-		m_spinPos[pos]->setMaximum(+100);
-		m_spinPos[pos]->setDecimals(g_prec_gui);
-		m_spinPos[pos]->setSingleStep(1);
-		m_spinPos[pos]->setToolTip(QString("Camera %1 position.").arg(pos_comp[pos]));
-	}
-
-	m_spinRot[0] = new QDoubleSpinBox(this);
-	m_spinRot[0]->setMinimum(0);
-	m_spinRot[0]->setMaximum(360);
-	m_spinRot[0]->setDecimals(g_prec_gui);
-	m_spinRot[0]->setSingleStep(1);
-	m_spinRot[0]->setSuffix("°");
-	m_spinRot[0]->setToolTip("Camera φ rotation [deg].");
-
-	m_spinRot[1] = new QDoubleSpinBox(this);
-	m_spinRot[1]->setMinimum(-180);
-	m_spinRot[1]->setMaximum(180);
-	m_spinRot[1]->setDecimals(g_prec_gui);
-	m_spinRot[1]->setSingleStep(1);
-	m_spinRot[1]->setSuffix("°");
-	m_spinRot[1]->setToolTip("Camera θ rotation [deg].");
-
-	auto *groupProj = new QGroupBox("Projection", this);
-	{
-		auto *layoutProj = new QGridLayout(groupProj);
-		layoutProj->setHorizontalSpacing(2);
-		layoutProj->setVerticalSpacing(2);
-		layoutProj->setContentsMargins(4,4,4,4);
-
-		int y = 0;
-		layoutProj->addWidget(new QLabel("Field of View and Zoom:", this),
-			y++, 0, 1, 2);
-		layoutProj->addWidget(m_spinViewingAngle, y, 0, 1, 1);
-		layoutProj->addWidget(m_spinZoom, y++, 1, 1, 1);
-		layoutProj->addWidget(m_checkPerspectiveProj, y++, 0, 1, 2);
-	}
-
-	auto *groupVecs = new QGroupBox("Vectors", this);
-	{
-		auto *layoutVecs = new QGridLayout(groupVecs);
-		layoutVecs->setHorizontalSpacing(2);
-		layoutVecs->setVerticalSpacing(2);
-		layoutVecs->setContentsMargins(4,4,4,4);
-
-		int y = 0;
-		layoutVecs->addWidget(new QLabel("Position (x, y, z):", this),
-			y++, 0, 1, 6);
-		layoutVecs->addWidget(m_spinPos[0], y, 0, 1, 2);
-		layoutVecs->addWidget(m_spinPos[1], y, 2, 1, 2);
-		layoutVecs->addWidget(m_spinPos[2], y++, 4, 1, 2);
-
-		layoutVecs->addWidget(new QLabel("Rotation (φ, θ):", this),
-			y++, 0, 1, 6);
-		layoutVecs->addWidget(m_spinRot[0], y, 0, 1, 3);
-		layoutVecs->addWidget(m_spinRot[1], y++, 3, 1, 3);
-	}
-
-	auto *grid = new QGridLayout(this);
-	grid->setHorizontalSpacing(2);
-	grid->setVerticalSpacing(2);
-	grid->setContentsMargins(4,4,4,4);
+	auto *layoutProj = new QGridLayout(groupProj);
+	layoutProj->setHorizontalSpacing(2);
+	layoutProj->setVerticalSpacing(2);
+	layoutProj->setContentsMargins(4,4,4,4);
 
 	int y = 0;
-	grid->addWidget(groupProj, y++, 0, 1, 1);
-	grid->addWidget(groupVecs, y++, 0, 1, 1);
-	grid->addItem(new QSpacerItem(1, 1, QSizePolicy::Minimum, QSizePolicy::Expanding), y++, 0, 1, 1);
+	layoutProj->addWidget(new QLabel("Field of View and Zoom:", groupProj), y++, 0, 1, 2);
+	layoutProj->addWidget(m_spinViewingAngle, y, 0, 1, 1);
+	layoutProj->addWidget(m_spinZoom, y++, 1, 1, 1);
+	layoutProj->addWidget(m_checkPerspectiveProj, y++, 0, 1, 2);
 
+	// connections of the projection group
 	// viewing angle
 	connect(m_spinViewingAngle,
 		static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
@@ -131,6 +73,52 @@ CamPropertiesWidget::CamPropertiesWidget(QWidget *parent)
 			emit PerspectiveProjChanged(state == Qt::Checked);
 		});
 
+
+	// vectors group
+	auto *groupVecs = new QGroupBox("Vectors", this);
+	const char* pos_comp[] = {"x", "y", "z"};
+	for(int pos=0; pos<3; ++pos)
+	{
+		m_spinPos[pos] = new QDoubleSpinBox(groupVecs);
+		m_spinPos[pos]->setMinimum(-100);
+		m_spinPos[pos]->setMaximum(+100);
+		m_spinPos[pos]->setDecimals(g_prec_gui);
+		m_spinPos[pos]->setSingleStep(1);
+		m_spinPos[pos]->setToolTip(QString("Camera %1 position.").arg(pos_comp[pos]));
+	}
+
+	m_spinRot[0] = new QDoubleSpinBox(groupVecs);
+	m_spinRot[0]->setMinimum(0);
+	m_spinRot[0]->setMaximum(360);
+	m_spinRot[0]->setDecimals(g_prec_gui);
+	m_spinRot[0]->setSingleStep(1);
+	m_spinRot[0]->setSuffix("°");
+	m_spinRot[0]->setToolTip("Camera φ rotation [deg].");
+
+	m_spinRot[1] = new QDoubleSpinBox(groupVecs);
+	m_spinRot[1]->setMinimum(-180);
+	m_spinRot[1]->setMaximum(180);
+	m_spinRot[1]->setDecimals(g_prec_gui);
+	m_spinRot[1]->setSingleStep(1);
+	m_spinRot[1]->setSuffix("°");
+	m_spinRot[1]->setToolTip("Camera θ rotation [deg].");
+
+	auto *layoutVecs = new QGridLayout(groupVecs);
+	layoutVecs->setHorizontalSpacing(2);
+	layoutVecs->setVerticalSpacing(2);
+	layoutVecs->setContentsMargins(4,4,4,4);
+
+	y = 0;
+	layoutVecs->addWidget(new QLabel("Position (x, y, z):", groupVecs), y++, 0, 1, 6);
+	layoutVecs->addWidget(m_spinPos[0], y, 0, 1, 2);
+	layoutVecs->addWidget(m_spinPos[1], y, 2, 1, 2);
+	layoutVecs->addWidget(m_spinPos[2], y++, 4, 1, 2);
+
+	layoutVecs->addWidget(new QLabel("Rotation (φ, θ):", groupVecs), y++, 0, 1, 6);
+	layoutVecs->addWidget(m_spinRot[0], y, 0, 1, 3);
+	layoutVecs->addWidget(m_spinRot[1], y++, 3, 1, 3);
+
+	// connections for the vectors group
 	// position
 	for(int i=0; i<3; ++i)
 	{
@@ -170,6 +158,18 @@ CamPropertiesWidget::CamPropertiesWidget(QWidget *parent)
 				emit RotationChanged(angles[0], angles[1]);
 			});
 	}
+
+
+	// main layout
+	auto *grid = new QGridLayout(this);
+	grid->setHorizontalSpacing(2);
+	grid->setVerticalSpacing(2);
+	grid->setContentsMargins(4,4,4,4);
+
+	y = 0;
+	grid->addWidget(groupProj, y++, 0, 1, 1);
+	grid->addWidget(groupVecs, y++, 0, 1, 1);
+	grid->addItem(new QSpacerItem(1, 1, QSizePolicy::Minimum, QSizePolicy::Expanding), y++, 0, 1, 1);
 }
 
 

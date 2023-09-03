@@ -259,6 +259,13 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 			if(m_renderer)
 				m_renderer->SetSelectionPlaneVisible(visible);
 		});
+
+	// mouse drag mode changed
+	connect(selwidget, &SelectionPropertiesWidget::MouseDragModeChanged,
+		[this](MouseDragMode mode) -> void
+		{
+			m_mousedragmode = mode;
+		});
 	// --------------------------------------------------------------------
 
 
@@ -712,6 +719,8 @@ void MainWnd::tick(const std::chrono::milliseconds& ms)
 		std::chrono::milliseconds ms_sim(ms_total - ms_cur_val);
 		m_scene.tick(ms_sim);
 	}
+
+	//std::cout << num_steps << "*" << ms_step << " + " << ms_total - ms_cur_val << std::endl;
 
 
 	// advance renderer
@@ -1360,7 +1369,8 @@ void MainWnd::ObjectDragged(bool drag_start, const std::string& objid)
 	}
 
 	m_scene.DragObject(drag_start, objid,
-		m_drag_start, m::convert<t_vec>(cursor));
+		m_drag_start, m::convert<t_vec>(cursor),
+		m_mousedragmode);
 
 
 	// if the object is a light, set its new position

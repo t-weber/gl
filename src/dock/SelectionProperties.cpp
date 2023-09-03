@@ -22,10 +22,13 @@ s */
 SelectionPropertiesWidget::SelectionPropertiesWidget(QWidget *parent)
 	: QWidget{parent}
 {
+	// selection group
+	auto *groupVecs = new QGroupBox("Selection Plane", this);
+
 	const char* pos_comp[] = {"x", "y", "z"};
 	for(int pos=0; pos<3; ++pos)
 	{
-		m_spinPlaneNorm[pos] = new QDoubleSpinBox(this);
+		m_spinPlaneNorm[pos] = new QDoubleSpinBox(groupVecs);
 		m_spinPlaneNorm[pos]->setMinimum(-999);
 		m_spinPlaneNorm[pos]->setMaximum(+999);
 		m_spinPlaneNorm[pos]->setDecimals(g_prec_gui);
@@ -35,7 +38,7 @@ SelectionPropertiesWidget::SelectionPropertiesWidget(QWidget *parent)
 			QString("Selection plane normal %1 component.").arg(pos_comp[pos]));
 	}
 
-	m_spinPlaneDist = new QDoubleSpinBox(this);
+	m_spinPlaneDist = new QDoubleSpinBox(groupVecs);
 	m_spinPlaneDist->setMinimum(-999);
 	m_spinPlaneDist->setMaximum(999);
 	m_spinPlaneDist->setDecimals(g_prec_gui);
@@ -43,58 +46,45 @@ SelectionPropertiesWidget::SelectionPropertiesWidget(QWidget *parent)
 	m_spinPlaneDist->setValue(0.);
 	m_spinPlaneDist->setToolTip("Selection plane distance.");
 
-	m_checkPlaneVisible = new QCheckBox("Visible", this);
+	m_checkPlaneVisible = new QCheckBox("Visible", groupVecs);
 	m_checkPlaneVisible->setChecked(true);
 
 	QPushButton* btnPlaneNorm[3];
 	const char* pos_btn[] = {"[100]", "[010]", "[001]"};
 	for(int pos=0; pos<3; ++pos)
 	{
-		btnPlaneNorm[pos] = new QPushButton(this);
+		btnPlaneNorm[pos] = new QPushButton(groupVecs);
 		btnPlaneNorm[pos]->setText(pos_btn[pos]);
 		btnPlaneNorm[pos]->setToolTip(
 			QString("Set selection plane normal to %1.").arg(pos_btn[pos]));
 	}
 
-	auto *groupVecs = new QGroupBox("Selection Plane", this);
-	{
-		auto *layoutVecs = new QGridLayout(groupVecs);
-		layoutVecs->setHorizontalSpacing(2);
-		layoutVecs->setVerticalSpacing(2);
-		layoutVecs->setContentsMargins(4,4,4,4);
-
-		int y = 0;
-		layoutVecs->addWidget(new QLabel("Normal (x, y, z):", this),
-			y++, 0, 1, 6);
-		layoutVecs->addWidget(m_spinPlaneNorm[0], y, 0, 1, 2);
-		layoutVecs->addWidget(m_spinPlaneNorm[1], y, 2, 1, 2);
-		layoutVecs->addWidget(m_spinPlaneNorm[2], y++, 4, 1, 2);
-
-		layoutVecs->addWidget(new QLabel("Distance:", this),
-			y, 0, 1, 2);
-		layoutVecs->addWidget(m_spinPlaneDist, y, 2, 1, 2);
-
-		layoutVecs->addWidget(m_checkPlaneVisible, y++, 4, 1, 2);
-
-		QFrame *separator = new QFrame(this);
-		separator->setFrameStyle(QFrame::HLine);
-		layoutVecs->addWidget(separator, y++, 0, 1, 6);
-
-		layoutVecs->addWidget(btnPlaneNorm[0], y, 0, 1, 2);
-		layoutVecs->addWidget(btnPlaneNorm[1], y, 2, 1, 2);
-		layoutVecs->addWidget(btnPlaneNorm[2], y++, 4, 1, 2);
-	}
-
-	auto *grid = new QGridLayout(this);
-	grid->setHorizontalSpacing(2);
-	grid->setVerticalSpacing(2);
-	grid->setContentsMargins(4,4,4,4);
+	auto *layoutVecs = new QGridLayout(groupVecs);
+	layoutVecs->setHorizontalSpacing(2);
+	layoutVecs->setVerticalSpacing(2);
+	layoutVecs->setContentsMargins(4,4,4,4);
 
 	int y = 0;
-	grid->addWidget(groupVecs, y++, 0, 1, 1);
-	grid->addItem(new QSpacerItem(1, 1,
-		QSizePolicy::Minimum, QSizePolicy::Expanding), y++, 0, 1, 1);
+	layoutVecs->addWidget(new QLabel("Normal (x, y, z):", groupVecs), y++, 0, 1, 6);
+	layoutVecs->addWidget(m_spinPlaneNorm[0], y, 0, 1, 2);
+	layoutVecs->addWidget(m_spinPlaneNorm[1], y, 2, 1, 2);
+	layoutVecs->addWidget(m_spinPlaneNorm[2], y++, 4, 1, 2);
 
+	layoutVecs->addWidget(new QLabel("Distance:", groupVecs), y, 0, 1, 2);
+	layoutVecs->addWidget(m_spinPlaneDist, y, 2, 1, 2);
+
+	layoutVecs->addWidget(m_checkPlaneVisible, y++, 4, 1, 2);
+
+	QFrame *separator = new QFrame(groupVecs);
+	separator->setFrameStyle(QFrame::HLine);
+	layoutVecs->addWidget(separator, y++, 0, 1, 6);
+
+	layoutVecs->addWidget(btnPlaneNorm[0], y, 0, 1, 2);
+	layoutVecs->addWidget(btnPlaneNorm[1], y, 2, 1, 2);
+	layoutVecs->addWidget(btnPlaneNorm[2], y++, 4, 1, 2);
+
+
+	// connections for selection group
 	// plane distance
 	connect(m_spinPlaneDist,
 		static_cast<void (QDoubleSpinBox::*)(double)>(&QDoubleSpinBox::valueChanged),
@@ -156,6 +146,51 @@ SelectionPropertiesWidget::SelectionPropertiesWidget(QWidget *parent)
 		connect(m_checkPlaneVisible, &QCheckBox::toggled,
 			this, &SelectionPropertiesWidget::PlaneVisibilityChanged);
 	}
+
+
+#ifdef USE_BULLET
+	// mouse dragging group
+	auto *groupDrag = new QGroupBox("Mouse Dragging", this);
+
+	m_comboMouseDragMode = new QComboBox(groupDrag);
+	m_comboMouseDragMode->addItem("Set Position", static_cast<int>(MouseDragMode::POSITION));
+	m_comboMouseDragMode->addItem("Apply Momentum", static_cast<int>(MouseDragMode::MOMENTUM));
+	m_comboMouseDragMode->addItem("Apply Force", static_cast<int>(MouseDragMode::FORCE));
+	m_comboMouseDragMode->setCurrentIndex(0);
+
+	auto *layoutDrag = new QGridLayout(groupDrag);
+	layoutDrag->setHorizontalSpacing(2);
+	layoutDrag->setVerticalSpacing(2);
+	layoutDrag->setContentsMargins(4,4,4,4);
+
+	y = 0;
+	layoutDrag->addWidget(new QLabel("Mode:", groupDrag), y, 0, 1, 1);
+	layoutDrag->addWidget(m_comboMouseDragMode, y++, 1, 1, 1);
+
+	// connections for mouse dragging group
+	connect(m_comboMouseDragMode, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+		[this](int /*idx*/) -> void
+		{
+			MouseDragMode mode = static_cast<MouseDragMode>(
+				m_comboMouseDragMode->currentData().toInt());
+			emit MouseDragModeChanged(mode);
+		});
+#endif
+
+
+	// add groups to main layout
+	auto *grid = new QGridLayout(this);
+	grid->setHorizontalSpacing(2);
+	grid->setVerticalSpacing(2);
+	grid->setContentsMargins(4,4,4,4);
+
+	y = 0;
+	grid->addWidget(groupVecs, y++, 0, 1, 1);
+#ifdef USE_BULLET
+	grid->addWidget(groupDrag, y++, 0, 1, 1);
+#endif
+	grid->addItem(new QSpacerItem(1, 1,
+		QSizePolicy::Minimum, QSizePolicy::Expanding), y++, 0, 1, 1);
 }
 
 
@@ -188,6 +223,28 @@ void SelectionPropertiesWidget::SetPlaneVisibility(bool visible)
 	m_checkPlaneVisible->setChecked(visible);
 	this->blockSignals(false);
 }
+
+
+#ifdef USE_BULLET
+void SelectionPropertiesWidget::SetMouseDragMode(MouseDragMode mode)
+{
+	this->blockSignals(true);
+	switch(mode)
+	{
+		default:
+		case MouseDragMode::POSITION:
+			m_comboMouseDragMode->setCurrentIndex(0);
+			break;
+		case MouseDragMode::MOMENTUM:
+			m_comboMouseDragMode->setCurrentIndex(1);
+			break;
+		case MouseDragMode::FORCE:
+			m_comboMouseDragMode->setCurrentIndex(2);
+			break;
+	}
+	this->blockSignals(false);
+}
+#endif
 
 
 /**

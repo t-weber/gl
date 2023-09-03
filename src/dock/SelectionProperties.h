@@ -11,12 +11,12 @@
 #include <memory>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
-#include <boost/signals2/signal.hpp>
 
 #include <QtWidgets/QWidget>
 #include <QtWidgets/QDockWidget>
 #include <QtWidgets/QDoubleSpinBox>
 #include <QtWidgets/QCheckBox>
+#include <QtWidgets/QComboBox>
 
 #include "src/types.h"
 
@@ -40,17 +40,29 @@ public slots:
 	void SetPlaneNorm(t_real x, t_real y, t_real z);
 	void SetPlaneVisibility(bool);
 
+#ifdef USE_BULLET
+	void SetMouseDragMode(MouseDragMode mode);
+#endif
+
 
 signals:
 	void PlaneDistChanged(t_real angle);
 	void PlaneNormChanged(t_real x, t_real y, t_real z);
 	void PlaneVisibilityChanged(bool visible);
 
+#ifdef USE_BULLET
+	void MouseDragModeChanged(MouseDragMode mode);
+#endif
+
 
 private:
 	QDoubleSpinBox *m_spinPlaneDist{nullptr};
 	QDoubleSpinBox *m_spinPlaneNorm[3]{nullptr, nullptr, nullptr};
 	QCheckBox *m_checkPlaneVisible{nullptr};
+
+#ifdef USE_BULLET
+	QComboBox *m_comboMouseDragMode{nullptr};
+#endif
 };
 
 

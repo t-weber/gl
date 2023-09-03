@@ -92,6 +92,14 @@ public:
 };
 
 
+enum class MouseDragMode : int
+{
+	POSITION = 0,
+	MOMENTUM,
+	FORCE,
+};
+
+
 template<class T> using t_arr2 = t_arr<T, 2>;
 template<class T> using t_arr3 = t_arr<T, 3>;
 template<class T> using t_arr4 = t_arr<T, 2*2>;

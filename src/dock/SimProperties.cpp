@@ -31,7 +31,7 @@ SimPropertiesWidget::SimPropertiesWidget(QWidget *parent)
 	m_spinTimeScale->setToolTip("Simulation time scale.");
 
 	m_spinMaxTimeStep = new QSpinBox(this);
-	m_spinMaxTimeStep->setMinimum(0);
+	m_spinMaxTimeStep->setMinimum(1);
 	m_spinMaxTimeStep->setMaximum(9999);
 	m_spinMaxTimeStep->setSingleStep(100);
 	m_spinMaxTimeStep->setValue(100);
@@ -50,7 +50,6 @@ SimPropertiesWidget::SimPropertiesWidget(QWidget *parent)
 	grid->addWidget(m_spinMaxTimeStep, y++, 1, 1, 1);
 	grid->addItem(new QSpacerItem(1, 1,
 		QSizePolicy::Minimum, QSizePolicy::Expanding), y++, 0, 1, 2);
-
 
 	// signals
 	connect(m_spinTimeScale,

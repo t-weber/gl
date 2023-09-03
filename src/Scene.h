@@ -52,7 +52,8 @@ public:
 	const std::vector<std::shared_ptr<Geometry>>& GetObjects() const { return m_objs; }
 
 	void DragObject(bool drag_start, const std::string& obj,
-		const t_vec& start, const t_vec& pos);
+		const t_vec& start, const t_vec& pos,
+		MouseDragMode drag_mode = MouseDragMode::POSITION);
 
 	// connection to update signal
 	template<class t_slot>

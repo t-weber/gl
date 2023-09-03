@@ -130,6 +130,8 @@ private:
 	t_vec3_gl m_curInters = m::create<t_vec3_gl>({0, 0, 0});
 	std::string m_curObj{};
 
+	MouseDragMode m_mousedragmode{ MouseDragMode::POSITION };
+
 
 protected:
 	// events

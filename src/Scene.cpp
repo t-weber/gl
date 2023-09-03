@@ -25,8 +25,7 @@
 namespace pt = boost::property_tree;
 
 
-Scene::Scene()
-	: m_sigUpdate{std::make_shared<t_sig_update>()}
+Scene::Scene() : m_sigUpdate{std::make_shared<t_sig_update>()}
 {
 #ifdef USE_BULLET
 	m_coll = std::make_shared<btDefaultCollisionConfiguration>(
@@ -78,11 +77,8 @@ void Scene::Clear()
 #ifdef USE_BULLET
 	for(auto& obj : m_objs)
 	{
-		if(m_world)
-		{
-			if(auto *rigidbody = obj->GetRigidBody().get(); rigidbody)
-				m_world->removeRigidBody(rigidbody);
-		}
+		if(auto *rigidbody = obj->GetRigidBody().get(); m_world && rigidbody)
+			m_world->removeRigidBody(rigidbody);
 	}
 #endif
 
@@ -180,11 +176,8 @@ void Scene::AddObject(
 		m_objs.push_back(obj);
 
 #ifdef USE_BULLET
-		if(m_world)
-		{
-			if(auto *rigidbody = obj->GetRigidBody().get(); rigidbody)
-				m_world->addRigidBody(rigidbody);
-		}
+		if(auto *rigidbody = obj->GetRigidBody().get(); m_world && rigidbody)
+			m_world->addRigidBody(rigidbody);
 #endif
 	}
 }
@@ -203,11 +196,8 @@ bool Scene::DeleteObject(const std::string& id)
 	}); iter != m_objs.end())
 	{
 #ifdef USE_BULLET
-		if(m_world)
-		{
-			if(auto *rigidbody = (*iter)->GetRigidBody().get(); rigidbody)
-				m_world->removeRigidBody(rigidbody);
-		}
+		if(auto *rigidbody = (*iter)->GetRigidBody().get(); m_world && rigidbody)
+			m_world->removeRigidBody(rigidbody);
 #endif
 
 		m_objs.erase(iter);
@@ -298,8 +288,11 @@ Scene::RotateObject(const std::string& id, t_real angle, char axis)
 /**
  * an object is requested to be dragged from the gui
  */
-void Scene::DragObject(bool drag_start, const std::string& objid,
-	const t_vec& pos_startcur, const t_vec& pos_cur)
+void Scene::DragObject(bool drag_start,
+	const std::string& objid,
+	[[__maybe_unused__]] const t_vec& pos_startcur,
+	const t_vec& pos_cur,
+	MouseDragMode drag_mode)
 {
 	bool obj_dragged = false;
 
@@ -315,8 +308,33 @@ void Scene::DragObject(bool drag_start, const std::string& objid,
 		if(drag_start)
 			m_drag_pos_axis_start = pos_obj;
 
-		pos_obj = pos_cur - pos_startcur + m_drag_pos_axis_start;
-		obj->SetPosition(pos_obj);
+#ifdef USE_BULLET
+		if(drag_mode == MouseDragMode::FORCE || drag_mode == MouseDragMode::MOMENTUM)
+		{
+			const t_vec vec_diff = pos_cur - m_drag_pos_axis_start;
+			const btVector3 vecDiff
+			{
+				btScalar(vec_diff[0]),
+				btScalar(vec_diff[1]),
+				btScalar(vec_diff[2])
+			};
+
+			if(drag_mode == MouseDragMode::FORCE)
+				obj->GetRigidBody()->applyCentralForce(vecDiff);
+			else if(drag_mode == MouseDragMode::MOMENTUM)
+				obj->GetRigidBody()->applyCentralImpulse(vecDiff);
+		}
+		else if(drag_mode == MouseDragMode::POSITION)
+		{
+			obj->SetPosition(pos_cur - pos_startcur + m_drag_pos_axis_start);
+		}
+
+#else	// !USE_BULLET
+		// only position dragging possible
+		obj->SetPosition(pos_cur - pos_startcur + m_drag_pos_axis_start);
+
+#endif	// USE_BULLET
+
 		obj_dragged = true;
 	}
 

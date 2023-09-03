@@ -383,6 +383,9 @@ void Geometry::tick([[maybe_unused]] const std::chrono::milliseconds& ms)
 
 
 #ifdef USE_BULLET
+/**
+ * update the object matrix from the simulation state
+ */
 void Geometry::SetMatrixFromState()
 {
 	if(!m_rigid_body)
@@ -403,6 +406,9 @@ void Geometry::SetMatrixFromState()
 }
 
 
+/**
+ * update the simulation state with the object matrix
+ */
 void Geometry::SetStateFromMatrix()
 {
 	if(!m_state)
@@ -914,7 +920,6 @@ bool BoxGeometry::Load(const pt::ptree& prop)
 #ifdef USE_BULLET
 	UpdateRigidBody();
 #endif
-
 	return true;
 }
 
@@ -1105,7 +1110,6 @@ bool CylinderGeometry::Load(const pt::ptree& prop)
 #ifdef USE_BULLET
 	UpdateRigidBody();
 #endif
-
 	return true;
 }
 
