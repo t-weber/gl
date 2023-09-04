@@ -74,6 +74,10 @@ extern t_real_gl g_wheel_zoom_scale;
 // camera rotation scaling factor
 extern t_real_gl g_rotation_scale;
 
+// mouse dragging
+extern t_real g_drag_scale_force;
+extern t_real g_drag_scale_momentum;
+
 
 // gui theme
 extern QString g_theme;
@@ -102,7 +106,7 @@ extern int g_nested_docks;
 // ----------------------------------------------------------------------------
 // variables register
 // ----------------------------------------------------------------------------
-constexpr std::array<SettingsVariable, 11> g_settingsvariables
+constexpr std::array<SettingsVariable, 13> g_settingsvariables
 {{
 	// epsilons and precisions
 	{
@@ -130,6 +134,18 @@ constexpr std::array<SettingsVariable, 11> g_settingsvariables
 		.description = "GUI number precision.",
 		.key = "settings/prec_gui",
 		.value = &g_prec_gui,
+	},
+
+	// mouse dragging
+	{
+		.description = "Force scaling.",
+		.key = "settings/drag_force_scale",
+		.value = &g_drag_scale_force,
+	},
+	{
+		.description = "Momentum scaling.",
+		.key = "settings/drag_momentum_scale",
+		.value = &g_drag_scale_momentum,
 	},
 
 	// file options

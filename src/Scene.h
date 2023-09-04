@@ -69,6 +69,9 @@ public:
 	t_real GetEpsilon() const { return m_eps; }
 	void SetEpsilon(t_real eps) { m_eps = eps; }
 
+	void SetMouseDragForceScaling(t_real scale) { m_drag_scale_force = scale; }
+	void SetMouseDragMomentumScaling(t_real scale) { m_drag_scale_momentum = scale; }
+
 	void tick(const std::chrono::milliseconds& ms);
 
 	static std::pair<bool, std::string> load(
@@ -92,7 +95,11 @@ private:
 	using t_sig_update = boost::signals2::signal<void(const Scene&)>;
 	std::shared_ptr<t_sig_update> m_sigUpdate{};
 
-	t_real m_eps = 1e-6;
+	t_real m_eps{1e-6};
+
+	// scaling factors for mouse dragging
+	t_real m_drag_scale_force{10.};
+	t_real m_drag_scale_momentum{0.1};
 
 #ifdef USE_BULLET
 	std::shared_ptr<btDefaultCollisionConfiguration> m_coll{};

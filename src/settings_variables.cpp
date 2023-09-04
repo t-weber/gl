@@ -38,6 +38,11 @@ t_real g_eps_angular = 0.01 / 180. * m::pi<t_real>;
 t_real g_eps_gui = 1e-4;
 
 
+// mouse dragging
+t_real g_drag_scale_force = 10.;
+t_real g_drag_scale_momentum = 0.1;
+
+
 // render timer TPS
 unsigned int g_timer_tps = 30;
 

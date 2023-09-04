@@ -1447,6 +1447,8 @@ void MainWnd::SetInitialSceneFile(const std::string& file)
 void MainWnd::InitSettings()
 {
 	m_scene.SetEpsilon(g_eps);
+	m_scene.SetMouseDragForceScaling(g_drag_scale_force);
+	m_scene.SetMouseDragMomentumScaling(g_drag_scale_momentum);
 
 	QMainWindow::DockOptions dockoptions{};
 	if(g_tabbed_docks)

@@ -320,9 +320,9 @@ void Scene::DragObject(bool drag_start,
 			};
 
 			if(drag_mode == MouseDragMode::FORCE)
-				obj->GetRigidBody()->applyCentralForce(vecDiff);
+				obj->GetRigidBody()->applyCentralForce(vecDiff * m_drag_scale_force);
 			else if(drag_mode == MouseDragMode::MOMENTUM)
-				obj->GetRigidBody()->applyCentralImpulse(vecDiff);
+				obj->GetRigidBody()->applyCentralImpulse(vecDiff * m_drag_scale_momentum);
 		}
 		else if(drag_mode == MouseDragMode::POSITION)
 		{
