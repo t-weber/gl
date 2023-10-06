@@ -260,12 +260,14 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 				m_renderer->SetSelectionPlaneVisible(visible);
 		});
 
+#ifdef USE_BULLET
 	// mouse drag mode changed
 	connect(selwidget, &SelectionPropertiesWidget::MouseDragModeChanged,
 		[this](MouseDragMode mode) -> void
 		{
 			m_mousedragmode = mode;
 		});
+#endif
 	// --------------------------------------------------------------------
 
 

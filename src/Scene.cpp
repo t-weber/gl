@@ -292,7 +292,7 @@ void Scene::DragObject(bool drag_start,
 	const std::string& objid,
 	[[__maybe_unused__]] const t_vec& pos_startcur,
 	const t_vec& pos_cur,
-	MouseDragMode drag_mode)
+	[[__maybe_unused__]] MouseDragMode drag_mode)
 {
 	bool obj_dragged = false;
 
