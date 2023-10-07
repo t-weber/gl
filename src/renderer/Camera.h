@@ -24,7 +24,7 @@
 #include <unordered_set>
 #include <algorithm>
 
-#include "mathlibs/libs/math_algos.h"
+#include "mathlibs/libs/matrix_algos.h"
 
 
 template<class t_mat, class t_vec, class t_vec3, class t_real>

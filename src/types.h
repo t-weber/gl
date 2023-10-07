@@ -9,8 +9,8 @@
 #define __GLSCENE_TYPES_H__
 
 
-#include "mathlibs/libs/math_algos.h"
-#include "mathlibs/libs/math_conts.h"
+#include "mathlibs/libs/matrix_algos.h"
+#include "mathlibs/libs/matrix_conts.h"
 
 
 // program identifier

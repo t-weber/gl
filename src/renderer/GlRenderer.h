@@ -59,8 +59,8 @@
 #include <unordered_map>
 #include <optional>
 
-#include "mathlibs/libs/math_algos.h"
-#include "mathlibs/libs/math_conts.h"
+#include "mathlibs/libs/matrix_algos.h"
+#include "mathlibs/libs/matrix_conts.h"
 
 #include "src/types.h"
 #include "src/Scene.h"
