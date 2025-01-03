@@ -286,6 +286,14 @@ Geometry::load(const pt::ptree& prop)
 			if(plane->Load(geo.second))
 				geo_objs.emplace_back(std::move(plane));
 		}
+		else if(geotype == "patch")
+		{
+			auto patch = std::make_shared<PatchGeometry>();
+			patch->m_id = geoid;
+
+			if(patch->Load(geo.second))
+				geo_objs.emplace_back(std::move(patch));
+		}
 		else if(geotype == "cylinder")
 		{
 			auto cyl = std::make_shared<CylinderGeometry>();
@@ -774,6 +782,166 @@ void PlaneGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 		if(prop.key == "normal")
 			m_norm = std::get<t_vec>(prop.value);
 		else if(prop.key == "width")
+			m_width = std::get<t_real>(prop.value);
+		else if(prop.key == "height")
+			m_height = std::get<t_real>(prop.value);
+	}
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
+}
+
+// ----------------------------------------------------------------------------
+
+
+
+// ----------------------------------------------------------------------------
+// patch
+// ----------------------------------------------------------------------------
+
+PatchGeometry::PatchGeometry() : Geometry()
+{
+#ifdef USE_BULLET
+	CreateRigidBody();
+#endif
+}
+
+
+PatchGeometry::~PatchGeometry()
+{
+}
+
+
+PatchGeometry& PatchGeometry::operator=(const Geometry& _geo)
+{
+	Geometry::operator=(_geo);
+	const PatchGeometry& geo = dynamic_cast<const PatchGeometry&>(_geo);
+
+	// TODO
+	this->m_width = geo.m_width;
+	this->m_height = geo.m_height;
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
+	return *this;
+}
+
+
+std::shared_ptr<Geometry> PatchGeometry::clone() const
+{
+	auto geo = std::make_shared<PatchGeometry>();
+	geo->operator=(dynamic_cast<const Geometry&>(*this));
+	return geo;
+}
+
+
+void PatchGeometry::SetWidth(t_real w)
+{
+	m_width = w;
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
+}
+
+
+void PatchGeometry::SetHeight(t_real h)
+{
+	m_height = h;
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
+}
+
+
+#ifdef USE_BULLET
+void PatchGeometry::CreateRigidBody()
+{
+	// TODO
+}
+
+
+void PatchGeometry::UpdateRigidBody()
+{
+	if(!m_rigid_body)
+		return;
+	// TODO
+}
+#endif
+
+
+bool PatchGeometry::Load(const pt::ptree& prop)
+{
+	if(!Geometry::Load(prop))
+		return false;
+
+	// TODO
+	m_width = geo_str_to_val<t_real>(prop.get<std::string>("width", "1."));
+	m_height = geo_str_to_val<t_real>(prop.get<std::string>("height", "1."));
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
+
+	return true;
+}
+
+
+pt::ptree PatchGeometry::Save() const
+{
+	pt::ptree prop = Geometry::Save();
+
+	// TODO
+	prop.put<t_real>("width", m_width);
+	prop.put<t_real>("height", m_height);
+
+	pt::ptree propPlane;
+	propPlane.put_child("plane", prop);
+	return propPlane;
+}
+
+
+std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
+PatchGeometry::GetTriangles() const
+{
+	// TODO
+	auto solid = m::create_plane<t_mat, t_vec>(
+		m::create<t_vec>({0., 0., 1.}), m_width*0.5, m_height*0.5);
+	auto [verts, norms, uvs] = m::create_triangles<t_vec>(solid);
+
+	return std::make_tuple(verts, norms, uvs);
+}
+
+
+/**
+ * obtain all defining properties of the geometry object
+ */
+std::vector<ObjectProperty> PatchGeometry::GetProperties() const
+{
+	std::vector<ObjectProperty> props = Geometry::GetProperties();
+
+	// TODO
+	props.emplace_back(ObjectProperty{.key="width", .value=m_width});
+	props.emplace_back(ObjectProperty{.key="height", .value=m_height});
+
+	return props;
+}
+
+
+/**
+ * set the properties of the geometry object
+ */
+void PatchGeometry::SetProperties(const std::vector<ObjectProperty>& props)
+{
+	Geometry::SetProperties(props);
+
+	for(const auto& prop : props)
+	{
+		// TODO
+		if(prop.key == "width")
 			m_width = std::get<t_real>(prop.value);
 		else if(prop.key == "height")
 			m_height = std::get<t_real>(prop.value);

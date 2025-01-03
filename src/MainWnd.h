@@ -194,6 +194,7 @@ protected slots:
 
 	// add or delete 3d objects
 	void AddPlane();
+	void AddPatch();
 	void AddCuboid();
 	void AddSphere();
 	void AddCylinder();

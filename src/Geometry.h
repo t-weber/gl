@@ -205,6 +205,43 @@ private:
 // ----------------------------------------------------------------------------
 
 
+// ----------------------------------------------------------------------------
+// patch
+// ----------------------------------------------------------------------------
+class PatchGeometry : public Geometry
+{
+public:
+	PatchGeometry();
+	virtual ~PatchGeometry();
+
+	virtual PatchGeometry& operator=(const Geometry& geo) override;
+	virtual std::shared_ptr<Geometry> clone() const override;
+
+	virtual bool Load(const boost::property_tree::ptree& prop) override;
+	virtual boost::property_tree::ptree Save() const override;
+
+	virtual std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
+	GetTriangles() const override;
+
+	t_real GetWidth() const { return m_width; }
+	t_real GetHeight() const { return m_height; }
+
+	void SetWidth(t_real w);
+	void SetHeight(t_real h);
+
+	virtual std::vector<ObjectProperty> GetProperties() const override;
+	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
+
+#ifdef USE_BULLET
+	virtual void CreateRigidBody() override;
+	virtual void UpdateRigidBody() override;
+#endif
+
+private:
+	t_real m_width = 1., m_height = 1.;
+};
+// ----------------------------------------------------------------------------
+
 
 // ----------------------------------------------------------------------------
 // box

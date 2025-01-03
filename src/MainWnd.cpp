@@ -399,6 +399,8 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 
 	QAction *actionAddPlane = new QAction(
 		QIcon::fromTheme("insert-object"), "Add Plane", menuGeo);
+	QAction *actionAddPatch = new QAction(
+		QIcon::fromTheme("insert-object"), "Add Patch", menuGeo);
 	QAction *actionAddCuboid = new QAction(
 		QIcon::fromTheme("insert-object"), "Add Cube", menuGeo);
 	QAction *actionAddSphere = new QAction(
@@ -420,6 +422,7 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 		QIcon::fromTheme("image-x-generic"), "Texture Browser...", menuGeo);
 
 	connect(actionAddPlane, &QAction::triggered, this, &MainWnd::AddPlane);
+	connect(actionAddPatch, &QAction::triggered, this, &MainWnd::AddPatch);
 	connect(actionAddCuboid, &QAction::triggered, this, &MainWnd::AddCuboid);
 	connect(actionAddSphere, &QAction::triggered, this, &MainWnd::AddSphere);
 	connect(actionAddCylinder, &QAction::triggered, this, &MainWnd::AddCylinder);
@@ -431,9 +434,12 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 	connect(actionTextureBrowser, &QAction::triggered, this, &MainWnd::ShowTextureBrowser);
 
 	menuGeo->addAction(actionAddPlane);
+	//menuGeo->addAction(actionAddPatch);  // TODO
+	menuGeo->addSeparator();
 	menuGeo->addAction(actionAddCuboid);
 	menuGeo->addAction(actionAddSphere);
 	menuGeo->addAction(actionAddCylinder);
+	menuGeo->addSeparator();
 	menuGeo->addAction(actionAddTetrahedron);
 	menuGeo->addAction(actionAddOctahedron);
 	//menuGeo->addAction(actionAddDodecahedron);  // TODO
@@ -1492,6 +1498,30 @@ void MainWnd::AddPlane()
 	// add a 3d representation of the plane
 	if(m_renderer)
 		m_renderer->AddObject(*plane);
+}
+
+
+/**
+ * add a patch to the scene
+ */
+void MainWnd::AddPatch()
+{
+	auto patch = std::make_shared<PatchGeometry>();
+	// TODO
+	patch->SetPosition(m::create<t_vec>({0, 0, 0}));
+
+	static std::size_t cnt = 1;
+	std::ostringstream ostrId;
+	ostrId << "patch " << cnt++;
+
+	// add patch to scene
+	m_scene.AddObject(std::vector<std::shared_ptr<Geometry>>{{patch}}, ostrId.str());
+
+	UpdateGeoTrees();
+
+	// add a 3d representation of the patch
+	if(m_renderer)
+		m_renderer->AddObject(*patch);
 }
 
 
