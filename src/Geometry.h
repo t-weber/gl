@@ -205,6 +205,7 @@ private:
 // ----------------------------------------------------------------------------
 
 
+
 // ----------------------------------------------------------------------------
 // patch
 // ----------------------------------------------------------------------------
@@ -228,6 +229,8 @@ public:
 
 	void SetWidth(t_real w);
 	void SetHeight(t_real h);
+	void SetNumPoints(t_int pts);
+	void SetExpression(const std::string& expr);
 
 	virtual std::vector<ObjectProperty> GetProperties() const override;
 	virtual void SetProperties(const std::vector<ObjectProperty>& props) override;
@@ -238,9 +241,12 @@ public:
 #endif
 
 private:
-	t_real m_width = 1., m_height = 1.;
+	t_real m_width{1.}, m_height{1.};
+	t_int m_num_points{8};
+	std::string m_expr{"x^2 + y^2"};
 };
 // ----------------------------------------------------------------------------
+
 
 
 // ----------------------------------------------------------------------------

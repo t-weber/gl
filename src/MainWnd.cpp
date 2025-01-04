@@ -434,7 +434,7 @@ MainWnd::MainWnd(QWidget* pParent) : QMainWindow{pParent}
 	connect(actionTextureBrowser, &QAction::triggered, this, &MainWnd::ShowTextureBrowser);
 
 	menuGeo->addAction(actionAddPlane);
-	//menuGeo->addAction(actionAddPatch);  // TODO
+	menuGeo->addAction(actionAddPatch);
 	menuGeo->addSeparator();
 	menuGeo->addAction(actionAddCuboid);
 	menuGeo->addAction(actionAddSphere);

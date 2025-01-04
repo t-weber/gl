@@ -51,6 +51,9 @@ public:
 	ExprParser(const ExprParser<T>&);
 	ExprParser& operator=(const ExprParser<T>&);
 
+	t_val GetIdentValue(const std::string& ident) const;
+	t_sym AssignVar(const std::string& ident, const t_sym& arg);
+
 	t_val Parse(const std::string& expr);
 
 
@@ -69,8 +72,6 @@ protected:
 
 	// --------------------------------------------------------------------
 	t_val GetValue(const t_sym& sym) const;
-	t_val GetIdentValue(const std::string& ident) const;
-	t_sym AssignVar(const std::string& ident, const t_sym& arg);
 	t_sym CallFunc(const std::string& ident) const;
 	t_sym CallFunc(const std::string& ident, const t_sym& arg) const;
 	t_sym CallFunc(const std::string& ident, const t_sym& arg1, const t_sym& arg2) const;

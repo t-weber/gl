@@ -818,9 +818,10 @@ PatchGeometry& PatchGeometry::operator=(const Geometry& _geo)
 	Geometry::operator=(_geo);
 	const PatchGeometry& geo = dynamic_cast<const PatchGeometry&>(_geo);
 
-	// TODO
 	this->m_width = geo.m_width;
 	this->m_height = geo.m_height;
+	this->m_num_points = geo.m_num_points;
+	this->m_expr = geo.m_expr;
 
 #ifdef USE_BULLET
 	UpdateRigidBody();
@@ -857,6 +858,26 @@ void PatchGeometry::SetHeight(t_real h)
 }
 
 
+void PatchGeometry::SetNumPoints(t_int pts)
+{
+	m_num_points = pts;
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
+}
+
+
+void PatchGeometry::SetExpression(const std::string& expr)
+{
+	m_expr = expr;
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
+}
+
+
 #ifdef USE_BULLET
 void PatchGeometry::CreateRigidBody()
 {
@@ -878,9 +899,10 @@ bool PatchGeometry::Load(const pt::ptree& prop)
 	if(!Geometry::Load(prop))
 		return false;
 
-	// TODO
 	m_width = geo_str_to_val<t_real>(prop.get<std::string>("width", "1."));
 	m_height = geo_str_to_val<t_real>(prop.get<std::string>("height", "1."));
+	m_num_points = geo_str_to_val<t_int>(prop.get<std::string>("num_points", "16"));
+	m_expr = prop.get<std::string>("expression", "0");
 
 #ifdef USE_BULLET
 	UpdateRigidBody();
@@ -894,9 +916,10 @@ pt::ptree PatchGeometry::Save() const
 {
 	pt::ptree prop = Geometry::Save();
 
-	// TODO
 	prop.put<t_real>("width", m_width);
 	prop.put<t_real>("height", m_height);
+	prop.put<t_int>("num_points", m_num_points);
+	prop.put<std::string>("expression", m_expr);
 
 	pt::ptree propPlane;
 	propPlane.put_child("plane", prop);
@@ -907,9 +930,17 @@ pt::ptree PatchGeometry::Save() const
 std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 PatchGeometry::GetTriangles() const
 {
-	// TODO
-	auto solid = m::create_plane<t_mat, t_vec>(
-		m::create<t_vec>({0., 0., 1.}), m_width*0.5, m_height*0.5);
+	// patch function, z = f(x, y)
+	auto fkt = [this](t_real x, t_real y) -> t_real
+	{
+		ExprParser<t_real> parser;
+		parser.AssignVar("y", y);
+		parser.AssignVar("x", x);
+		return parser.Parse(m_expr);
+	};
+
+	auto solid = m::create_patch<decltype(fkt), t_mat, t_vec>(
+		fkt, m_width, m_height, m_num_points);
 	auto [verts, norms, uvs] = m::create_triangles<t_vec>(solid);
 
 	return std::make_tuple(verts, norms, uvs);
@@ -923,9 +954,10 @@ std::vector<ObjectProperty> PatchGeometry::GetProperties() const
 {
 	std::vector<ObjectProperty> props = Geometry::GetProperties();
 
-	// TODO
 	props.emplace_back(ObjectProperty{.key="width", .value=m_width});
 	props.emplace_back(ObjectProperty{.key="height", .value=m_height});
+	props.emplace_back(ObjectProperty{.key="num_points", .value=m_num_points});
+	props.emplace_back(ObjectProperty{.key="expression", .value=m_expr});
 
 	return props;
 }
@@ -940,11 +972,14 @@ void PatchGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 
 	for(const auto& prop : props)
 	{
-		// TODO
 		if(prop.key == "width")
 			m_width = std::get<t_real>(prop.value);
 		else if(prop.key == "height")
 			m_height = std::get<t_real>(prop.value);
+		else if(prop.key == "num_points")
+			m_num_points = std::get<t_int>(prop.value);
+		else if(prop.key == "expression")
+			m_expr = std::get<std::string>(prop.value);
 	}
 
 #ifdef USE_BULLET
