@@ -818,9 +818,11 @@ PatchGeometry& PatchGeometry::operator=(const Geometry& _geo)
 	Geometry::operator=(_geo);
 	const PatchGeometry& geo = dynamic_cast<const PatchGeometry&>(_geo);
 
+	this->m_norm = geo.m_norm;
 	this->m_width = geo.m_width;
 	this->m_height = geo.m_height;
-	this->m_num_points = geo.m_num_points;
+	this->m_num_points_x = geo.m_num_points_x;
+	this->m_num_points_y = geo.m_num_points_y;
 	this->m_expr = geo.m_expr;
 
 #ifdef USE_BULLET
@@ -835,6 +837,16 @@ std::shared_ptr<Geometry> PatchGeometry::clone() const
 	auto geo = std::make_shared<PatchGeometry>();
 	geo->operator=(dynamic_cast<const Geometry&>(*this));
 	return geo;
+}
+
+
+void PatchGeometry::SetNormal(const t_vec& n)
+{
+	m_norm = n;
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
 }
 
 
@@ -858,9 +870,19 @@ void PatchGeometry::SetHeight(t_real h)
 }
 
 
-void PatchGeometry::SetNumPoints(t_int pts)
+void PatchGeometry::SetNumPointsX(t_int pts)
 {
-	m_num_points = pts;
+	m_num_points_x = pts;
+
+#ifdef USE_BULLET
+	UpdateRigidBody();
+#endif
+}
+
+
+void PatchGeometry::SetNumPointsY(t_int pts)
+{
+	m_num_points_y = pts;
 
 #ifdef USE_BULLET
 	UpdateRigidBody();
@@ -899,9 +921,18 @@ bool PatchGeometry::Load(const pt::ptree& prop)
 	if(!Geometry::Load(prop))
 		return false;
 
+	// normal
+	if(auto optPos = prop.get_optional<std::string>("normal"); optPos)
+	{
+		m_norm = geo_str_to_vec(*optPos);
+		if(m_norm.size() < 3)
+			m_norm.resize(3);
+	}
+
 	m_width = geo_str_to_val<t_real>(prop.get<std::string>("width", "1."));
 	m_height = geo_str_to_val<t_real>(prop.get<std::string>("height", "1."));
-	m_num_points = geo_str_to_val<t_int>(prop.get<std::string>("num_points", "16"));
+	m_num_points_x = geo_str_to_val<t_int>(prop.get<std::string>("num_points_x", "8"));
+	m_num_points_y = geo_str_to_val<t_int>(prop.get<std::string>("num_points_y", "8"));
 	m_expr = prop.get<std::string>("expression", "0");
 
 #ifdef USE_BULLET
@@ -916,9 +947,11 @@ pt::ptree PatchGeometry::Save() const
 {
 	pt::ptree prop = Geometry::Save();
 
+	prop.put<std::string>("normal", geo_vec_to_str(m_norm));
 	prop.put<t_real>("width", m_width);
 	prop.put<t_real>("height", m_height);
-	prop.put<t_int>("num_points", m_num_points);
+	prop.put<t_int>("num_points_x", m_num_points_x);
+	prop.put<t_int>("num_points_y", m_num_points_y);
 	prop.put<std::string>("expression", m_expr);
 
 	pt::ptree propPlane;
@@ -940,7 +973,7 @@ PatchGeometry::GetTriangles() const
 	};
 
 	auto solid = m::create_patch<decltype(fkt), t_mat, t_vec>(
-		fkt, m_width, m_height, m_num_points);
+		fkt, m_width, m_height, m_num_points_x, m_num_points_y, m_norm);
 	auto [verts, norms, uvs] = m::create_triangles<t_vec>(solid);
 
 	return std::make_tuple(verts, norms, uvs);
@@ -954,9 +987,11 @@ std::vector<ObjectProperty> PatchGeometry::GetProperties() const
 {
 	std::vector<ObjectProperty> props = Geometry::GetProperties();
 
+	props.emplace_back(ObjectProperty{.key="normal", .value=m_norm});
 	props.emplace_back(ObjectProperty{.key="width", .value=m_width});
 	props.emplace_back(ObjectProperty{.key="height", .value=m_height});
-	props.emplace_back(ObjectProperty{.key="num_points", .value=m_num_points});
+	props.emplace_back(ObjectProperty{.key="num_points_x", .value=m_num_points_x});
+	props.emplace_back(ObjectProperty{.key="num_points_y", .value=m_num_points_y});
 	props.emplace_back(ObjectProperty{.key="expression", .value=m_expr});
 
 	return props;
@@ -972,12 +1007,16 @@ void PatchGeometry::SetProperties(const std::vector<ObjectProperty>& props)
 
 	for(const auto& prop : props)
 	{
-		if(prop.key == "width")
+		if(prop.key == "normal")
+			m_norm = std::get<t_vec>(prop.value);
+		else if(prop.key == "width")
 			m_width = std::get<t_real>(prop.value);
 		else if(prop.key == "height")
 			m_height = std::get<t_real>(prop.value);
-		else if(prop.key == "num_points")
-			m_num_points = std::get<t_int>(prop.value);
+		else if(prop.key == "num_points_x")
+			m_num_points_x = std::get<t_int>(prop.value);
+		else if(prop.key == "num_points_y")
+			m_num_points_y = std::get<t_int>(prop.value);
 		else if(prop.key == "expression")
 			m_expr = std::get<std::string>(prop.value);
 	}

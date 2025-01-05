@@ -224,12 +224,18 @@ public:
 	virtual std::tuple<std::vector<t_vec>, std::vector<t_vec>, std::vector<t_vec>>
 	GetTriangles() const override;
 
+	const t_vec& GetNormal() const { return m_norm; }
 	t_real GetWidth() const { return m_width; }
 	t_real GetHeight() const { return m_height; }
+	t_int GetNumPointsX() const { return m_num_points_x; }
+	t_int GetNumPointsY() const { return m_num_points_y; }
+	const std::string& GetExpression() const { return m_expr; }
 
+	void SetNormal(const t_vec& n);
 	void SetWidth(t_real w);
 	void SetHeight(t_real h);
-	void SetNumPoints(t_int pts);
+	void SetNumPointsX(t_int pts);
+	void SetNumPointsY(t_int pts);
 	void SetExpression(const std::string& expr);
 
 	virtual std::vector<ObjectProperty> GetProperties() const override;
@@ -241,8 +247,9 @@ public:
 #endif
 
 private:
-	t_real m_width{1.}, m_height{1.};
-	t_int m_num_points{8};
+	t_vec m_norm = m::create<t_vec>({0, 0, 1});
+	t_real m_width{2.}, m_height{2.};
+	t_int m_num_points_x{8}, m_num_points_y{8};
 	std::string m_expr{"x^2 + y^2"};
 };
 // ----------------------------------------------------------------------------
