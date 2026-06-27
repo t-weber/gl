@@ -120,8 +120,11 @@ protected:
 			auto iter = begin;
 			std::size_t cnt = 0;
 
-			while(iter++ != end)
+			while(iter != end)
+			{
 				++cnt;
+				++iter;
+			}
 
 			return cnt;
 		};

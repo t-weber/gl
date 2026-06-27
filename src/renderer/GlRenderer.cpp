@@ -187,7 +187,7 @@ bool GlSceneRenderer::CreateTriangleObject(GlRenderObj& obj,
 
 		auto vecVerts = to_float_array(triagverts, 1, 4, false, 1.);
 		obj.m_vertex_buffer->allocate(
-			vecVerts.data(), 
+			vecVerts.data(),
 			vecVerts.size()*sizeof(typename decltype(vecVerts)::value_type));
 		pGl->glVertexAttribPointer(attrVertex, 4, GL_FLOAT, 0, 0, nullptr);
 	}
@@ -1009,18 +1009,18 @@ void GlSceneRenderer::UpdatePicker()
 			continue;
 
 		// test actual polygons for intersection
-		for(std::size_t startidx=0; startidx+2<obj.m_triangles.size(); startidx+=3)
+		for(std::size_t startidx = 0; startidx + 2 < obj.m_triangles.size(); startidx += 3)
 		{
 			std::vector<t_vec3_gl> poly{ {
-				obj.m_triangles[startidx+0],
-				obj.m_triangles[startidx+1],
-				obj.m_triangles[startidx+2]
+				obj.m_triangles[startidx + 0],
+				obj.m_triangles[startidx + 1],
+				obj.m_triangles[startidx + 2]
 			} };
 
 			std::vector<t_vec3_gl> polyuv{ {
-				obj.m_uvs[startidx+0],
-				obj.m_uvs[startidx+1],
-				obj.m_uvs[startidx+2]
+				startidx + 0 < obj.m_uvs.size() ? obj.m_uvs[startidx + 0] : 0.,
+				startidx + 1 < obj.m_uvs.size() ? obj.m_uvs[startidx + 1] : 0.,
+				startidx + 1 < obj.m_uvs.size() ? obj.m_uvs[startidx + 2] : 0.
 			} };
 
 			auto [inters, does_intersect, inters_lam] =
@@ -1652,7 +1652,7 @@ void GlSceneRenderer::DoPaintGL(qgl_funcs *pGl)
 	auto colOverride = m::create<t_vec_gl>({ 1, 1, 1, 1 });
 
 	// render object
-	auto render_triangle_geometry = 
+	auto render_triangle_geometry =
 		[this, pGl, &colOverride, &boost_scope_exit_aux_args](
 			const GlSceneObj& obj)
 	{
